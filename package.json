@@ -23,6 +23,7 @@
   "scripts": {
     "test": "jest",
     "coverage": "jest --coverage",
+    "start": "ts-node src/main.ts",
     "prebuild": "tsc",
     "build": "ncc build ./build/index.js -o dist",
     "release": "release-it --no-git.requireCleanWorkingDir"
