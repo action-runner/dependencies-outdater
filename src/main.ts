@@ -1,9 +1,23 @@
 import simpleGit from "simple-git";
+import { NodeJSProvider } from "./providers/nodejs/nodejs";
+import * as github from "@actions/github";
+import { GithubClient } from "./providers/client/github";
+import { exec } from "child_process";
 
 (async () => {
-  const git = simpleGit();
-  await git.checkout("test");
-  await git.add("./*");
-  await git.commit("Update dependencies");
-  await git.push(["-u", "origin", "test"]);
+  const run = () => {
+    return new Promise((resolve, reject) => {
+      exec("ping www.google.com", (error, stdout, stderr) => {
+        if (error) {
+          reject();
+          return;
+        }
+
+        resolve("success");
+      });
+    });
+  };
+
+  const result = await run();
+  console.log(result);
 })();
