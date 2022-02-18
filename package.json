@@ -18,14 +18,16 @@
     "@release-it/conventional-changelog": "^4.1.0",
     "@types/node": "^17.0.18",
     "@vercel/ncc": "^0.33.3",
+    "npm-check-updates": "^12.3.1",
     "simple-git": "^3.2.4"
   },
   "scripts": {
     "test": "jest",
     "coverage": "jest --coverage",
-    "start": "ts-node src/main.ts",
+    "dev": "ts-node src/main.ts",
+    "start": "node dist/index.js",
     "prebuild": "tsc",
-    "build": "ncc build ./build/index.js -o dist",
+    "build": "ncc build -s --external='@npmcli/run-script' ./build/index.js -o dist",
     "release": "release-it --no-git.requireCleanWorkingDir"
   }
 }

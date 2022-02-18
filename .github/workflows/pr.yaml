@@ -13,13 +13,22 @@ jobs:
     runs-on: ubuntu-latest
     name: Lint PR
     steps:
+      - name: label
+        uses: action-runner/conventional-labeler@v1
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
+
+  outdated:
+    runs-on: ubuntu-latest
+    name: Check Dependencies
+    steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js 16
         uses: actions/setup-node@v2
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 16
           cache: 'yarn'
       - run: yarn
       - run: yarn build
@@ -27,5 +36,3 @@ jobs:
         uses: ./
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Get the output
-        run: echo "The labels were ${{ steps.label.outputs.labels }}"
