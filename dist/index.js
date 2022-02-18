@@ -91,6 +91,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __asyncValues = (this && this.__asyncValues) || function (o) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var m = o[Symbol.asyncIterator], i;
+    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
+    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
+    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -117,7 +124,7 @@ class GithubClient {
                 if (pullRequestNumber) {
                     core.info(`Adding comment to pull request ${pullRequestNumber}`);
                     // Add a comment to the pull request
-                    yield this.createComment(pullRequestNumber, props.body);
+                    yield this.createComment(pullRequestNumber, props.body, props.deleteComment);
                     return;
                 }
                 else {
@@ -132,7 +139,7 @@ class GithubClient {
             const result = yield client.rest.pulls.create({
                 owner: github.context.repo.owner,
                 repo: github.context.repo.repo,
-                title: this.getTitle(sha),
+                title: this.getTitle(),
                 head: `dependencies-update-${sha}`,
                 base: (_b = props.base) !== null && _b !== void 0 ? _b : github.context.ref,
                 body: props.body,
@@ -140,25 +147,58 @@ class GithubClient {
             return result;
         });
     }
-    createComment(pullRequestNumber, content) {
+    findComment(pullRequestNumber) {
+        var e_1, _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            const client = github.getOctokit(this.githubToken);
+            try {
+                for (var _b = __asyncValues(client.paginate.iterator(client.rest.issues.listComments, {
+                    owner: github.context.repo.owner,
+                    repo: github.context.repo.repo,
+                    issue_number: pullRequestNumber,
+                })), _c; _c = yield _b.next(), !_c.done;) {
+                    const { data: comments } = _c.value;
+                    // Search each page for the comment
+                    const comment = comments.find((comment) => { var _a; return (_a = comment.body) === null || _a === void 0 ? void 0 : _a.includes(this.getTitle()); });
+                    if (comment)
+                        return comment;
+                }
+            }
+            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            finally {
+                try {
+                    if (_c && !_c.done && (_a = _b.return)) yield _a.call(_b);
+                }
+                finally { if (e_1) throw e_1.error; }
+            }
+            return undefined;
+        });
+    }
+    createComment(pullRequestNumber, content, deleteComment = false) {
         return __awaiter(this, void 0, void 0, function* () {
             const client = github.getOctokit(this.githubToken);
             // search for the pull request's comment while content contains the string "Update dependencies"
             // and the comment is not from the github-actions bot
             // and the comment is from this pull request
-            core.info(`Creating pull request with comment: ${content}`);
-            const result = yield client.rest.search.issuesAndPullRequests({
-                q: `type:pr is:open repo:${github.context.repo.owner}/${github.context.repo.repo} in:comments ${this.getTitle(this.getCommit({}))}`,
-                sort: "updated",
-            });
-            if (result.data.total_count > 0) {
-                core.info(`Found comment ${result.data.items[0].id}`);
+            core.info(`Creating pull request with comment`);
+            const result = yield this.findComment(pullRequestNumber);
+            if (result !== undefined) {
+                core.info(`Found comment ${result.id}`);
                 // update the comment
-                const comment = result.data.items[0];
+                if (deleteComment) {
+                    core.info(`Deleting comment ${result.id}`);
+                    yield client.rest.issues.deleteComment({
+                        owner: github.context.repo.owner,
+                        repo: github.context.repo.repo,
+                        comment_id: result.id,
+                    });
+                    return;
+                }
+                core.info(`Updating comment ${result.id}`);
                 yield client.rest.issues.updateComment({
                     owner: github.context.repo.owner,
                     repo: github.context.repo.repo,
-                    comment_id: comment.id,
+                    comment_id: result.id,
                     body: content,
                 });
             }
@@ -184,8 +224,11 @@ class GithubClient {
         }
         return github.context.sha;
     }
-    getTitle(sha) {
-        return `Update dependencies for ${sha}`;
+    getTitle() {
+        const title = this.isPullRequest()
+            ? `pull request #${this.pullRequestNumber()}`
+            : this.getCommit({});
+        return `Update dependencies for ${title}`;
     }
     getBranch(sha) {
         return `dependencies-update-${sha}`;
@@ -196,7 +239,7 @@ class GithubClient {
      */
     checkPullRequestExists(sha) {
         return __awaiter(this, void 0, void 0, function* () {
-            const title = this.getTitle(sha);
+            const title = this.getTitle();
             const client = github.getOctokit(this.githubToken);
             const result = yield client.rest.search.issuesAndPullRequests({ q: title });
             if (result.data.total_count > 0) {
@@ -231,6 +274,10 @@ class GithubClient {
     }
     isPullRequest() {
         return github.context.eventName === "pull_request";
+    }
+    pullRequestNumber() {
+        var _a;
+        return (_a = github.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.number;
     }
 }
 exports.GithubClient = GithubClient;
@@ -410,9 +457,7 @@ class Provider {
             core.startGroup("Checking dependencies");
             const updates = yield this.findUpdates();
             this.packages = updates;
-            if (this.packages.length > 0 && !props.skip) {
-                yield this.update();
-            }
+            yield this.update();
             core.endGroup();
             return updates;
         });
@@ -423,7 +468,7 @@ class Provider {
      * @returns {string} Report in markdown format
      */
     getComment() {
-        let output = `## ${this.github.getTitle(this.github.getCommit({}))} \n\n`;
+        let output = `## ${this.github.getTitle()}\n\n`;
         // markdown table header
         output += `| Package | Current Version | New Version|\n`;
         output += `|:-------:|:--------------:|:---------:|\n`;
@@ -438,23 +483,25 @@ class Provider {
      */
     update() {
         return __awaiter(this, void 0, void 0, function* () {
-            if (this.packages.length === 0) {
-                return;
-            }
-            core.startGroup("Updating dependencies");
-            core.info("Switching to new branch...");
-            if (!this.github.isPullRequest()) {
-                const branch = yield this.github.switchToBranch();
-                core.info(`Switched to branch ${branch}`);
-                core.info("Performing updating...");
-                yield this.performUpdate();
-                core.info(`Adding commit...`);
-                yield this.github.addAndCommit();
+            if (this.packages.length > 0) {
+                core.startGroup("Updating dependencies");
+                core.info("Switching to new branch...");
+                if (!this.github.isPullRequest()) {
+                    const branch = yield this.github.switchToBranch();
+                    core.info(`Switched to branch ${branch}`);
+                    core.info("Performing updating...");
+                    yield this.performUpdate();
+                    core.info(`Adding commit...`);
+                    yield this.github.addAndCommit();
+                }
             }
             core.info("Creating pull request...");
             const body = this.getComment();
             const headCommit = this.github.getCommit({});
-            yield this.github.createPullRequest(headCommit, { body: body });
+            yield this.github.createPullRequest(headCommit, {
+                body: body,
+                deleteComment: this.packages.length === 0,
+            });
             core.info("Done!");
             core.endGroup();
         });
