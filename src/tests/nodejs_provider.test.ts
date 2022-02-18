@@ -143,8 +143,9 @@ describe("Given a node js provider", () => {
     }));
 
     const updates = await nodejsProvider.checkUpdates({ skip: false });
-    expect(nodejsProvider.getComment()).toContain("- mock_dep 1.0.0 -> 1.0.1");
-
+    expect(nodejsProvider.getComment()).toContain(
+      "| mock_dep | 1.0.0 | 1.0.1 |"
+    );
     expect(updates).toHaveLength(1);
     expect(mockCheckout).toHaveBeenCalledTimes(1);
     expect(mockPush).toHaveBeenCalledTimes(1);

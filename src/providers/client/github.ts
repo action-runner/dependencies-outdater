@@ -96,7 +96,7 @@ export class GithubClient {
   }
 
   getTitle(sha: string) {
-    return `Update dependencies ${sha}`;
+    return `Update dependencies for ${sha}`;
   }
 
   private getBranch(sha: string) {

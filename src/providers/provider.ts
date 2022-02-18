@@ -80,6 +80,7 @@ export abstract class Provider {
     let output = `## ${this.github.getTitle(this.github.getCommit({}))} \n\n`;
     // markdown table header
     output += `| Package | Current Version | New Version|\n`;
+    output += `|:-------:|:--------------:|:---------:|\n`;
     for (const pkg of this.packages) {
       // use markdown table
       output += `| ${pkg.name} | ${pkg.currentVersion} | ${pkg.newVersion} |\n`;
@@ -90,7 +91,7 @@ export abstract class Provider {
   /**
    * Perform the update
    */
-  async update() {
+  private async update() {
     if (this.packages.length === 0) {
       return;
     }
