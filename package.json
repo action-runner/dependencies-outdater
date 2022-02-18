@@ -19,7 +19,7 @@
     "@types/node": "^17.0.18",
     "@vercel/ncc": "^0.33.3",
     "npm-check-updates": "^12.3.1",
-    "simple-git": "^3.2.4"
+    "simple-git": "^3.2.6"
   },
   "scripts": {
     "test": "jest",

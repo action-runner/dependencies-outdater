@@ -32,7 +32,7 @@ jobs:
           cache: 'yarn'
       - run: yarn
       - run: yarn build
-      - name: label
+      - name: check dependencies
         uses: ./
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}

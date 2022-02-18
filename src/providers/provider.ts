@@ -64,9 +64,7 @@ export abstract class Provider {
     core.startGroup("Checking dependencies");
     const updates = await this.findUpdates();
     this.packages = updates;
-    if (this.packages.length > 0 && !props.skip) {
-      await this.update();
-    }
+    await this.update();
     core.endGroup();
     return updates;
   }
@@ -77,7 +75,7 @@ export abstract class Provider {
    * @returns {string} Report in markdown format
    */
   getComment(): string {
-    let output = `## ${this.github.getTitle(this.github.getCommit({}))} \n\n`;
+    let output = `## ${this.github.getTitle()}\n\n`;
     // markdown table header
     output += `| Package | Current Version | New Version|\n`;
     output += `|:-------:|:--------------:|:---------:|\n`;
@@ -92,24 +90,25 @@ export abstract class Provider {
    * Perform the update
    */
   private async update() {
-    if (this.packages.length === 0) {
-      return;
-    }
-
-    core.startGroup("Updating dependencies");
-    core.info("Switching to new branch...");
-    if (!this.github.isPullRequest()) {
-      const branch = await this.github.switchToBranch();
-      core.info(`Switched to branch ${branch}`);
-      core.info("Performing updating...");
-      await this.performUpdate();
-      core.info(`Adding commit...`);
-      await this.github.addAndCommit();
+    if (this.packages.length > 0) {
+      core.startGroup("Updating dependencies");
+      core.info("Switching to new branch...");
+      if (!this.github.isPullRequest()) {
+        const branch = await this.github.switchToBranch();
+        core.info(`Switched to branch ${branch}`);
+        core.info("Performing updating...");
+        await this.performUpdate();
+        core.info(`Adding commit...`);
+        await this.github.addAndCommit();
+      }
     }
     core.info("Creating pull request...");
     const body = this.getComment();
     const headCommit = this.github.getCommit({});
-    await this.github.createPullRequest(headCommit, { body: body });
+    await this.github.createPullRequest(headCommit, {
+      body: body,
+      deleteComment: this.packages.length === 0,
+    });
     core.info("Done!");
     core.endGroup();
   }
