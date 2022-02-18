@@ -14,7 +14,7 @@ export class GithubClient {
    */
   public async createPullRequest(
     sha: string,
-    props: { base?: string; body: string }
+    props: { base?: string; body: string; deleteComment: boolean }
   ): Promise<any | undefined> {
     const client = github.getOctokit(this.githubToken);
     // add a comment to the pull request instead of creating a new one
@@ -24,7 +24,11 @@ export class GithubClient {
       if (pullRequestNumber) {
         core.info(`Adding comment to pull request ${pullRequestNumber}`);
         // Add a comment to the pull request
-        await this.createComment(pullRequestNumber, props.body);
+        await this.createComment(
+          pullRequestNumber,
+          props.body,
+          props.deleteComment
+        );
         return;
       } else {
         core.setFailed("Could not find pull request number");
@@ -40,7 +44,7 @@ export class GithubClient {
     const result = await client.rest.pulls.create({
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
-      title: this.getTitle(sha),
+      title: this.getTitle(),
       head: `dependencies-update-${sha}`,
       base: props.base ?? github.context.ref,
       body: props.body,
@@ -49,27 +53,53 @@ export class GithubClient {
     return result;
   }
 
-  private async createComment(pullRequestNumber: number, content: string) {
+  private async findComment(pullRequestNumber: number) {
+    const client = github.getOctokit(this.githubToken);
+    for await (const { data: comments } of client.paginate.iterator(
+      client.rest.issues.listComments,
+      {
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        issue_number: pullRequestNumber,
+      }
+    )) {
+      // Search each page for the comment
+      const comment = comments.find((comment) =>
+        comment.body?.includes(this.getTitle())
+      );
+      if (comment) return comment;
+    }
+    return undefined;
+  }
+
+  private async createComment(
+    pullRequestNumber: number,
+    content: string,
+    deleteComment = false
+  ) {
     const client = github.getOctokit(this.githubToken);
     // search for the pull request's comment while content contains the string "Update dependencies"
     // and the comment is not from the github-actions bot
     // and the comment is from this pull request
-    core.info(`Creating pull request with comment: ${content}`);
-    const result = await client.rest.search.issuesAndPullRequests({
-      q: `type:pr is:open repo:${github.context.repo.owner}/${
-        github.context.repo.repo
-      } in:comments ${this.getTitle(this.getCommit({}))}`,
-      sort: "updated",
-    });
-
-    if (result.data.total_count > 0) {
-      core.info(`Found comment ${result.data.items[0].id}`);
+    core.info(`Creating pull request with comment`);
+    const result = await this.findComment(pullRequestNumber);
+    if (result !== undefined) {
+      core.info(`Found comment ${result.id}`);
       // update the comment
-      const comment = result.data.items[0];
+      if (deleteComment) {
+        core.info(`Deleting comment ${result.id}`);
+        await client.rest.issues.deleteComment({
+          owner: github.context.repo.owner,
+          repo: github.context.repo.repo,
+          comment_id: result.id,
+        });
+        return;
+      }
+      core.info(`Updating comment ${result.id}`);
       await client.rest.issues.updateComment({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
-        comment_id: comment.id,
+        comment_id: result.id,
         body: content,
       });
     } else {
@@ -95,8 +125,11 @@ export class GithubClient {
     return github.context.sha;
   }
 
-  getTitle(sha: string) {
-    return `Update dependencies for ${sha}`;
+  getTitle() {
+    const title = this.isPullRequest()
+      ? `pull request #${this.pullRequestNumber()}`
+      : this.getCommit({});
+    return `Update dependencies for ${title}`;
   }
 
   private getBranch(sha: string) {
@@ -108,7 +141,7 @@ export class GithubClient {
    * @returns {Promise<Update[]>} Whether there exists a pull request for this commit
    */
   private async checkPullRequestExists(sha: string): Promise<boolean> {
-    const title = this.getTitle(sha);
+    const title = this.getTitle();
     const client = github.getOctokit(this.githubToken);
     const result = await client.rest.search.issuesAndPullRequests({ q: title });
     if (result.data.total_count > 0) {
@@ -141,5 +174,9 @@ export class GithubClient {
 
   isPullRequest() {
     return github.context.eventName === "pull_request";
+  }
+
+  pullRequestNumber() {
+    return github.context.payload.pull_request?.number;
   }
 }
