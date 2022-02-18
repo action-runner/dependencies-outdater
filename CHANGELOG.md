@@ -1,3 +1,16 @@
+# 1.2.0 (2022-02-18)
+
+
+### Bug Fixes
+
+* add some comments ([e4eb02c](https://github.com/action-runner/dependencies-outdater/commit/e4eb02c53a132da2a92dc44289c52f813160d988))
+* update markdown style ([84dd456](https://github.com/action-runner/dependencies-outdater/commit/84dd4569eeb9f54ce0d3e90b4d157187ba081560))
+
+
+### Features
+
+* add node js provider ([aa34f35](https://github.com/action-runner/dependencies-outdater/commit/aa34f3575ef2c77046c7f4b85b2581a0f2993252))
+
 ## [1.1.1](https://github.com/action-runner/conventional-labeler/compare/1.1.0...1.1.1) (2022-02-15)
 
 
