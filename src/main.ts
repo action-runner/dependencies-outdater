@@ -2,22 +2,16 @@ import simpleGit from "simple-git";
 import { NodeJSProvider } from "./providers/nodejs/nodejs";
 import * as github from "@actions/github";
 import { GithubClient } from "./providers/client/github";
+import * as ncu from "npm-check-updates";
 import { exec } from "child_process";
 
 (async () => {
-  const run = () => {
-    return new Promise((resolve, reject) => {
-      exec("ping www.google.com", (error, stdout, stderr) => {
-        if (error) {
-          reject();
-          return;
-        }
+  const github = new GithubClient("mock_token");
+  const nodejsProvider = new NodeJSProvider({
+    githubClient: github,
+    pkgManager: "npm",
+    checkUpdater: ncu as any,
+  });
 
-        resolve("success");
-      });
-    });
-  };
-
-  const result = await run();
-  console.log(result);
+  await nodejsProvider.checkUpdates({ skip: true });
 })();

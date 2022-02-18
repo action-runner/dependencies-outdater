@@ -18,6 +18,6 @@ import { NodeJSProvider } from "./providers/nodejs/nodejs";
   const language = Language.nodeJs;
   const provider = map[language];
 
-  await provider.checkUpdates();
+  await provider.checkUpdates({ skip: false });
   await provider.update();
 })();

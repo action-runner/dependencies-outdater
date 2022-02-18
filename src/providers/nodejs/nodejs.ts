@@ -1,5 +1,5 @@
 import * as ncu from "npm-check-updates";
-import {Provider, ProviderProps, Update} from "../provider";
+import { Provider, ProviderProps, Update } from "../provider";
 import fs from "fs";
 import * as core from "@actions/core";
 
@@ -8,11 +8,11 @@ interface PackageFile {
 }
 
 interface Updater {
-  run(props: {packageFile?: string}): {[key: string]: string}
+  run(props: { packageFile?: string }): Promise<{ [key: string]: string }>;
 }
 
-interface NodeJSProps extends ProviderProps{
-  checkUpdater:Updater
+interface NodeJSProps extends ProviderProps {
+  checkUpdater: Updater;
 }
 
 export class NodeJSProvider extends Provider {
@@ -21,7 +21,7 @@ export class NodeJSProvider extends Provider {
 
   constructor(props: NodeJSProps) {
     super(props);
-    this.updater = props.checkUpdater
+    this.updater = props.checkUpdater;
   }
 
   protected async performUpdate(): Promise<void> {
@@ -47,7 +47,9 @@ export class NodeJSProvider extends Provider {
 
   protected async findUpdates(): Promise<Update[]> {
     const packageFile = this.getPackageFile();
-    const upgraded = this.updater.run({ packageFile: this.packageFilePath });
+    const upgraded = await this.updater.run({
+      packageFile: this.packageFilePath,
+    });
     core.info(`Found ${Object.keys(upgraded).length} updates`);
     const updates = Object.entries(upgraded).map(([name, version]) => ({
       name,

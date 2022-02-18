@@ -24,7 +24,7 @@ export class GithubClient {
       if (pullRequestNumber) {
         core.info(`Adding comment to pull request ${pullRequestNumber}`);
         // Add a comment to the pull request
-        await this.createAComment(pullRequestNumber, props.body);
+        await this.createComment(pullRequestNumber, props.body);
         return;
       } else {
         core.setFailed("Could not find pull request number");
@@ -49,15 +49,16 @@ export class GithubClient {
     return result;
   }
 
-  private async createAComment(pullRequestNumber: number, content: string) {
+  private async createComment(pullRequestNumber: number, content: string) {
     const client = github.getOctokit(this.githubToken);
     // search for the pull request's comment while content contains the string "Update dependencies"
     // and the comment is not from the github-actions bot
     // and the comment is from this pull request
+    core.info(`Creating pull request with comment: ${content}`);
     const result = await client.rest.search.issuesAndPullRequests({
       q: `type:pr is:open repo:${github.context.repo.owner}/${
         github.context.repo.repo
-      } in:comments ${this.getTitle(this.getCommit({}))} author:github-actions`,
+      } in:comments ${this.getTitle(this.getCommit({}))}`,
       sort: "updated",
     });
 

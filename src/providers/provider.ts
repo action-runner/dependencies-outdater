@@ -60,11 +60,11 @@ export abstract class Provider {
   /**
    * Check list of packages and update
    */
-  public async checkUpdates() {
+  public async checkUpdates(props: { skip: boolean }) {
     core.startGroup("Checking dependencies");
     const updates = await this.findUpdates();
     this.packages = updates;
-    if (this.packages.length > 0) {
+    if (this.packages.length > 0 && !props.skip) {
       await this.update();
     }
     core.endGroup();
@@ -76,10 +76,13 @@ export abstract class Provider {
    *
    * @returns {string} Report in markdown format
    */
-  protected getComment(): string {
+  getComment(): string {
     let output = `## ${this.github.getTitle(this.github.getCommit({}))} \n\n`;
+    // markdown table header
+    output += `| Package | Current Version | New Version|\n`;
     for (const pkg of this.packages) {
-      output += `- ${pkg.name} ${pkg.currentVersion} -> ${pkg.newVersion}\n`;
+      // use markdown table
+      output += `| ${pkg.name} | ${pkg.currentVersion} | ${pkg.newVersion} |\n`;
     }
     return output;
   }
@@ -88,15 +91,17 @@ export abstract class Provider {
    * Perform the update
    */
   async update() {
+    if (this.packages.length === 0) {
+      return;
+    }
+
     core.startGroup("Updating dependencies");
     core.info("Switching to new branch...");
     if (!this.github.isPullRequest()) {
       const branch = await this.github.switchToBranch();
       core.info(`Switched to branch ${branch}`);
-    }
-    core.info("Performing updating...");
-    await this.performUpdate();
-    if (!this.github.isPullRequest()) {
+      core.info("Performing updating...");
+      await this.performUpdate();
       core.info(`Adding commit...`);
       await this.github.addAndCommit();
     }
