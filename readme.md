@@ -1,5 +1,7 @@
 # Dependencies outdater
 
+[![codecov](https://codecov.io/gh/action-runner/dependencies-outdater/branch/master/graph/badge.svg?token=7DG55EMBSU)](https://codecov.io/gh/action-runner/dependencies-outdater)
+
 A Automated Dependencies checking tool to check your dependencies and will create a pull request based on that.
 
 

@@ -23,7 +23,11 @@ jobs:
         cache: 'yarn'
     - run: yarn
     - run: yarn build
-    - run: yarn test
+    - run: yarn coverage
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
 
   release:
     if: ${{ (github.event.pusher.name != 'github action') && (github.ref == 'refs/heads/master') }}
