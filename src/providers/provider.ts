@@ -108,6 +108,7 @@ export abstract class Provider {
     await this.github.createPullRequest(headCommit, {
       body: body,
       deleteComment: this.packages.length === 0,
+      packages: this.packages,
     });
     core.info("Done!");
     core.endGroup();

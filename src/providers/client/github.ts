@@ -1,6 +1,7 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import simpleGit from "simple-git";
+import { Update } from "../provider";
 
 export class GithubClient {
   githubToken: string;
@@ -14,7 +15,12 @@ export class GithubClient {
    */
   public async createPullRequest(
     sha: string,
-    props: { base?: string; body: string; deleteComment: boolean }
+    props: {
+      base?: string;
+      body: string;
+      deleteComment: boolean;
+      packages: Update[];
+    }
   ): Promise<any | undefined> {
     const client = github.getOctokit(this.githubToken);
     // add a comment to the pull request instead of creating a new one
@@ -27,6 +33,7 @@ export class GithubClient {
         await this.createComment(
           pullRequestNumber,
           props.body,
+          props.packages,
           props.deleteComment
         );
         return;
@@ -84,6 +91,7 @@ export class GithubClient {
   private async createComment(
     pullRequestNumber: number,
     content: string,
+    packages: Update[],
     deleteComment = false
   ) {
     const client = github.getOctokit(this.githubToken);
@@ -113,6 +121,9 @@ export class GithubClient {
         body: content,
       });
     } else {
+      if (packages.length === 0) {
+        return;
+      }
       core.info(`Creating a comment`);
       // create a new comment
       await client.rest.issues.createComment({
