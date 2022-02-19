@@ -6,6 +6,8 @@ import { NodeJSProvider } from "./providers/nodejs/nodejs";
 
 (async () => {
   const accessToken = core.getInput("access_token");
+  const language = core.getInput("language") as Language;
+
   const gitClient = new GithubClient(accessToken);
   const map = {
     [Language.nodeJs]: new NodeJSProvider({
@@ -15,8 +17,11 @@ import { NodeJSProvider } from "./providers/nodejs/nodejs";
     }),
   };
 
-  const language = Language.nodeJs;
   const provider = map[language];
+
+  if (provider === undefined) {
+    core.setFailed("Language is not supported");
+  }
 
   await provider.checkUpdates({ skip: false });
 })();
