@@ -2,6 +2,14 @@
 # yarn lockfile v1
 
 
+"@action-runner/common@^1.13.3":
+  version "1.13.3"
+  resolved "https://registry.yarnpkg.com/@action-runner/common/-/common-1.13.3.tgz#7bc0aff4d455f5dfba0a4e06341bf2394f5c6394"
+  integrity sha512-rzsCKt/DZzQOQdT+NWJJ1aMeq+6h1XKgBC7RxThYw81y7ej4BHKXwf9zFr/Yd8HU2LGyqozWM50XAlG5utbX8w==
+  dependencies:
+    "@actions/github" "^5.0.0"
+    typescript "^4.5.4"
+
 "@actions/core@^1.6.0":
   version "1.6.0"
   resolved "https://registry.npmjs.org/@actions/core/-/core-1.6.0.tgz"
@@ -5363,7 +5371,7 @@ typedarray@^0.0.6:
   resolved "https://registry.npmjs.org/typedarray/-/typedarray-0.0.6.tgz"
   integrity sha1-hnrHTjhkGHsdPUfZlqeOxciDB3c=
 
-typescript@^4.5.5:
+typescript@^4.5.4, typescript@^4.5.5:
   version "4.5.5"
   resolved "https://registry.npmjs.org/typescript/-/typescript-4.5.5.tgz"
   integrity sha512-TCTIul70LyWe6IJWT8QSYeA54WQe8EjQFU4wY52Fasj5UKx88LNYKCgBEHcOMOrFF1rKGbD8v/xcNWVUq9SymA==

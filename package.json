@@ -12,6 +12,7 @@
     "typescript": "^4.5.5"
   },
   "dependencies": {
+    "@action-runner/common": "^1.13.3",
     "@actions/core": "^1.6.0",
     "@actions/github": "^5.0.0",
     "@octokit/webhooks-definitions": "^3.67.3",
