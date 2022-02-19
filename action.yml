@@ -1,16 +1,20 @@
-name: 'Conventional Labeler'
-description: 'A Pull request labeler using conventional commit standard'
+name: 'Dependencies Outdater'
+description: 'Will automatically check your dependencies and look for latest updates.'
 branding:
   icon: align-center
   color: green
-
 inputs:
   access_token:
     description: Github Access Token to access and modify your pr's label
     required: true
-outputs:
-  labels:
-    description: Generated labels for your pull request.
+  language:
+    description: Which language you are tring to use for dependencies checking.
+    required: false
+    default: nodejs
+  package_manager:
+    description: Which package manager will be used
+    default: yarn
+    required: false
 runs:
   using: 'node16'
   main: 'dist/index.js'
