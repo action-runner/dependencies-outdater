@@ -1,6 +1,6 @@
 {
   "name": "dependencies_outdater",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "main": "index.js",
   "license": "MIT",
   "devDependencies": {

@@ -42,6 +42,7 @@ const ncu = __importStar(__nccwpck_require__(37790));
 const nodejs_1 = __nccwpck_require__(1081);
 (() => __awaiter(void 0, void 0, void 0, function* () {
     const accessToken = core.getInput("access_token");
+    const language = core.getInput("language");
     const gitClient = new github_1.GithubClient(accessToken);
     const map = {
         [languages_1.Language.nodeJs]: new nodejs_1.NodeJSProvider({
@@ -50,8 +51,10 @@ const nodejs_1 = __nccwpck_require__(1081);
             checkUpdater: ncu,
         }),
     };
-    const language = languages_1.Language.nodeJs;
     const provider = map[language];
+    if (provider === undefined) {
+        core.setFailed("Language is not supported");
+    }
     yield provider.checkUpdates({ skip: false });
 }))();
 
