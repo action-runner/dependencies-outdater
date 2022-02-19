@@ -1,3 +1,10 @@
+## [1.2.4](https://github.com/action-runner/dependencies-outdater/compare/1.2.3...1.2.4) (2022-02-19)
+
+
+### Bug Fixes
+
+* correct the name and the inputs of the action ([#5](https://github.com/action-runner/dependencies-outdater/issues/5)) ([cefb38d](https://github.com/action-runner/dependencies-outdater/commit/cefb38df414ba89c340218930a8fbad022cd2dae))
+
 ## [1.2.3](https://github.com/action-runner/dependencies-outdater/compare/1.2.2...1.2.3) (2022-02-19)
 
 
