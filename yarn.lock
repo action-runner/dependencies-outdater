@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@action-runner/common@^1.13.3":
-  version "1.13.3"
-  resolved "https://registry.yarnpkg.com/@action-runner/common/-/common-1.13.3.tgz#7bc0aff4d455f5dfba0a4e06341bf2394f5c6394"
-  integrity sha512-rzsCKt/DZzQOQdT+NWJJ1aMeq+6h1XKgBC7RxThYw81y7ej4BHKXwf9zFr/Yd8HU2LGyqozWM50XAlG5utbX8w==
+"@action-runner/common@^1.15.0":
+  version "1.15.0"
+  resolved "https://registry.yarnpkg.com/@action-runner/common/-/common-1.15.0.tgz#1a21def93545905e1a5e3a9c21b07c4d181b923c"
+  integrity sha512-q+AimXSJuT3aNKBSkjEokXuZdplsN90mx/KgHefapXYrBMQHjFfb4AjI0xnHeok23lqzsJQNbvKJcvICwGcq4Q==
   dependencies:
     "@actions/github" "^5.0.0"
     typescript "^4.5.4"
@@ -641,7 +641,7 @@
 
 "@npmcli/run-script@^2.0.0":
   version "2.0.0"
-  resolved "https://registry.npmjs.org/@npmcli/run-script/-/run-script-2.0.0.tgz"
+  resolved "https://registry.yarnpkg.com/@npmcli/run-script/-/run-script-2.0.0.tgz#9949c0cab415b17aaac279646db4f027d6f1e743"
   integrity sha512-fSan/Pu11xS/TdaTpTB0MRn9guwGU8dye+x56mEVgBEd/QsybBbYcAL0phPXi8SGWFEChkQd6M9qL4y6VOpFig==
   dependencies:
     "@npmcli/node-gyp" "^1.0.2"
@@ -3984,10 +3984,10 @@ npm-bundled@^1.1.1:
   dependencies:
     npm-normalize-package-bin "^1.0.1"
 
-npm-check-updates@^12.3.1:
-  version "12.3.1"
-  resolved "https://registry.npmjs.org/npm-check-updates/-/npm-check-updates-12.3.1.tgz"
-  integrity sha512-rvXyiUnc9zw3WXakqv0LsdFDc1V4T8DHG8AdWEjJiqfOZdBI4q8ekTt/BFqLQAtcXo5Pu6WGqjA9oDnFi4UV3g==
+npm-check-updates@^12.4.0:
+  version "12.4.0"
+  resolved "https://registry.yarnpkg.com/npm-check-updates/-/npm-check-updates-12.4.0.tgz#67e8e1b88551167368ec246dfd4302ce3007d83d"
+  integrity sha512-X14H74M8SVFkStmP1NDOMh0OjLB3mU2dwUeM71zyITJHkm08MASwwTcydW6YuGcNW1RUlVq1cQY2yWijv4zKUQ==
   dependencies:
     chalk "^4.1.2"
     cint "^8.2.1"
