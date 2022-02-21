@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/action-runner/dependencies-outdater/compare/1.3.4...1.4.0) (2022-02-21)
+
+
+### Features
+
+* :sparkles: will include a list of update suggestion in pr's comment ([#13](https://github.com/action-runner/dependencies-outdater/issues/13)) ([0f60c0b](https://github.com/action-runner/dependencies-outdater/commit/0f60c0bce8118e7b9b20e8931e2a1fbbf5204f17))
+
 ## [1.3.4](https://github.com/action-runner/dependencies-outdater/compare/1.3.3...1.3.4) (2022-02-21)
 
 ## [1.3.3](https://github.com/action-runner/dependencies-outdater/compare/1.3.2...1.3.3) (2022-02-21)

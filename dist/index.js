@@ -354,21 +354,38 @@ class NodeJSProvider extends provider_1.Provider {
         this.name = "nodejs";
         this.updater = props.checkUpdater;
     }
-    performUpdate() {
+    performUpdate(shouldApply) {
         return __awaiter(this, void 0, void 0, function* () {
             const packageFile = this.getPackageFile();
             for (const pkg of this.packages) {
-                packageFile.dependencies[pkg.name] = pkg.newVersion;
+                const dep = packageFile.dependencies[pkg.name];
+                const devDep = packageFile.devDependencies[pkg.name];
+                if (dep) {
+                    packageFile.dependencies[pkg.name] = pkg.newVersion;
+                }
+                if (devDep) {
+                    packageFile.devDependencies[pkg.name] = pkg.newVersion;
+                }
             }
             fs_1.default.writeFileSync(this.packageFilePath, JSON.stringify(packageFile, null, 2));
-            if (this.pkgManager === "yarn") {
-                core.info("Running yarn install");
-                this.runCommand("yarn install");
+            if (shouldApply) {
+                if (this.pkgManager === "yarn") {
+                    core.info("Running yarn install");
+                    this.runCommand("yarn install");
+                }
+                if (this.pkgManager === "npm") {
+                    core.info("Running npm install");
+                    this.runCommand("npm install");
+                }
             }
-            if (this.pkgManager === "npm") {
-                core.info("Running npm install");
-                this.runCommand("npm install");
-            }
+            // update updateSuggestions
+            this.updateSuggestions = [
+                {
+                    fileName: this.packageFilePath,
+                    language: "json",
+                    content: JSON.stringify(packageFile, null, 2),
+                },
+            ];
         });
     }
     findUpdates() {
@@ -452,6 +469,7 @@ class Provider {
          * List of packages to update
          */
         this.packages = [];
+        this.updateSuggestions = [];
         this.github = props.githubClient;
         this.packageFilePath = (_a = props.packageFilePath) !== null && _a !== void 0 ? _a : this.packageFilePath;
         this.pkgManager = props.pkgManager;
@@ -486,6 +504,17 @@ class Provider {
             // use markdown table
             output += `| ${pkg.name} | ${pkg.currentVersion} | ${pkg.newVersion} |\n`;
         }
+        core.info("Creating Suggestions: " + this.updateSuggestions.length);
+        if (this.updateSuggestions.length > 0) {
+            output += `\n`;
+            output += `### Suggested updates\n`;
+        }
+        for (const suggestion of this.updateSuggestions) {
+            output += `**${suggestion.fileName}** \n`;
+            output += `\`\`\`${suggestion.language}\n`;
+            output += `${suggestion.content}\n`;
+            output += `\`\`\`\n`;
+        }
         return output;
     }
     /**
@@ -493,6 +522,7 @@ class Provider {
      */
     update() {
         return __awaiter(this, void 0, void 0, function* () {
+            // if any update available
             if (this.packages.length > 0) {
                 core.startGroup("Updating dependencies");
                 core.info("Switching to new branch...");
@@ -500,9 +530,12 @@ class Provider {
                     const branch = yield this.github.switchToBranch();
                     core.info(`Switched to branch ${branch}`);
                     core.info("Performing updating...");
-                    yield this.performUpdate();
+                    yield this.performUpdate(true);
                     core.info(`Adding commit...`);
                     yield this.github.addAndCommit();
+                }
+                else {
+                    yield this.performUpdate(false);
                 }
             }
             core.info("Creating pull request...");
