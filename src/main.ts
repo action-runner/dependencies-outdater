@@ -1,11 +1,10 @@
-import simpleGit from "simple-git";
 import { NodeJSProvider } from "./providers/nodejs/nodejs";
-import * as github from "@actions/github";
+import * as core from "@actions/core";
 import { GithubClient } from "./providers/client/github";
 import * as ncu from "npm-check-updates";
-import { exec } from "child_process";
 
 (async () => {
+  core.debug("Starting...");
   const github = new GithubClient("mock_token");
   const nodejsProvider = new NodeJSProvider({
     githubClient: github,
@@ -13,5 +12,10 @@ import { exec } from "child_process";
     checkUpdater: ncu as any,
   });
 
-  await nodejsProvider.checkUpdates({ skip: true });
+  try {
+    await nodejsProvider.checkUpdates({ skip: true });
+  } catch (err) {
+    core.setFailed(`${err}`);
+    throw err;
+  }
 })();

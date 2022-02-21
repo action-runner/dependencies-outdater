@@ -1,4 +1,12 @@
-node_modules
+
 coverage
 build
 .idea
+
+/node_modules/*
+/node_modules/**/*.md
+/node_modules/**/LICENSE
+!/node_modules/@npmcli/
+
+/node_modules/@npmcli/*
+!/node_modules/@npmcli/run-script
