@@ -17,6 +17,5 @@ inputs:
     required: false
 runs:
   using: 'node16'
-  pre: "scripts/pre-run.js"
   main: 'dist/index.js'
   

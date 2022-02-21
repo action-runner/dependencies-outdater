@@ -18,9 +18,9 @@ jobs:
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
 
-  outdated:
+  build:
     runs-on: ubuntu-latest
-    name: Check Dependencies
+    name: Build Outdater
     steps:
       - uses: actions/checkout@v2
         with:
@@ -32,9 +32,27 @@ jobs:
           cache: 'yarn'
       - run: yarn
       - run: yarn build
-      - run: rm -rf node_modules
-      - run: node ./scripts/pre-run.js
+      - uses: actions/upload-artifact@v2
+        with:
+          name: index.js
+          path: dist/index.js
+
+  outdated:
+    needs: [build]
+    runs-on: ubuntu-latest
+    name: Check dependencies
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js 16
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16
+      - uses: actions/download-artifact@v2
+        with:
+          name: index.js
+          path: ./dist
       - name: check dependencies
         uses: ./
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
+
