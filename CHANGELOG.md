@@ -1,3 +1,10 @@
+## [1.3.3](https://github.com/action-runner/dependencies-outdater/compare/1.3.2...1.3.3) (2022-02-21)
+
+
+### Bug Fixes
+
+* :bug: won't use dev dependencies for current version ([#12](https://github.com/action-runner/dependencies-outdater/issues/12)) ([578b412](https://github.com/action-runner/dependencies-outdater/commit/578b41213f83d49c48ccfdb5fb12b004e558a6f0))
+
 ## [1.3.2](https://github.com/action-runner/dependencies-outdater/compare/1.3.1...1.3.2) (2022-02-21)
 
 

@@ -378,11 +378,14 @@ class NodeJSProvider extends provider_1.Provider {
                 packageFile: this.packageFilePath,
             });
             core.info(`Found ${Object.keys(upgraded).length} updates`);
-            const updates = Object.entries(upgraded).map(([name, version]) => ({
-                name,
-                newVersion: version,
-                currentVersion: packageFile.dependencies[name],
-            }));
+            const updates = Object.entries(upgraded).map(([name, version]) => {
+                var _a;
+                return ({
+                    name,
+                    newVersion: version,
+                    currentVersion: (_a = packageFile.dependencies[name]) !== null && _a !== void 0 ? _a : packageFile.devDependencies[name],
+                });
+            });
             return updates;
         });
     }
