@@ -36,3 +36,12 @@ jobs:
         uses: ./
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
+      
+  prod:
+    runs-on: ubuntu-latest
+    name: Use master branch to check dependencies
+    steps:
+      - name: check dependencies
+        uses: action-runner/dependencies-outdater@master
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
