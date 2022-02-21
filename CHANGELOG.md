@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/action-runner/dependencies-outdater/compare/1.2.5...1.3.0) (2022-02-21)
+
+
+### Features
+
+* use @action-runner/common package ([#7](https://github.com/action-runner/dependencies-outdater/issues/7)) ([4f58228](https://github.com/action-runner/dependencies-outdater/commit/4f5822854ed59ad38b5ad9189b103ef47d949f4c))
+
 ## [1.2.5](https://github.com/action-runner/dependencies-outdater/compare/1.2.4...1.2.5) (2022-02-19)
 
 ## [1.2.4](https://github.com/action-runner/dependencies-outdater/compare/1.2.3...1.2.4) (2022-02-19)
