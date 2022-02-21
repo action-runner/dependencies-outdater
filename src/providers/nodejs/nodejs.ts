@@ -25,25 +25,44 @@ export class NodeJSProvider extends Provider {
     this.updater = props.checkUpdater;
   }
 
-  protected async performUpdate(): Promise<void> {
+  protected async performUpdate(shouldApply: boolean): Promise<void> {
     const packageFile = this.getPackageFile();
     for (const pkg of this.packages) {
-      packageFile.dependencies[pkg.name] = pkg.newVersion;
+      const dep = packageFile.dependencies[pkg.name];
+      const devDep = packageFile.devDependencies[pkg.name];
+      if (dep) {
+        packageFile.dependencies[pkg.name] = pkg.newVersion;
+      }
+
+      if (devDep) {
+        packageFile.devDependencies[pkg.name] = pkg.newVersion;
+      }
     }
     fs.writeFileSync(
       this.packageFilePath,
       JSON.stringify(packageFile, null, 2)
     );
 
-    if (this.pkgManager === "yarn") {
-      core.info("Running yarn install");
-      this.runCommand("yarn install");
+    if (shouldApply) {
+      if (this.pkgManager === "yarn") {
+        core.info("Running yarn install");
+        this.runCommand("yarn install");
+      }
+
+      if (this.pkgManager === "npm") {
+        core.info("Running npm install");
+        this.runCommand("npm install");
+      }
     }
 
-    if (this.pkgManager === "npm") {
-      core.info("Running npm install");
-      this.runCommand("npm install");
-    }
+    // update updateSuggestions
+    this.updateSuggestions = [
+      {
+        fileName: this.packageFilePath,
+        language: "json",
+        content: JSON.stringify(packageFile, null, 2),
+      },
+    ];
   }
 
   protected async findUpdates(): Promise<Update[]> {

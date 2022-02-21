@@ -162,5 +162,31 @@ describe("Given a node js provider", () => {
     expect(mockCommit).toHaveBeenCalledTimes(1);
     expect(mockAdd).toHaveBeenCalledTimes(1);
     expect(mockCreate).toHaveBeenCalledTimes(1);
+    expect(nodejsProvider.updateSuggestions).toHaveLength(1);
+    expect(nodejsProvider.updateSuggestions[0].content).toContain("mock_dep");
+    expect(nodejsProvider.updateSuggestions[0].content).toContain(
+      "mock_dev_dep"
+    );
+  });
+
+  test("Should generate correct update suggestions", () => {
+    const mockData = {
+      depedencies: {
+        mock_dep: "1.0.0",
+      },
+    };
+    nodejsProvider.updateSuggestions = [
+      {
+        fileName: "package.json",
+        language: "json",
+        content: JSON.stringify(mockData, null, 2),
+      },
+    ];
+
+    const comment = nodejsProvider.getComment();
+    expect(comment).toContain("### Suggested updates");
+    expect(comment).toContain("json");
+    expect(comment).toContain("package.json");
+    expect(comment).toContain("mock_dep");
   });
 });
