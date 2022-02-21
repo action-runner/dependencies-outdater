@@ -32,16 +32,9 @@ jobs:
           cache: 'yarn'
       - run: yarn
       - run: yarn build
+      - run: rm -rf node_modules
+      - run: node ./scripts/pre-run.js
       - name: check dependencies
         uses: ./
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-      
-  prod:
-    runs-on: ubuntu-latest
-    name: Use master branch to check dependencies
-    steps:
-      - name: check dependencies
-        uses: action-runner/dependencies-outdater@master
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
