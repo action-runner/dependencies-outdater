@@ -19,6 +19,12 @@ export interface Update {
   currentVersion: string;
 }
 
+export interface UpdateSuggestion {
+  fileName: string;
+  language: string;
+  content: string;
+}
+
 export interface ProviderProps {
   githubClient: GithubClient;
   packageFilePath?: string;
@@ -40,6 +46,8 @@ export abstract class Provider {
    * List of packages to update
    */
   protected packages: Update[] = [];
+
+  updateSuggestions: UpdateSuggestion[] = [];
 
   /**
    * Github client
@@ -83,6 +91,20 @@ export abstract class Provider {
       // use markdown table
       output += `| ${pkg.name} | ${pkg.currentVersion} | ${pkg.newVersion} |\n`;
     }
+
+    core.info("Creating Suggestions: " + this.updateSuggestions.length);
+    if (this.updateSuggestions.length > 0) {
+      output += `\n`;
+      output += `### Suggested updates\n`;
+    }
+
+    for (const suggestion of this.updateSuggestions) {
+      output += `**${suggestion.fileName}** \n`;
+      output += `\`\`\`${suggestion.language}\n`;
+      output += `${suggestion.content}\n`;
+      output += `\`\`\`\n`;
+    }
+
     return output;
   }
 
@@ -90,6 +112,7 @@ export abstract class Provider {
    * Perform the update
    */
   private async update() {
+    // if any update available
     if (this.packages.length > 0) {
       core.startGroup("Updating dependencies");
       core.info("Switching to new branch...");
@@ -97,9 +120,11 @@ export abstract class Provider {
         const branch = await this.github.switchToBranch();
         core.info(`Switched to branch ${branch}`);
         core.info("Performing updating...");
-        await this.performUpdate();
+        await this.performUpdate(true);
         core.info(`Adding commit...`);
         await this.github.addAndCommit();
+      } else {
+        await this.performUpdate(false);
       }
     }
     core.info("Creating pull request...");
@@ -114,7 +139,7 @@ export abstract class Provider {
     core.endGroup();
   }
 
-  protected abstract performUpdate(): Promise<void>;
+  protected abstract performUpdate(shouldApply: boolean): Promise<void>;
 
   /**
    * Given a package's dependencies' file, returns dependencies which need to be updated

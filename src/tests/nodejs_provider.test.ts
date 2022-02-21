@@ -2,7 +2,9 @@ import { GithubClient } from "../providers/client/github";
 import { NodeJSProvider } from "../providers/nodejs/nodejs";
 import git from "simple-git";
 import github from "@actions/github";
+import { commentFinder } from "@action-runner/common";
 
+jest.mock("@action-runner/common");
 jest.mock("@actions/core");
 jest.mock("@actions/github", () => ({
   context: {
@@ -20,6 +22,9 @@ jest.mock("@actions/github", () => ({
             total_count: 1,
           },
         }),
+      },
+      issues: {
+        updateComment: jest.fn(),
       },
     },
   }),
@@ -162,5 +167,59 @@ describe("Given a node js provider", () => {
     expect(mockCommit).toHaveBeenCalledTimes(1);
     expect(mockAdd).toHaveBeenCalledTimes(1);
     expect(mockCreate).toHaveBeenCalledTimes(1);
+    expect(nodejsProvider.updateSuggestions).toHaveLength(1);
+    expect(nodejsProvider.updateSuggestions[0].content).toContain("mock_dep");
+    expect(nodejsProvider.updateSuggestions[0].content).toContain(
+      "mock_dev_dep"
+    );
+  });
+
+  test("Should generate correct update suggestions", () => {
+    const mockData = {
+      depedencies: {
+        mock_dep: "1.0.0",
+      },
+    };
+    nodejsProvider.updateSuggestions = [
+      {
+        fileName: "package.json",
+        language: "json",
+        content: JSON.stringify(mockData, null, 2),
+      },
+    ];
+
+    const comment = nodejsProvider.getComment();
+    expect(comment).toContain("### Suggested updates");
+    expect(comment).toContain("json");
+    expect(comment).toContain("package.json");
+    expect(comment).toContain("mock_dep");
+  });
+
+  test("Should generate correct update suggestions", async () => {
+    (github.getOctokit as any).mockReturnValue({
+      rest: {
+        issues: {
+          updateComment: jest.fn(),
+        },
+      },
+    });
+
+    (github.context as any) = {
+      eventName: "pull_request",
+      repo: {
+        owner: "mock_owner",
+        repo: "mock_repo",
+      },
+      payload: {
+        pull_request: {
+          number: 1,
+        },
+      },
+    };
+
+    const mockComment = jest.fn().mockReturnValue({ updateComment: jest.fn() });
+
+    (commentFinder.findComment as any).mockReturnValue(mockComment);
+    await nodejsProvider.checkUpdates({ skip: false });
   });
 });
