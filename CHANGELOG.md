@@ -1,3 +1,5 @@
+## [1.3.4](https://github.com/action-runner/dependencies-outdater/compare/1.3.3...1.3.4) (2022-02-21)
+
 ## [1.3.3](https://github.com/action-runner/dependencies-outdater/compare/1.3.2...1.3.3) (2022-02-21)
 
 
