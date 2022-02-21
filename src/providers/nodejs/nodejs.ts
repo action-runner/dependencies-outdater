@@ -5,6 +5,7 @@ import * as core from "@actions/core";
 
 interface PackageFile {
   dependencies: { [key: string]: string };
+  devDependencies: { [key: string]: string };
 }
 
 interface Updater {
@@ -54,7 +55,8 @@ export class NodeJSProvider extends Provider {
     const updates = Object.entries(upgraded).map(([name, version]) => ({
       name,
       newVersion: version,
-      currentVersion: packageFile.dependencies[name],
+      currentVersion:
+        packageFile.dependencies[name] ?? packageFile.devDependencies[name],
     }));
 
     return updates as any;

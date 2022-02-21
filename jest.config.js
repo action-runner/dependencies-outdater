@@ -14,5 +14,6 @@ module.exports = {
   testPathIgnorePatterns: [
     "src/*.js",
     "build/",
+    "node_modules/",
   ]
 };

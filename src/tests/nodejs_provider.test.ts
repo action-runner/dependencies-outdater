@@ -32,6 +32,9 @@ jest.mock("fs", () => ({
       dependencies: {
         mock_dep: "1.0.0",
       },
+      devDependencies: {
+        mock_dev_dep: "1.0.0",
+      },
     })
   ),
   writeFileSync: jest.fn(),
@@ -48,6 +51,7 @@ describe("Given a node js provider", () => {
     const mockUpdater = {
       run: jest.fn().mockReturnValue({
         mock_dep: "1.0.1",
+        mock_dev_dep: "1.0.1",
       }),
     };
     nodejsProvider = new NodeJSProvider({
@@ -72,7 +76,13 @@ describe("Given a node js provider", () => {
     }));
 
     const updates = await nodejsProvider.checkUpdates({ skip: false });
-    expect(updates).toHaveLength(1);
+    expect(updates).toHaveLength(2);
+    updates.forEach((u) => {
+      expect(u.currentVersion).toBeDefined();
+      expect(u.newVersion).toBeDefined();
+      expect(u.name).toBeDefined();
+    });
+
     expect(mockCheckout).toHaveBeenCalledTimes(1);
     expect(mockPush).toHaveBeenCalledTimes(1);
     expect(mockCommit).toHaveBeenCalledTimes(1);
@@ -146,7 +156,7 @@ describe("Given a node js provider", () => {
     expect(nodejsProvider.getComment()).toContain(
       "| mock_dep | 1.0.0 | 1.0.1 |"
     );
-    expect(updates).toHaveLength(1);
+    expect(updates).toHaveLength(2);
     expect(mockCheckout).toHaveBeenCalledTimes(1);
     expect(mockPush).toHaveBeenCalledTimes(1);
     expect(mockCommit).toHaveBeenCalledTimes(1);
