@@ -1,3 +1,10 @@
+## [1.3.2](https://github.com/action-runner/dependencies-outdater/compare/1.3.1...1.3.2) (2022-02-21)
+
+
+### Bug Fixes
+
+* action bugs ([#10](https://github.com/action-runner/dependencies-outdater/issues/10)) ([df2c505](https://github.com/action-runner/dependencies-outdater/commit/df2c5055aa52f2aebb646644d78e287efd2f50a4))
+
 ## [1.3.1](https://github.com/action-runner/dependencies-outdater/compare/1.3.0...1.3.1) (2022-02-21)
 
 
