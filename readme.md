@@ -27,3 +27,15 @@ steps:
       with:
         access_token: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+## Pull request mode
+
+On each pull request, this action will check yoour package.json file for updates. If any, it will create
+a comment on your pull reequest indicates the updates it found. Whenever you update your package json to the latest version,
+it will delete that comment.
+
+<img width="969" alt="截屏2022-02-21 下午6 19 57" src="https://user-images.githubusercontent.com/32106111/154935872-9a95b1bd-9220-4b45-8ef8-ceb83f7540f7.png">
+
+## Schedule mode
+
+On each schedule mode, it will create a pull request whenever it found any update.
