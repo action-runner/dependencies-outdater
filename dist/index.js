@@ -44,22 +44,33 @@ const languages_1 = __nccwpck_require__(9866);
 const core = __importStar(__nccwpck_require__(42186));
 const ncu = __importStar(__nccwpck_require__(37790));
 const nodejs_1 = __nccwpck_require__(1081);
+const nodejs_workspace_1 = __nccwpck_require__(8929);
 (() => __awaiter(void 0, void 0, void 0, function* () {
     const accessToken = core.getInput("access_token");
     const language = core.getInput("language");
     const gitClient = new github_1.GithubClient(accessToken);
     const map = {
-        [languages_1.Language.nodeJs]: new nodejs_1.NodeJSProvider({
-            githubClient: gitClient,
-            pkgManager: "yarn",
-            checkUpdater: ncu,
-        }),
+        [languages_1.Language.nodeJs]: [
+            new nodejs_1.NodeJSProvider({
+                githubClient: gitClient,
+                pkgManager: "yarn",
+                checkUpdater: ncu,
+            }),
+            new nodejs_workspace_1.NodeJSWorkspaceProvider({
+                githubClient: gitClient,
+                pkgManager: "yarn",
+                checkUpdater: ncu,
+            }),
+        ],
     };
-    const provider = map[language];
-    if (provider === undefined) {
+    const providers = map[language];
+    if (providers === undefined) {
         core.setFailed("Language is not supported");
     }
-    yield provider.checkUpdates({ skip: false });
+    for (const provider of providers) {
+        core.info(`Using provider ${provider.name}`);
+        yield provider.checkUpdates({ skip: false });
+    }
 }))();
 
 
@@ -370,8 +381,8 @@ class NodeJSProvider extends provider_1.Provider {
         return __awaiter(this, void 0, void 0, function* () {
             const packageFile = this.getPackageFile();
             for (const pkg of this.packages) {
-                const dep = packageFile.dependencies[pkg.name];
-                const devDep = packageFile.devDependencies[pkg.name];
+                const dep = (packageFile === null || packageFile === void 0 ? void 0 : packageFile.dependencies) ? [pkg.name] : undefined;
+                const devDep = (packageFile === null || packageFile === void 0 ? void 0 : packageFile.devDependencies) ? [pkg.name] : undefined;
                 if (dep) {
                     packageFile.dependencies[pkg.name] = pkg.newVersion;
                 }
@@ -410,20 +421,28 @@ class NodeJSProvider extends provider_1.Provider {
     findUpdatesHelper(packageFile, packageFilePath) {
         return __awaiter(this, void 0, void 0, function* () {
             const upgraded = yield this.updater.run({
-                packageFile: this.packageFilePath,
+                packageFile: packageFilePath,
             });
-            core.info(`Found ${Object.keys(upgraded).length} updates`);
-            const updates = Object.entries(upgraded).map(([name, version]) => {
-                var _a;
-                return ({
-                    name,
-                    packageFilePath: packageFilePath,
-                    newVersion: version,
-                    currentVersion: (_a = packageFile.dependencies[name]) !== null && _a !== void 0 ? _a : packageFile.devDependencies[name],
-                });
-            });
+            core.info(`Found ${Object.keys(upgraded).length} updates in ${packageFilePath}`);
+            const updates = Object.entries(upgraded).map(([name, version]) => ({
+                name,
+                packageFilePath: packageFilePath,
+                newVersion: version,
+                currentVersion: this.getCurrentVersion(packageFile, name),
+            }));
             return updates;
         });
+    }
+    getCurrentVersion(packageFile, name) {
+        if (packageFile.dependencies) {
+            if (packageFile.dependencies[name]) {
+                return packageFile.dependencies[name];
+            }
+        }
+        if (packageFile.devDependencies) {
+            return packageFile.devDependencies[name];
+        }
+        return "";
     }
     /**
      * Return the package.json file. Will returned the package file defined in the parameter
@@ -435,6 +454,110 @@ class NodeJSProvider extends provider_1.Provider {
     }
 }
 exports.NodeJSProvider = NodeJSProvider;
+
+
+/***/ }),
+
+/***/ 8929:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.NodeJSWorkspaceProvider = void 0;
+const nodejs_1 = __nccwpck_require__(1081);
+const glob_1 = __importDefault(__nccwpck_require__(91957));
+const fs_1 = __importDefault(__nccwpck_require__(57147));
+/**
+ * Check packages under nodejs workspace
+ */
+class NodeJSWorkspaceProvider extends nodejs_1.NodeJSProvider {
+    constructor() {
+        super(...arguments);
+        this.name = "nodejs-workspace";
+        // List of package file paths where updates are available
+        this.updatedPackageFilePaths = [];
+    }
+    performUpdate(shouldApply) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const packageFiles = {};
+            for (const pkg of this.updatedPackageFilePaths) {
+                packageFiles[pkg] = this.getPackageFile(pkg);
+            }
+            for (const pkg of this.packages) {
+                // get package file based on package filepath
+                const pkgFile = packageFiles[pkg.packageFilePath];
+                const dep = pkgFile.dependencies ? [pkg.name] : undefined;
+                const devDep = pkgFile.devDependencies ? [pkg.name] : undefined;
+                if (dep) {
+                    pkgFile.dependencies[pkg.name] = pkg.newVersion;
+                }
+                if (devDep) {
+                    pkgFile.devDependencies[pkg.name] = pkg.newVersion;
+                }
+            }
+            // write package files
+            if (shouldApply) {
+                for (const pkg of this.updatedPackageFilePaths) {
+                    const pkgFile = packageFiles[pkg];
+                    fs_1.default.writeFileSync(pkg, JSON.stringify(pkgFile, null, 2));
+                }
+            }
+            // update updateSuggestions
+            this.updateSuggestions = Object.entries(packageFiles).map(([filePath, pkgFile]) => {
+                return {
+                    fileName: filePath,
+                    language: "json",
+                    content: JSON.stringify(pkgFile, null, 2),
+                };
+            });
+        });
+    }
+    findUpdates() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const packageFile = this.getPackageFile();
+            this.updatedPackageFilePaths = [];
+            // find package files
+            let packages = [];
+            if (packageFile.workspaces) {
+                for (const workspace of packageFile.workspaces) {
+                    packages = packages.concat(this.findPackageJsonFile(workspace));
+                }
+            }
+            // find updates
+            let updates = [];
+            for (const pkg of packages) {
+                const pkgFile = this.getPackageFile(pkg);
+                const foundUpdates = yield this.findUpdatesHelper(pkgFile, pkg);
+                if (foundUpdates.length > 0) {
+                    updates = updates.concat(foundUpdates);
+                    this.updatedPackageFilePaths.push(pkg);
+                }
+            }
+            return updates;
+        });
+    }
+    /**
+     * Find all package.json files under the workspace
+     * @param workspace Workspace path
+     */
+    findPackageJsonFile(workspace) {
+        return glob_1.default.sync(`${workspace}/**/package.json`);
+    }
+}
+exports.NodeJSWorkspaceProvider = NodeJSWorkspaceProvider;
 
 
 /***/ }),
@@ -521,11 +644,11 @@ class Provider {
     getComment() {
         let output = `## ${this.github.getTitle()}\n\n`;
         // markdown table header
-        output += `| Package | Current Version | New Version|\n`;
-        output += `|:-------:|:--------------:|:---------:|\n`;
+        output += `| Package | Package Path | Current Version | New Version|\n`;
+        output += `|:-------:|:------------:|:--------------:|:---------:|\n`;
         for (const pkg of this.packages) {
             // use markdown table
-            output += `| ${pkg.name} | ${pkg.currentVersion} | ${pkg.newVersion} |\n`;
+            output += `| ${pkg.name} | ${pkg.packageFilePath} | ${pkg.currentVersion} | ${pkg.newVersion} |\n`;
         }
         core.info("Creating Suggestions: " + this.updateSuggestions.length);
         if (this.updateSuggestions.length > 0) {

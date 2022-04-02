@@ -1,7 +1,7 @@
-import {Update} from "../types/update";
-import {NodeJSProvider} from "./nodejs";
+import { Update } from "../types/update";
+import { NodeJSProvider } from "./nodejs";
 import glob from "glob";
-import {PackageFile} from "../types/nodejs";
+import { PackageFile } from "../types/nodejs";
 import fs from "fs";
 
 /**
@@ -21,14 +21,14 @@ export class NodeJSWorkspaceProvider extends NodeJSProvider {
     for (const pkg of this.packages) {
       // get package file based on package filepath
       const pkgFile = packageFiles[pkg.packageFilePath];
-      const dep = pkgFile.dependencies[pkg.name];
-      const devDep = pkgFile.devDependencies[pkg.name];
+      const dep = pkgFile.dependencies ? [pkg.name] : undefined;
+      const devDep = pkgFile.devDependencies ? [pkg.name] : undefined;
       if (dep) {
-        pkgFile.dependencies[pkg.name] = pkg.newVersion;
+        pkgFile.dependencies![pkg.name] = pkg.newVersion;
       }
 
       if (devDep) {
-        pkgFile.devDependencies[pkg.name] = pkg.newVersion;
+        pkgFile.devDependencies![pkg.name] = pkg.newVersion;
       }
     }
     // write package files
@@ -53,7 +53,7 @@ export class NodeJSWorkspaceProvider extends NodeJSProvider {
 
   protected async findUpdates(): Promise<Update[]> {
     const packageFile = this.getPackageFile();
-    this.updatedPackageFilePaths = []
+    this.updatedPackageFilePaths = [];
     // find package files
     let packages: string[] = [];
     if (packageFile.workspaces) {
@@ -66,10 +66,10 @@ export class NodeJSWorkspaceProvider extends NodeJSProvider {
     let updates: Update[] = [];
     for (const pkg of packages) {
       const pkgFile = this.getPackageFile(pkg);
-      const foundUpdates = await this.findUpdatesHelper(pkgFile, pkg)
-      if (foundUpdates.length > 0){
-        updates = updates.concat(foundUpdates)
-        this.updatedPackageFilePaths.push(pkg)
+      const foundUpdates = await this.findUpdatesHelper(pkgFile, pkg);
+      if (foundUpdates.length > 0) {
+        updates = updates.concat(foundUpdates);
+        this.updatedPackageFilePaths.push(pkg);
       }
     }
     return updates;

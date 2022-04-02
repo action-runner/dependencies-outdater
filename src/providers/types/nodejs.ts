@@ -1,7 +1,7 @@
 export interface PackageFile {
   workspaces?: string[];
-  dependencies: { [key: string]: string };
-  devDependencies: { [key: string]: string };
+  dependencies?: { [key: string]: string };
+  devDependencies?: { [key: string]: string };
 }
 
 export interface Updater {

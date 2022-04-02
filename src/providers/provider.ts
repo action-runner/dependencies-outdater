@@ -63,11 +63,11 @@ export abstract class Provider {
   getComment(): string {
     let output = `## ${this.github.getTitle()}\n\n`;
     // markdown table header
-    output += `| Package | Current Version | New Version|\n`;
-    output += `|:-------:|:--------------:|:---------:|\n`;
+    output += `| Package | Package Path | Current Version | New Version|\n`;
+    output += `|:-------:|:------------:|:--------------:|:---------:|\n`;
     for (const pkg of this.packages) {
       // use markdown table
-      output += `| ${pkg.name} | ${pkg.currentVersion} | ${pkg.newVersion} |\n`;
+      output += `| ${pkg.name} | ${pkg.packageFilePath} | ${pkg.currentVersion} | ${pkg.newVersion} |\n`;
     }
 
     core.info("Creating Suggestions: " + this.updateSuggestions.length);

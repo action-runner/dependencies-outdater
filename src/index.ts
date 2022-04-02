@@ -3,6 +3,7 @@ import { Language } from "./providers/languages";
 import * as core from "@actions/core";
 import * as ncu from "npm-check-updates";
 import { NodeJSProvider } from "./providers/nodejs/nodejs";
+import { NodeJSWorkspaceProvider } from "./providers/nodejs/nodejs_workspace";
 
 (async () => {
   const accessToken = core.getInput("access_token");
@@ -10,18 +11,28 @@ import { NodeJSProvider } from "./providers/nodejs/nodejs";
 
   const gitClient = new GithubClient(accessToken);
   const map = {
-    [Language.nodeJs]: new NodeJSProvider({
-      githubClient: gitClient,
-      pkgManager: "yarn",
-      checkUpdater: ncu as any,
-    }),
+    [Language.nodeJs]: [
+      new NodeJSProvider({
+        githubClient: gitClient,
+        pkgManager: "yarn",
+        checkUpdater: ncu as any,
+      }),
+      new NodeJSWorkspaceProvider({
+        githubClient: gitClient,
+        pkgManager: "yarn",
+        checkUpdater: ncu as any,
+      }),
+    ],
   };
 
-  const provider = map[language];
+  const providers = map[language];
 
-  if (provider === undefined) {
+  if (providers === undefined) {
     core.setFailed("Language is not supported");
   }
 
-  await provider.checkUpdates({ skip: false });
+  for (const provider of providers) {
+    core.info(`Using provider ${provider.name}`);
+    await provider.checkUpdates({ skip: false });
+  }
 })();
