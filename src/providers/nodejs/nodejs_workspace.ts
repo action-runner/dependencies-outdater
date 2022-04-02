@@ -21,8 +21,12 @@ export class NodeJSWorkspaceProvider extends NodeJSProvider {
     for (const pkg of this.packages) {
       // get package file based on package filepath
       const pkgFile = packageFiles[pkg.packageFilePath];
-      const dep = pkgFile.dependencies ? [pkg.name] : undefined;
-      const devDep = pkgFile.devDependencies ? [pkg.name] : undefined;
+      const dep = pkgFile.dependencies
+        ? pkgFile.dependencies[pkg.name]
+        : undefined;
+      const devDep = pkgFile.devDependencies
+        ? pkgFile.devDependencies[pkg.name]
+        : undefined;
       if (dep) {
         pkgFile.dependencies![pkg.name] = pkg.newVersion;
       }
