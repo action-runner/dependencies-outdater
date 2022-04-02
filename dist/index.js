@@ -8,7 +8,11 @@ require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -68,7 +72,11 @@ const nodejs_1 = __nccwpck_require__(1081);
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -314,7 +322,11 @@ var Language;
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -345,9 +357,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.NodeJSProvider = void 0;
-const provider_1 = __nccwpck_require__(5400);
-const fs_1 = __importDefault(__nccwpck_require__(57147));
 const core = __importStar(__nccwpck_require__(42186));
+const fs_1 = __importDefault(__nccwpck_require__(57147));
+const provider_1 = __nccwpck_require__(5400);
 class NodeJSProvider extends provider_1.Provider {
     constructor(props) {
         super(props);
@@ -391,6 +403,12 @@ class NodeJSProvider extends provider_1.Provider {
     findUpdates() {
         return __awaiter(this, void 0, void 0, function* () {
             const packageFile = this.getPackageFile();
+            const updates = this.findUpdatesHelper(packageFile, this.packageFilePath);
+            return updates;
+        });
+    }
+    findUpdatesHelper(packageFile, packageFilePath) {
+        return __awaiter(this, void 0, void 0, function* () {
             const upgraded = yield this.updater.run({
                 packageFile: this.packageFilePath,
             });
@@ -399,6 +417,7 @@ class NodeJSProvider extends provider_1.Provider {
                 var _a;
                 return ({
                     name,
+                    packageFilePath: packageFilePath,
                     newVersion: version,
                     currentVersion: (_a = packageFile.dependencies[name]) !== null && _a !== void 0 ? _a : packageFile.devDependencies[name],
                 });
@@ -407,11 +426,11 @@ class NodeJSProvider extends provider_1.Provider {
         });
     }
     /**
-     * Return the package.json file
+     * Return the package.json file. Will returned the package file defined in the parameter
      * @returns Package file
      */
-    getPackageFile() {
-        const packageFile = JSON.parse(fs_1.default.readFileSync(this.packageFilePath, "utf8"));
+    getPackageFile(packageFilePath) {
+        const packageFile = JSON.parse(fs_1.default.readFileSync(packageFilePath !== null && packageFilePath !== void 0 ? packageFilePath : this.packageFilePath, "utf8"));
         return packageFile;
     }
 }
@@ -427,7 +446,11 @@ exports.NodeJSProvider = NodeJSProvider;
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -455,9 +478,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Provider = void 0;
-const fs = __importStar(__nccwpck_require__(57147));
 const core = __importStar(__nccwpck_require__(42186));
 const child_process_1 = __nccwpck_require__(32081);
+const fs = __importStar(__nccwpck_require__(57147));
 class Provider {
     constructor(props) {
         var _a;
@@ -3654,6 +3677,105 @@ module.exports = {
 
 /***/ }),
 
+/***/ 21574:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const { dirname, resolve } = __nccwpck_require__(71017)
+
+const fileURLToPath = __nccwpck_require__(77220)
+const fs = __nccwpck_require__(16274)
+
+// given a path, find the owner of the nearest parent
+const find = (path) => {
+  // if we have no getuid, permissions are irrelevant on this platform
+  if (!process.getuid) {
+    return {}
+  }
+
+  // fs methods accept URL objects with a scheme of file: so we need to unwrap
+  // those into an actual path string before we can resolve it
+  const resolved = path != null && path.href && path.origin
+    ? resolve(fileURLToPath(path))
+    : resolve(path)
+
+  let stat
+
+  try {
+    stat = fs.lstatSync(resolved)
+  } finally {
+    // if we got a stat, return its contents
+    if (stat) {
+      return { uid: stat.uid, gid: stat.gid }
+    }
+
+    // try the parent directory
+    if (resolved !== dirname(resolved)) {
+      return find(dirname(resolved))
+    }
+
+    // no more parents, never got a stat, just return an empty object
+    return {}
+  }
+}
+
+// given a path, uid, and gid update the ownership of the path if necessary
+const update = (path, uid, gid) => {
+  // nothing to update, just exit
+  if (uid === undefined && gid === undefined) {
+    return
+  }
+
+  try {
+    // see if the permissions are already the same, if they are we don't
+    // need to do anything, so return early
+    const stat = fs.statSync(path)
+    if (uid === stat.uid && gid === stat.gid) {
+      return
+    }
+  } catch (err) {}
+
+  try {
+    fs.chownSync(path, uid, gid)
+  } catch (err) {}
+}
+
+// accepts a `path` and the `owner` property of an options object and normalizes
+// it into an object with numerical `uid` and `gid`
+const validate = (path, input) => {
+  let uid
+  let gid
+
+  if (typeof input === 'string' || typeof input === 'number') {
+    uid = input
+    gid = input
+  } else if (input && typeof input === 'object') {
+    uid = input.uid
+    gid = input.gid
+  }
+
+  if (uid === 'inherit' || gid === 'inherit') {
+    const owner = find(path)
+    if (uid === 'inherit') {
+      uid = owner.uid
+    }
+
+    if (gid === 'inherit') {
+      gid = owner.gid
+    }
+  }
+
+  return { uid, gid }
+}
+
+module.exports = {
+  find,
+  update,
+  validate,
+}
+
+
+/***/ }),
+
 /***/ 80333:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -3758,23 +3880,17 @@ module.exports = {
 
 const fs = __nccwpck_require__(16274)
 const getOptions = __nccwpck_require__(91573)
-const owner = __nccwpck_require__(80333)
+const withOwner = __nccwpck_require__(252)
 
 const copyFile = async (src, dest, opts) => {
   const options = getOptions(opts, {
-    copy: ['mode', 'owner'],
+    copy: ['mode'],
     wrap: 'mode',
   })
 
-  const { uid, gid } = await owner.validate(dest, options.owner)
-
   // the node core method as of 16.5.0 does not support the mode being in an
   // object, so we have to pass the mode value directly
-  const result = await fs.copyFile(src, dest, options.mode)
-
-  await owner.update(dest, uid, gid)
-
-  return result
+  return withOwner(dest, () => fs.copyFile(src, dest, options.mode), opts)
 }
 
 module.exports = copyFile
@@ -4390,11 +4506,17 @@ module.exports.ERR_INVALID_ARG_TYPE = class ERR_INVALID_ARG_TYPE extends Error {
 const fs = __nccwpck_require__(57147)
 const promisify = __nccwpck_require__(95327)
 
-// this module returns the core fs module wrapped in a proxy that promisifies
+const isLower = (s) => s === s.toLowerCase() && s !== s.toUpperCase()
+
+const fsSync = Object.fromEntries(Object.entries(fs).filter(([k, v]) =>
+  typeof v === 'function' && (k.endsWith('Sync') || !isLower(k[0]))
+))
+
+// this module returns the core fs async fns wrapped in a proxy that promisifies
 // method calls within the getter. we keep it in a separate module so that the
 // overridden methods have a consistent way to get to promisified fs methods
-// without creating a circular dependency
-module.exports = promisify(fs)
+// without creating a circular dependency. the ctors and sync methods are kept untouched
+module.exports = { ...promisify(fs), ...fsSync }
 
 
 /***/ }),
@@ -4410,6 +4532,8 @@ module.exports = {
   mkdtemp: __nccwpck_require__(62988),
   rm: __nccwpck_require__(62399),
   withTempDir: __nccwpck_require__(31045),
+  withOwner: __nccwpck_require__(252),
+  withOwnerSync: __nccwpck_require__(60707),
   writeFile: __nccwpck_require__(73373),
 }
 
@@ -4422,7 +4546,7 @@ module.exports = {
 const fs = __nccwpck_require__(16274)
 const getOptions = __nccwpck_require__(91573)
 const node = __nccwpck_require__(32486)
-const owner = __nccwpck_require__(80333)
+const withOwner = __nccwpck_require__(252)
 
 const polyfill = __nccwpck_require__(90869)
 
@@ -4433,21 +4557,18 @@ const useNative = node.satisfies('>=10.12.0')
 // extends mkdir with the ability to specify an owner of the new dir
 const mkdir = async (path, opts) => {
   const options = getOptions(opts, {
-    copy: ['mode', 'recursive', 'owner'],
+    copy: ['mode', 'recursive'],
     wrap: 'mode',
   })
-  const { uid, gid } = await owner.validate(path, options.owner)
 
   // the polyfill is tested separately from this module, no need to hack
   // process.version to try to trigger it just for coverage
   // istanbul ignore next
-  const result = useNative
-    ? await fs.mkdir(path, options)
-    : await polyfill(path, options)
-
-  await owner.update(path, uid, gid)
-
-  return result
+  return withOwner(
+    path,
+    () => useNative ? fs.mkdir(path, options) : polyfill(path, options),
+    opts
+  )
 }
 
 module.exports = mkdir
@@ -4550,11 +4671,11 @@ const { dirname, sep } = __nccwpck_require__(71017)
 
 const fs = __nccwpck_require__(16274)
 const getOptions = __nccwpck_require__(91573)
-const owner = __nccwpck_require__(80333)
+const withOwner = __nccwpck_require__(252)
 
 const mkdtemp = async (prefix, opts) => {
   const options = getOptions(opts, {
-    copy: ['encoding', 'owner'],
+    copy: ['encoding'],
     wrap: 'encoding',
   })
 
@@ -4564,13 +4685,8 @@ const mkdtemp = async (prefix, opts) => {
   // /tmp -> /tmpABCDEF, infers from /
   // /tmp/ -> /tmp/ABCDEF, infers from /tmp
   const root = prefix.endsWith(sep) ? prefix : dirname(prefix)
-  const { uid, gid } = await owner.validate(root, options.owner)
 
-  const result = await fs.mkdtemp(prefix, options)
-
-  await owner.update(result, uid, gid)
-
-  return result
+  return withOwner(root, () => fs.mkdtemp(prefix, options), opts)
 }
 
 module.exports = mkdtemp
@@ -4853,6 +4969,62 @@ module.exports = rm
 
 /***/ }),
 
+/***/ 60707:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const getOptions = __nccwpck_require__(91573)
+const owner = __nccwpck_require__(21574)
+
+const withOwnerSync = (path, fn, opts) => {
+  const options = getOptions(opts, {
+    copy: ['owner'],
+  })
+
+  const { uid, gid } = owner.validate(path, options.owner)
+
+  const result = fn({ uid, gid })
+
+  owner.update(path, uid, gid)
+  if (typeof result === 'string') {
+    owner.update(result, uid, gid)
+  }
+
+  return result
+}
+
+module.exports = withOwnerSync
+
+
+/***/ }),
+
+/***/ 252:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const getOptions = __nccwpck_require__(91573)
+const owner = __nccwpck_require__(80333)
+
+const withOwner = async (path, fn, opts) => {
+  const options = getOptions(opts, {
+    copy: ['owner'],
+  })
+
+  const { uid, gid } = await owner.validate(path, options.owner)
+
+  const result = await fn({ uid, gid })
+
+  await Promise.all([
+    owner.update(path, uid, gid),
+    typeof result === 'string' ? owner.update(result, uid, gid) : null,
+  ])
+
+  return result
+}
+
+module.exports = withOwner
+
+
+/***/ }),
+
 /***/ 31045:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -4885,7 +5057,7 @@ const withTempDir = async (root, fn, opts) => {
 
   try {
     await rm(target, { force: true, recursive: true })
-  } catch (err) {}
+  } catch {}
 
   if (err) {
     throw err
@@ -4904,20 +5076,15 @@ module.exports = withTempDir
 
 const fs = __nccwpck_require__(16274)
 const getOptions = __nccwpck_require__(91573)
-const owner = __nccwpck_require__(80333)
+const withOwner = __nccwpck_require__(252)
 
 const writeFile = async (file, data, opts) => {
   const options = getOptions(opts, {
-    copy: ['encoding', 'mode', 'flag', 'signal', 'owner'],
+    copy: ['encoding', 'mode', 'flag', 'signal'],
     wrap: 'encoding',
   })
-  const { uid, gid } = await owner.validate(file, options.owner)
 
-  const result = await fs.writeFile(file, data, options)
-
-  await owner.update(file, uid, gid)
-
-  return result
+  return withOwner(file, () => fs.writeFile(file, data, options), opts)
 }
 
 module.exports = writeFile
@@ -8885,6 +9052,37 @@ exports.request = request;
 
 /***/ }),
 
+/***/ 81040:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+function once(emitter, name, { signal } = {}) {
+    return new Promise((resolve, reject) => {
+        function cleanup() {
+            signal === null || signal === void 0 ? void 0 : signal.removeEventListener('abort', cleanup);
+            emitter.removeListener(name, onEvent);
+            emitter.removeListener('error', onError);
+        }
+        function onEvent(...args) {
+            cleanup();
+            resolve(args);
+        }
+        function onError(err) {
+            cleanup();
+            reject(err);
+        }
+        signal === null || signal === void 0 ? void 0 : signal.addEventListener('abort', cleanup);
+        emitter.on(name, onEvent);
+        emitter.on('error', onError);
+    });
+}
+exports["default"] = once;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
 /***/ 49690:
 /***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
 
@@ -11245,305 +11443,6 @@ exports.flatten = (...args) => {
 
 /***/ }),
 
-/***/ 14761:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const Collect = __nccwpck_require__(74658)
-const Minipass = __nccwpck_require__(41077)
-const Pipeline = __nccwpck_require__(69891)
-const fs = __nccwpck_require__(57147)
-const util = __nccwpck_require__(73837)
-
-const index = __nccwpck_require__(90595)
-const memo = __nccwpck_require__(5575)
-const read = __nccwpck_require__(99409)
-
-const writeFile = util.promisify(fs.writeFile)
-
-function getData (cache, key, opts = {}) {
-  const { integrity, memoize, size } = opts
-  const memoized = memo.get(cache, key, opts)
-  if (memoized && memoize !== false) {
-    return Promise.resolve({
-      metadata: memoized.entry.metadata,
-      data: memoized.data,
-      integrity: memoized.entry.integrity,
-      size: memoized.entry.size,
-    })
-  }
-
-  return index.find(cache, key, opts).then((entry) => {
-    if (!entry)
-      throw new index.NotFoundError(cache, key)
-
-    return read(cache, entry.integrity, { integrity, size }).then((data) => {
-      if (memoize)
-        memo.put(cache, entry, data, opts)
-
-      return {
-        data,
-        metadata: entry.metadata,
-        size: entry.size,
-        integrity: entry.integrity,
-      }
-    })
-  })
-}
-module.exports = getData
-
-function getDataByDigest (cache, key, opts = {}) {
-  const { integrity, memoize, size } = opts
-  const memoized = memo.get.byDigest(cache, key, opts)
-  if (memoized && memoize !== false)
-    return Promise.resolve(memoized)
-
-  return read(cache, key, { integrity, size }).then((res) => {
-    if (memoize)
-      memo.put.byDigest(cache, key, res, opts)
-    return res
-  })
-}
-module.exports.byDigest = getDataByDigest
-
-function getDataSync (cache, key, opts = {}) {
-  const { integrity, memoize, size } = opts
-  const memoized = memo.get(cache, key, opts)
-
-  if (memoized && memoize !== false) {
-    return {
-      metadata: memoized.entry.metadata,
-      data: memoized.data,
-      integrity: memoized.entry.integrity,
-      size: memoized.entry.size,
-    }
-  }
-  const entry = index.find.sync(cache, key, opts)
-  if (!entry)
-    throw new index.NotFoundError(cache, key)
-  const data = read.sync(cache, entry.integrity, {
-    integrity: integrity,
-    size: size,
-  })
-  const res = {
-    metadata: entry.metadata,
-    data: data,
-    size: entry.size,
-    integrity: entry.integrity,
-  }
-  if (memoize)
-    memo.put(cache, entry, res.data, opts)
-
-  return res
-}
-
-module.exports.sync = getDataSync
-
-function getDataByDigestSync (cache, digest, opts = {}) {
-  const { integrity, memoize, size } = opts
-  const memoized = memo.get.byDigest(cache, digest, opts)
-
-  if (memoized && memoize !== false)
-    return memoized
-
-  const res = read.sync(cache, digest, {
-    integrity: integrity,
-    size: size,
-  })
-  if (memoize)
-    memo.put.byDigest(cache, digest, res, opts)
-
-  return res
-}
-module.exports.sync.byDigest = getDataByDigestSync
-
-const getMemoizedStream = (memoized) => {
-  const stream = new Minipass()
-  stream.on('newListener', function (ev, cb) {
-    ev === 'metadata' && cb(memoized.entry.metadata)
-    ev === 'integrity' && cb(memoized.entry.integrity)
-    ev === 'size' && cb(memoized.entry.size)
-  })
-  stream.end(memoized.data)
-  return stream
-}
-
-function getStream (cache, key, opts = {}) {
-  const { memoize, size } = opts
-  const memoized = memo.get(cache, key, opts)
-  if (memoized && memoize !== false)
-    return getMemoizedStream(memoized)
-
-  const stream = new Pipeline()
-  index
-    .find(cache, key)
-    .then((entry) => {
-      if (!entry)
-        throw new index.NotFoundError(cache, key)
-
-      stream.emit('metadata', entry.metadata)
-      stream.emit('integrity', entry.integrity)
-      stream.emit('size', entry.size)
-      stream.on('newListener', function (ev, cb) {
-        ev === 'metadata' && cb(entry.metadata)
-        ev === 'integrity' && cb(entry.integrity)
-        ev === 'size' && cb(entry.size)
-      })
-
-      const src = read.readStream(
-        cache,
-        entry.integrity,
-        { ...opts, size: typeof size !== 'number' ? entry.size : size }
-      )
-
-      if (memoize) {
-        const memoStream = new Collect.PassThrough()
-        memoStream.on('collect', data => memo.put(cache, entry, data, opts))
-        stream.unshift(memoStream)
-      }
-      stream.unshift(src)
-    })
-    .catch((err) => stream.emit('error', err))
-
-  return stream
-}
-
-module.exports.stream = getStream
-
-function getStreamDigest (cache, integrity, opts = {}) {
-  const { memoize } = opts
-  const memoized = memo.get.byDigest(cache, integrity, opts)
-  if (memoized && memoize !== false) {
-    const stream = new Minipass()
-    stream.end(memoized)
-    return stream
-  } else {
-    const stream = read.readStream(cache, integrity, opts)
-    if (!memoize)
-      return stream
-
-    const memoStream = new Collect.PassThrough()
-    memoStream.on('collect', data => memo.put.byDigest(
-      cache,
-      integrity,
-      data,
-      opts
-    ))
-    return new Pipeline(stream, memoStream)
-  }
-}
-
-module.exports.stream.byDigest = getStreamDigest
-
-function info (cache, key, opts = {}) {
-  const { memoize } = opts
-  const memoized = memo.get(cache, key, opts)
-  if (memoized && memoize !== false)
-    return Promise.resolve(memoized.entry)
-  else
-    return index.find(cache, key)
-}
-module.exports.info = info
-
-function copy (cache, key, dest, opts = {}) {
-  if (read.copy) {
-    return index.find(cache, key, opts).then((entry) => {
-      if (!entry)
-        throw new index.NotFoundError(cache, key)
-      return read.copy(cache, entry.integrity, dest, opts)
-        .then(() => {
-          return {
-            metadata: entry.metadata,
-            size: entry.size,
-            integrity: entry.integrity,
-          }
-        })
-    })
-  }
-
-  return getData(cache, key, opts).then((res) => {
-    return writeFile(dest, res.data).then(() => {
-      return {
-        metadata: res.metadata,
-        size: res.size,
-        integrity: res.integrity,
-      }
-    })
-  })
-}
-module.exports.copy = copy
-
-function copyByDigest (cache, key, dest, opts = {}) {
-  if (read.copy)
-    return read.copy(cache, key, dest, opts).then(() => key)
-
-  return getDataByDigest(cache, key, opts).then((res) => {
-    return writeFile(dest, res).then(() => key)
-  })
-}
-module.exports.copy.byDigest = copyByDigest
-
-module.exports.hasContent = read.hasContent
-
-
-/***/ }),
-
-/***/ 87234:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const ls = __nccwpck_require__(1048)
-const get = __nccwpck_require__(14761)
-const put = __nccwpck_require__(35576)
-const rm = __nccwpck_require__(44876)
-const verify = __nccwpck_require__(49869)
-const { clearMemoized } = __nccwpck_require__(5575)
-const tmp = __nccwpck_require__(70644)
-const index = __nccwpck_require__(90595)
-
-module.exports.index = {}
-module.exports.index.compact = index.compact
-module.exports.index.insert = index.insert
-
-module.exports.ls = ls
-module.exports.ls.stream = ls.stream
-
-module.exports.get = get
-module.exports.get.byDigest = get.byDigest
-module.exports.get.sync = get.sync
-module.exports.get.sync.byDigest = get.sync.byDigest
-module.exports.get.stream = get.stream
-module.exports.get.stream.byDigest = get.stream.byDigest
-module.exports.get.copy = get.copy
-module.exports.get.copy.byDigest = get.copy.byDigest
-module.exports.get.info = get.info
-module.exports.get.hasContent = get.hasContent
-module.exports.get.hasContent.sync = get.hasContent.sync
-
-module.exports.put = put
-module.exports.put.stream = put.stream
-
-module.exports.rm = rm.entry
-module.exports.rm.all = rm.all
-module.exports.rm.entry = module.exports.rm
-module.exports.rm.content = rm.content
-
-module.exports.clearMemoized = clearMemoized
-
-module.exports.tmp = {}
-module.exports.tmp.mkdir = tmp.mkdir
-module.exports.tmp.withTmp = tmp.withTmp
-
-module.exports.verify = verify
-module.exports.verify.lastRun = verify.lastRun
-
-
-/***/ }),
-
 /***/ 83491:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -11607,15 +11506,18 @@ function read (cache, integrity, opts = {}) {
     // get size
     return lstat(cpath).then(stat => ({ stat, cpath, sri }))
   }).then(({ stat, cpath, sri }) => {
-    if (typeof size === 'number' && stat.size !== size)
+    if (typeof size === 'number' && stat.size !== size) {
       throw sizeError(size, stat.size)
+    }
 
-    if (stat.size > MAX_SINGLE_READ_SIZE)
+    if (stat.size > MAX_SINGLE_READ_SIZE) {
       return readPipeline(cpath, stat.size, sri, new Pipeline()).concat()
+    }
 
     return readFile(cpath, null).then((data) => {
-      if (!ssri.checkData(data, sri))
+      if (!ssri.checkData(data, sri)) {
         throw integrityError(sri, cpath)
+      }
 
       return data
     })
@@ -11642,11 +11544,13 @@ function readSync (cache, integrity, opts = {}) {
   const { size } = opts
   return withContentSriSync(cache, integrity, (cpath, sri) => {
     const data = fs.readFileSync(cpath)
-    if (typeof size === 'number' && size !== data.length)
+    if (typeof size === 'number' && size !== data.length) {
       throw sizeError(size, data.length)
+    }
 
-    if (ssri.checkData(data, sri))
+    if (ssri.checkData(data, sri)) {
       return data
+    }
 
     throw integrityError(sri, cpath)
   })
@@ -11662,8 +11566,9 @@ function readStream (cache, integrity, opts = {}) {
     // just lstat to ensure it exists
     return lstat(cpath).then((stat) => ({ stat, cpath, sri }))
   }).then(({ stat, cpath, sri }) => {
-    if (typeof size === 'number' && size !== stat.size)
+    if (typeof size === 'number' && size !== stat.size) {
       return stream.emit('error', sizeError(size, stat.size))
+    }
 
     readPipeline(cpath, stat.size, sri, stream)
   }, er => stream.emit('error', er))
@@ -11693,21 +11598,24 @@ function copySync (cache, integrity, dest) {
 module.exports.hasContent = hasContent
 
 function hasContent (cache, integrity) {
-  if (!integrity)
+  if (!integrity) {
     return Promise.resolve(false)
+  }
 
   return withContentSri(cache, integrity, (cpath, sri) => {
     return lstat(cpath).then((stat) => ({ size: stat.size, sri, stat }))
   }).catch((err) => {
-    if (err.code === 'ENOENT')
+    if (err.code === 'ENOENT') {
       return false
+    }
 
     if (err.code === 'EPERM') {
       /* istanbul ignore else */
-      if (process.platform !== 'win32')
+      if (process.platform !== 'win32') {
         throw err
-      else
+      } else {
         return false
+      }
     }
   })
 }
@@ -11715,23 +11623,26 @@ function hasContent (cache, integrity) {
 module.exports.hasContent.sync = hasContentSync
 
 function hasContentSync (cache, integrity) {
-  if (!integrity)
+  if (!integrity) {
     return false
+  }
 
   return withContentSriSync(cache, integrity, (cpath, sri) => {
     try {
       const stat = fs.lstatSync(cpath)
       return { size: stat.size, sri, stat }
     } catch (err) {
-      if (err.code === 'ENOENT')
+      if (err.code === 'ENOENT') {
         return false
+      }
 
       if (err.code === 'EPERM') {
         /* istanbul ignore else */
-        if (process.platform !== 'win32')
+        if (process.platform !== 'win32') {
           throw err
-        else
+        } else {
           return false
+        }
       }
     }
   })
@@ -11767,13 +11678,15 @@ function withContentSri (cache, integrity, fn) {
         .then((results) => {
           // Return the first non error if it is found
           const result = results.find((r) => !(r instanceof Error))
-          if (result)
+          if (result) {
             return result
+          }
 
           // Throw the No matching content found error
           const enoentError = results.find((r) => r.code === 'ENOENT')
-          if (enoentError)
+          if (enoentError) {
             throw enoentError
+          }
 
           // Throw generic error
           throw results.find((r) => r instanceof Error)
@@ -11815,6 +11728,7 @@ function withContentSriSync (cache, integrity, fn) {
 }
 
 function sizeError (expected, found) {
+  /* eslint-disable-next-line max-len */
   const err = new Error(`Bad data size: expected inserted data to be ${expected} bytes, but got ${found} instead`)
   err.expected = expected
   err.found = found
@@ -11850,10 +11764,11 @@ module.exports = rm
 function rm (cache, integrity) {
   return hasContent(cache, integrity).then((content) => {
     // ~pretty~ sure we can't end up with a content lacking sri, but be safe
-    if (content && content.sri)
+    if (content && content.sri) {
       return rimraf(contentPath(cache, content.sri)).then(() => true)
-    else
+    } else {
       return false
+    }
   })
 }
 
@@ -11888,15 +11803,18 @@ module.exports = write
 
 function write (cache, data, opts = {}) {
   const { algorithms, size, integrity } = opts
-  if (algorithms && algorithms.length > 1)
+  if (algorithms && algorithms.length > 1) {
     throw new Error('opts.algorithms only supports a single algorithm for now')
+  }
 
-  if (typeof size === 'number' && data.length !== size)
+  if (typeof size === 'number' && data.length !== size) {
     return Promise.reject(sizeError(size, data.length))
+  }
 
   const sri = ssri.fromData(data, algorithms ? { algorithms } : {})
-  if (integrity && !ssri.checkData(data, integrity, opts))
+  if (integrity && !ssri.checkData(data, integrity, opts)) {
     return Promise.reject(checksumError(integrity, sri))
+  }
 
   return disposer(makeTmp(cache, opts), makeTmpDisposer,
     (tmp) => {
@@ -12015,8 +11933,9 @@ function makeTmp (cache, opts) {
 }
 
 function makeTmpDisposer (tmp) {
-  if (tmp.moved)
+  if (tmp.moved) {
     return Promise.resolve()
+  }
 
   return rimraf(tmp.target)
 }
@@ -12037,6 +11956,7 @@ function moveToDestination (tmp, cache, sri, opts) {
 }
 
 function sizeError (expected, found) {
+  /* eslint-disable-next-line max-len */
   const err = new Error(`Bad data size: expected inserted data to be ${expected} bytes, but got ${found} instead`)
   err.expected = expected
   err.found = found
@@ -12112,8 +12032,9 @@ async function compact (cache, key, matchFn, opts = {}) {
     // if the integrity is null and no validateEntry is provided, we break
     // as we consider the null integrity to be a deletion of everything
     // that came before it.
-    if (entry.integrity === null && !opts.validateEntry)
+    if (entry.integrity === null && !opts.validateEntry) {
       break
+    }
 
     // if this entry is valid, and it is either the first entry or
     // the newEntries array doesn't already include an entry that
@@ -12121,8 +12042,9 @@ async function compact (cache, key, matchFn, opts = {}) {
     // it to the beginning of our list
     if ((!opts.validateEntry || opts.validateEntry(entry) === true) &&
       (newEntries.length === 0 ||
-        !newEntries.find((oldEntry) => matchFn(oldEntry, entry))))
+        !newEntries.find((oldEntry) => matchFn(oldEntry, entry)))) {
       newEntries.unshift(entry)
+    }
   }
 
   const newIndex = '\n' + newEntries.map((entry) => {
@@ -12141,8 +12063,9 @@ async function compact (cache, key, matchFn, opts = {}) {
   }
 
   const teardown = async (tmp) => {
-    if (!tmp.moved)
+    if (!tmp.moved) {
       return rimraf(tmp.target)
+    }
   }
 
   const write = async (tmp) => {
@@ -12155,8 +12078,9 @@ async function compact (cache, key, matchFn, opts = {}) {
     try {
       await fixOwner.chownr(cache, bucket)
     } catch (err) {
-      if (err.code !== 'ENOENT')
+      if (err.code !== 'ENOENT') {
         throw err
+      }
     }
   }
 
@@ -12199,8 +12123,9 @@ function insert (cache, key, integrity, opts = {}) {
     })
     .then(() => fixOwner.chownr(cache, bucket))
     .catch((err) => {
-      if (err.code === 'ENOENT')
+      if (err.code === 'ENOENT') {
         return undefined
+      }
 
       throw err
       // There's a class of race conditions that happen when things get deleted
@@ -12232,8 +12157,9 @@ function insertSync (cache, key, integrity, opts = {}) {
   try {
     fixOwner.chownr.sync(cache, bucket)
   } catch (err) {
-    if (err.code !== 'ENOENT')
+    if (err.code !== 'ENOENT') {
       throw err
+    }
   }
   return formatEntry(cache, entry)
 }
@@ -12245,17 +12171,19 @@ function find (cache, key) {
   return bucketEntries(bucket)
     .then((entries) => {
       return entries.reduce((latest, next) => {
-        if (next && next.key === key)
+        if (next && next.key === key) {
           return formatEntry(cache, next)
-        else
+        } else {
           return latest
+        }
       }, null)
     })
     .catch((err) => {
-      if (err.code === 'ENOENT')
+      if (err.code === 'ENOENT') {
         return null
-      else
+      } else {
         throw err
+      }
     })
 }
 
@@ -12265,24 +12193,27 @@ function findSync (cache, key) {
   const bucket = bucketPath(cache, key)
   try {
     return bucketEntriesSync(bucket).reduce((latest, next) => {
-      if (next && next.key === key)
+      if (next && next.key === key) {
         return formatEntry(cache, next)
-      else
+      } else {
         return latest
+      }
     }, null)
   } catch (err) {
-    if (err.code === 'ENOENT')
+    if (err.code === 'ENOENT') {
       return null
-    else
+    } else {
       throw err
+    }
   }
 }
 
 module.exports["delete"] = del
 
 function del (cache, key, opts = {}) {
-  if (!opts.removeFully)
+  if (!opts.removeFully) {
     return insert(cache, key, null, opts)
+  }
 
   const bucket = bucketPath(cache, key)
   return rimraf(bucket)
@@ -12291,8 +12222,9 @@ function del (cache, key, opts = {}) {
 module.exports["delete"].sync = delSync
 
 function delSync (cache, key, opts = {}) {
-  if (!opts.removeFully)
+  if (!opts.removeFully) {
     return insertSync(cache, key, null, opts)
+  }
 
   const bucket = bucketPath(cache, key)
   return rimraf.sync(bucket)
@@ -12326,12 +12258,14 @@ function lsStream (cache) {
                 // reduced is a map of key => entry
                 for (const entry of reduced.values()) {
                   const formatted = formatEntry(cache, entry)
-                  if (formatted)
+                  if (formatted) {
                     stream.write(formatted)
+                  }
                 }
               }).catch(err => {
-                if (err.code === 'ENOENT')
+                if (err.code === 'ENOENT') {
                   return undefined
+                }
                 throw err
               })
             })
@@ -12375,8 +12309,9 @@ function bucketEntriesSync (bucket, filter) {
 function _bucketEntries (data, filter) {
   const entries = []
   data.split('\n').forEach((entry) => {
-    if (!entry)
+    if (!entry) {
       return
+    }
 
     const pieces = entry.split('\t')
     if (!pieces[1] || hashEntry(pieces[1]) !== pieces[0]) {
@@ -12391,8 +12326,9 @@ function _bucketEntries (data, filter) {
       // Entry is corrupted!
       return
     }
-    if (obj)
+    if (obj) {
       entries.push(obj)
+    }
   })
   return entries
 }
@@ -12434,8 +12370,9 @@ function hash (str, digest) {
 
 function formatEntry (cache, entry, keepAll) {
   // Treat null digests as deletions. They'll shadow any previous entries.
-  if (!entry.integrity && !keepAll)
+  if (!entry.integrity && !keepAll) {
     return null
+  }
 
   return {
     key: entry.key,
@@ -12449,12 +12386,325 @@ function formatEntry (cache, entry, keepAll) {
 
 function readdirOrEmpty (dir) {
   return readdir(dir).catch((err) => {
-    if (err.code === 'ENOENT' || err.code === 'ENOTDIR')
+    if (err.code === 'ENOENT' || err.code === 'ENOTDIR') {
       return []
+    }
 
     throw err
   })
 }
+
+
+/***/ }),
+
+/***/ 10408:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+const Collect = __nccwpck_require__(74658)
+const Minipass = __nccwpck_require__(41077)
+const Pipeline = __nccwpck_require__(69891)
+const fs = __nccwpck_require__(57147)
+const util = __nccwpck_require__(73837)
+
+const index = __nccwpck_require__(90595)
+const memo = __nccwpck_require__(5575)
+const read = __nccwpck_require__(99409)
+
+const writeFile = util.promisify(fs.writeFile)
+
+function getData (cache, key, opts = {}) {
+  const { integrity, memoize, size } = opts
+  const memoized = memo.get(cache, key, opts)
+  if (memoized && memoize !== false) {
+    return Promise.resolve({
+      metadata: memoized.entry.metadata,
+      data: memoized.data,
+      integrity: memoized.entry.integrity,
+      size: memoized.entry.size,
+    })
+  }
+
+  return index.find(cache, key, opts).then((entry) => {
+    if (!entry) {
+      throw new index.NotFoundError(cache, key)
+    }
+
+    return read(cache, entry.integrity, { integrity, size }).then((data) => {
+      if (memoize) {
+        memo.put(cache, entry, data, opts)
+      }
+
+      return {
+        data,
+        metadata: entry.metadata,
+        size: entry.size,
+        integrity: entry.integrity,
+      }
+    })
+  })
+}
+module.exports = getData
+
+function getDataByDigest (cache, key, opts = {}) {
+  const { integrity, memoize, size } = opts
+  const memoized = memo.get.byDigest(cache, key, opts)
+  if (memoized && memoize !== false) {
+    return Promise.resolve(memoized)
+  }
+
+  return read(cache, key, { integrity, size }).then((res) => {
+    if (memoize) {
+      memo.put.byDigest(cache, key, res, opts)
+    }
+    return res
+  })
+}
+module.exports.byDigest = getDataByDigest
+
+function getDataSync (cache, key, opts = {}) {
+  const { integrity, memoize, size } = opts
+  const memoized = memo.get(cache, key, opts)
+
+  if (memoized && memoize !== false) {
+    return {
+      metadata: memoized.entry.metadata,
+      data: memoized.data,
+      integrity: memoized.entry.integrity,
+      size: memoized.entry.size,
+    }
+  }
+  const entry = index.find.sync(cache, key, opts)
+  if (!entry) {
+    throw new index.NotFoundError(cache, key)
+  }
+  const data = read.sync(cache, entry.integrity, {
+    integrity: integrity,
+    size: size,
+  })
+  const res = {
+    metadata: entry.metadata,
+    data: data,
+    size: entry.size,
+    integrity: entry.integrity,
+  }
+  if (memoize) {
+    memo.put(cache, entry, res.data, opts)
+  }
+
+  return res
+}
+
+module.exports.sync = getDataSync
+
+function getDataByDigestSync (cache, digest, opts = {}) {
+  const { integrity, memoize, size } = opts
+  const memoized = memo.get.byDigest(cache, digest, opts)
+
+  if (memoized && memoize !== false) {
+    return memoized
+  }
+
+  const res = read.sync(cache, digest, {
+    integrity: integrity,
+    size: size,
+  })
+  if (memoize) {
+    memo.put.byDigest(cache, digest, res, opts)
+  }
+
+  return res
+}
+module.exports.sync.byDigest = getDataByDigestSync
+
+const getMemoizedStream = (memoized) => {
+  const stream = new Minipass()
+  stream.on('newListener', function (ev, cb) {
+    ev === 'metadata' && cb(memoized.entry.metadata)
+    ev === 'integrity' && cb(memoized.entry.integrity)
+    ev === 'size' && cb(memoized.entry.size)
+  })
+  stream.end(memoized.data)
+  return stream
+}
+
+function getStream (cache, key, opts = {}) {
+  const { memoize, size } = opts
+  const memoized = memo.get(cache, key, opts)
+  if (memoized && memoize !== false) {
+    return getMemoizedStream(memoized)
+  }
+
+  const stream = new Pipeline()
+  index
+    .find(cache, key)
+    .then((entry) => {
+      if (!entry) {
+        throw new index.NotFoundError(cache, key)
+      }
+
+      stream.emit('metadata', entry.metadata)
+      stream.emit('integrity', entry.integrity)
+      stream.emit('size', entry.size)
+      stream.on('newListener', function (ev, cb) {
+        ev === 'metadata' && cb(entry.metadata)
+        ev === 'integrity' && cb(entry.integrity)
+        ev === 'size' && cb(entry.size)
+      })
+
+      const src = read.readStream(
+        cache,
+        entry.integrity,
+        { ...opts, size: typeof size !== 'number' ? entry.size : size }
+      )
+
+      if (memoize) {
+        const memoStream = new Collect.PassThrough()
+        memoStream.on('collect', data => memo.put(cache, entry, data, opts))
+        stream.unshift(memoStream)
+      }
+      stream.unshift(src)
+    })
+    .catch((err) => stream.emit('error', err))
+
+  return stream
+}
+
+module.exports.stream = getStream
+
+function getStreamDigest (cache, integrity, opts = {}) {
+  const { memoize } = opts
+  const memoized = memo.get.byDigest(cache, integrity, opts)
+  if (memoized && memoize !== false) {
+    const stream = new Minipass()
+    stream.end(memoized)
+    return stream
+  } else {
+    const stream = read.readStream(cache, integrity, opts)
+    if (!memoize) {
+      return stream
+    }
+
+    const memoStream = new Collect.PassThrough()
+    memoStream.on('collect', data => memo.put.byDigest(
+      cache,
+      integrity,
+      data,
+      opts
+    ))
+    return new Pipeline(stream, memoStream)
+  }
+}
+
+module.exports.stream.byDigest = getStreamDigest
+
+function info (cache, key, opts = {}) {
+  const { memoize } = opts
+  const memoized = memo.get(cache, key, opts)
+  if (memoized && memoize !== false) {
+    return Promise.resolve(memoized.entry)
+  } else {
+    return index.find(cache, key)
+  }
+}
+module.exports.info = info
+
+function copy (cache, key, dest, opts = {}) {
+  if (read.copy) {
+    return index.find(cache, key, opts).then((entry) => {
+      if (!entry) {
+        throw new index.NotFoundError(cache, key)
+      }
+      return read.copy(cache, entry.integrity, dest, opts)
+        .then(() => {
+          return {
+            metadata: entry.metadata,
+            size: entry.size,
+            integrity: entry.integrity,
+          }
+        })
+    })
+  }
+
+  return getData(cache, key, opts).then((res) => {
+    return writeFile(dest, res.data).then(() => {
+      return {
+        metadata: res.metadata,
+        size: res.size,
+        integrity: res.integrity,
+      }
+    })
+  })
+}
+module.exports.copy = copy
+
+function copyByDigest (cache, key, dest, opts = {}) {
+  if (read.copy) {
+    return read.copy(cache, key, dest, opts).then(() => key)
+  }
+
+  return getDataByDigest(cache, key, opts).then((res) => {
+    return writeFile(dest, res).then(() => key)
+  })
+}
+module.exports.copy.byDigest = copyByDigest
+
+module.exports.hasContent = read.hasContent
+
+
+/***/ }),
+
+/***/ 85490:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+const get = __nccwpck_require__(10408)
+const put = __nccwpck_require__(70178)
+const rm = __nccwpck_require__(70123)
+const verify = __nccwpck_require__(70584)
+const { clearMemoized } = __nccwpck_require__(5575)
+const tmp = __nccwpck_require__(70644)
+const index = __nccwpck_require__(90595)
+
+module.exports.index = {}
+module.exports.index.compact = index.compact
+module.exports.index.insert = index.insert
+
+module.exports.ls = index.ls
+module.exports.ls.stream = index.lsStream
+
+module.exports.get = get
+module.exports.get.byDigest = get.byDigest
+module.exports.get.sync = get.sync
+module.exports.get.sync.byDigest = get.sync.byDigest
+module.exports.get.stream = get.stream
+module.exports.get.stream.byDigest = get.stream.byDigest
+module.exports.get.copy = get.copy
+module.exports.get.copy.byDigest = get.copy.byDigest
+module.exports.get.info = get.info
+module.exports.get.hasContent = get.hasContent
+module.exports.get.hasContent.sync = get.hasContent.sync
+
+module.exports.put = put
+module.exports.put.stream = put.stream
+
+module.exports.rm = rm.entry
+module.exports.rm.all = rm.all
+module.exports.rm.entry = module.exports.rm
+module.exports.rm.content = rm.content
+
+module.exports.clearMemoized = clearMemoized
+
+module.exports.tmp = {}
+module.exports.tmp.mkdir = tmp.mkdir
+module.exports.tmp.withTmp = tmp.withTmp
+
+module.exports.verify = verify
+module.exports.verify.lastRun = verify.lastRun
 
 
 /***/ }),
@@ -12467,13 +12717,11 @@ function readdirOrEmpty (dir) {
 
 const LRU = __nccwpck_require__(7129)
 
-const MAX_SIZE = 50 * 1024 * 1024 // 50MB
-const MAX_AGE = 3 * 60 * 1000
-
 const MEMOIZED = new LRU({
-  max: MAX_SIZE,
-  maxAge: MAX_AGE,
-  length: (entry, key) => key.startsWith('key:') ? entry.data.length : entry.length,
+  max: 500,
+  maxSize: 50 * 1024 * 1024, // 50MB
+  ttl: 3 * 60 * 1000, // 3 minutes
+  sizeCalculation: (entry, key) => key.startsWith('key:') ? entry.data.length : entry.length,
 })
 
 module.exports.clearMemoized = clearMemoized
@@ -12483,7 +12731,7 @@ function clearMemoized () {
   MEMOIZED.forEach((v, k) => {
     old[k] = v
   })
-  MEMOIZED.reset()
+  MEMOIZED.clear()
   return old
 }
 
@@ -12527,14 +12775,149 @@ class ObjProxy {
 }
 
 function pickMem (opts) {
-  if (!opts || !opts.memoize)
+  if (!opts || !opts.memoize) {
     return MEMOIZED
-  else if (opts.memoize.get && opts.memoize.set)
+  } else if (opts.memoize.get && opts.memoize.set) {
     return opts.memoize
-  else if (typeof opts.memoize === 'object')
+  } else if (typeof opts.memoize === 'object') {
     return new ObjProxy(opts.memoize)
-  else
+  } else {
     return MEMOIZED
+  }
+}
+
+
+/***/ }),
+
+/***/ 70178:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+const index = __nccwpck_require__(90595)
+const memo = __nccwpck_require__(5575)
+const write = __nccwpck_require__(73729)
+const Flush = __nccwpck_require__(4181)
+const { PassThrough } = __nccwpck_require__(74658)
+const Pipeline = __nccwpck_require__(69891)
+
+const putOpts = (opts) => ({
+  algorithms: ['sha512'],
+  ...opts,
+})
+
+module.exports = putData
+
+function putData (cache, key, data, opts = {}) {
+  const { memoize } = opts
+  opts = putOpts(opts)
+  return write(cache, data, opts).then((res) => {
+    return index
+      .insert(cache, key, res.integrity, { ...opts, size: res.size })
+      .then((entry) => {
+        if (memoize) {
+          memo.put(cache, entry, data, opts)
+        }
+
+        return res.integrity
+      })
+  })
+}
+
+module.exports.stream = putStream
+
+function putStream (cache, key, opts = {}) {
+  const { memoize } = opts
+  opts = putOpts(opts)
+  let integrity
+  let size
+
+  let memoData
+  const pipeline = new Pipeline()
+  // first item in the pipeline is the memoizer, because we need
+  // that to end first and get the collected data.
+  if (memoize) {
+    const memoizer = new PassThrough().on('collect', data => {
+      memoData = data
+    })
+    pipeline.push(memoizer)
+  }
+
+  // contentStream is a write-only, not a passthrough
+  // no data comes out of it.
+  const contentStream = write.stream(cache, opts)
+    .on('integrity', (int) => {
+      integrity = int
+    })
+    .on('size', (s) => {
+      size = s
+    })
+
+  pipeline.push(contentStream)
+
+  // last but not least, we write the index and emit hash and size,
+  // and memoize if we're doing that
+  pipeline.push(new Flush({
+    flush () {
+      return index
+        .insert(cache, key, integrity, { ...opts, size })
+        .then((entry) => {
+          if (memoize && memoData) {
+            memo.put(cache, entry, memoData, opts)
+          }
+
+          if (integrity) {
+            pipeline.emit('integrity', integrity)
+          }
+
+          if (size) {
+            pipeline.emit('size', size)
+          }
+        })
+    },
+  }))
+
+  return pipeline
+}
+
+
+/***/ }),
+
+/***/ 70123:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+const util = __nccwpck_require__(73837)
+
+const index = __nccwpck_require__(90595)
+const memo = __nccwpck_require__(5575)
+const path = __nccwpck_require__(71017)
+const rimraf = util.promisify(__nccwpck_require__(14959))
+const rmContent = __nccwpck_require__(51343)
+
+module.exports = entry
+module.exports.entry = entry
+
+function entry (cache, key, opts) {
+  memo.clearMemoized()
+  return index.delete(cache, key, opts)
+}
+
+module.exports.content = content
+
+function content (cache, integrity) {
+  memo.clearMemoized()
+  return rmContent(cache, integrity)
+}
+
+module.exports.all = all
+
+function all (cache) {
+  memo.clearMemoized()
+  return rimraf(path.join(cache, '*(content-*|index-*)'))
 }
 
 
@@ -12554,8 +12937,9 @@ function disposer (creatorFn, disposerFn, fn) {
       .then(
         // disposer resolved, do something with original fn's promise
         () => {
-          if (shouldThrow)
+          if (shouldThrow) {
             throw result
+          }
 
           return result
         },
@@ -12633,8 +13017,9 @@ function fixOwner (cache, filepath) {
     const { uid, gid } = owner
 
     // No need to override if it's already what we used.
-    if (self.uid === uid && self.gid === gid)
+    if (self.uid === uid && self.gid === gid) {
       return
+    }
 
     return inflight('fixOwner: fixing ownership on ' + filepath, () =>
       chownr(
@@ -12642,8 +13027,9 @@ function fixOwner (cache, filepath) {
         typeof uid === 'number' ? uid : self.uid,
         typeof gid === 'number' ? gid : self.gid
       ).catch((err) => {
-        if (err.code === 'ENOENT')
+        if (err.code === 'ENOENT') {
           return null
+        }
 
         throw err
       })
@@ -12677,8 +13063,9 @@ function fixOwnerSync (cache, filepath) {
     )
   } catch (err) {
     // only catch ENOENT, any other error is a problem.
-    if (err.code === 'ENOENT')
+    if (err.code === 'ENOENT') {
       return null
+    }
 
     throw err
   }
@@ -12694,12 +13081,14 @@ function mkdirfix (cache, p, cb) {
   return Promise.resolve(inferOwner(cache)).then(() => {
     return mkdirp(p)
       .then((made) => {
-        if (made)
+        if (made) {
           return fixOwner(cache, made).then(() => made)
+        }
       })
       .catch((err) => {
-        if (err.code === 'EEXIST')
+        if (err.code === 'EEXIST') {
           return fixOwner(cache, p).then(() => null)
+        }
 
         throw err
       })
@@ -12720,8 +13109,9 @@ function mkdirfixSync (cache, p) {
     if (err.code === 'EEXIST') {
       fixOwnerSync(cache, p)
       return null
-    } else
+    } else {
       throw err
+    }
   }
 }
 
@@ -12787,10 +13177,12 @@ function moveFile (src, dest) {
         } else if (err.code === 'EEXIST' || err.code === 'EBUSY') {
           // file already exists, so whatever
           return resolve()
-        } else
+        } else {
           return reject(err)
-      } else
+        }
+      } else {
         return resolve()
+      }
     })
   })
     .then(() => {
@@ -12921,8 +13313,9 @@ function verify (cache, opts) {
               stats[k] = s[k]
             })
           const end = new Date()
-          if (!stats.runTime)
+          if (!stats.runTime) {
             stats.runTime = {}
+          }
 
           stats.runTime[label] = end - start
           return Promise.resolve(stats)
@@ -12975,8 +13368,9 @@ function garbageCollect (cache, opts) {
   const indexStream = index.lsStream(cache)
   const liveContent = new Set()
   indexStream.on('data', (entry) => {
-    if (opts.filter && !opts.filter(entry))
+    if (opts.filter && !opts.filter(entry)) {
       return
+    }
 
     liveContent.add(entry.integrity.toString())
   })
@@ -13043,8 +13437,9 @@ function verifyContent (filepath, sri) {
       return ssri
         .checkStream(new fsm.ReadStream(filepath), sri)
         .catch((err) => {
-          if (err.code !== 'EINTEGRITY')
+          if (err.code !== 'EINTEGRITY') {
             throw err
+          }
 
           return rimraf(filepath).then(() => {
             contentInfo.valid = false
@@ -13053,8 +13448,9 @@ function verifyContent (filepath, sri) {
         .then(() => contentInfo)
     })
     .catch((err) => {
-      if (err.code === 'ENOENT')
+      if (err.code === 'ENOENT') {
         return { size: 0, valid: false }
+      }
 
       throw err
     })
@@ -13076,9 +13472,9 @@ function rebuildIndex (cache, opts) {
         const entry = entries[k]
         const excluded = opts.filter && !opts.filter(entry)
         excluded && stats.rejectedEntries++
-        if (buckets[hashed] && !excluded)
+        if (buckets[hashed] && !excluded) {
           buckets[hashed].push(entry)
-        else if (buckets[hashed] && excluded) {
+        } else if (buckets[hashed] && excluded) {
           // skip
         } else if (excluded) {
           buckets[hashed] = []
@@ -13152,161 +13548,6 @@ function lastRun (cache) {
     (data) => new Date(+data)
   )
 }
-
-
-/***/ }),
-
-/***/ 1048:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const index = __nccwpck_require__(90595)
-
-module.exports = index.ls
-module.exports.stream = index.lsStream
-
-
-/***/ }),
-
-/***/ 35576:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const index = __nccwpck_require__(90595)
-const memo = __nccwpck_require__(5575)
-const write = __nccwpck_require__(73729)
-const Flush = __nccwpck_require__(4181)
-const { PassThrough } = __nccwpck_require__(74658)
-const Pipeline = __nccwpck_require__(69891)
-
-const putOpts = (opts) => ({
-  algorithms: ['sha512'],
-  ...opts,
-})
-
-module.exports = putData
-
-function putData (cache, key, data, opts = {}) {
-  const { memoize } = opts
-  opts = putOpts(opts)
-  return write(cache, data, opts).then((res) => {
-    return index
-      .insert(cache, key, res.integrity, { ...opts, size: res.size })
-      .then((entry) => {
-        if (memoize)
-          memo.put(cache, entry, data, opts)
-
-        return res.integrity
-      })
-  })
-}
-
-module.exports.stream = putStream
-
-function putStream (cache, key, opts = {}) {
-  const { memoize } = opts
-  opts = putOpts(opts)
-  let integrity
-  let size
-
-  let memoData
-  const pipeline = new Pipeline()
-  // first item in the pipeline is the memoizer, because we need
-  // that to end first and get the collected data.
-  if (memoize) {
-    const memoizer = new PassThrough().on('collect', data => {
-      memoData = data
-    })
-    pipeline.push(memoizer)
-  }
-
-  // contentStream is a write-only, not a passthrough
-  // no data comes out of it.
-  const contentStream = write.stream(cache, opts)
-    .on('integrity', (int) => {
-      integrity = int
-    })
-    .on('size', (s) => {
-      size = s
-    })
-
-  pipeline.push(contentStream)
-
-  // last but not least, we write the index and emit hash and size,
-  // and memoize if we're doing that
-  pipeline.push(new Flush({
-    flush () {
-      return index
-        .insert(cache, key, integrity, { ...opts, size })
-        .then((entry) => {
-          if (memoize && memoData)
-            memo.put(cache, entry, memoData, opts)
-
-          if (integrity)
-            pipeline.emit('integrity', integrity)
-
-          if (size)
-            pipeline.emit('size', size)
-        })
-    },
-  }))
-
-  return pipeline
-}
-
-
-/***/ }),
-
-/***/ 44876:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const util = __nccwpck_require__(73837)
-
-const index = __nccwpck_require__(90595)
-const memo = __nccwpck_require__(5575)
-const path = __nccwpck_require__(71017)
-const rimraf = util.promisify(__nccwpck_require__(14959))
-const rmContent = __nccwpck_require__(51343)
-
-module.exports = entry
-module.exports.entry = entry
-
-function entry (cache, key, opts) {
-  memo.clearMemoized()
-  return index.delete(cache, key, opts)
-}
-
-module.exports.content = content
-
-function content (cache, integrity) {
-  memo.clearMemoized()
-  return rmContent(cache, integrity)
-}
-
-module.exports.all = all
-
-function all (cache) {
-  memo.clearMemoized()
-  return rimraf(path.join(cache, '*(content-*|index-*)'))
-}
-
-
-/***/ }),
-
-/***/ 49869:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-module.exports = __nccwpck_require__(70584)
 
 
 /***/ }),
@@ -26883,7 +27124,7 @@ module.exports = GitHost
 const url = __nccwpck_require__(57310)
 const gitHosts = __nccwpck_require__(30135)
 const GitHost = module.exports = __nccwpck_require__(18145)
-const LRU = __nccwpck_require__(7129)
+const LRU = __nccwpck_require__(91372)
 const cache = new LRU({ max: 1000 })
 
 const protocolToRepresentationMap = {
@@ -27116,6 +27357,348 @@ const parseGitUrl = (giturl) => {
 
   return result
 }
+
+
+/***/ }),
+
+/***/ 91372:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+// A linked list to keep track of recently-used-ness
+const Yallist = __nccwpck_require__(40665)
+
+const MAX = Symbol('max')
+const LENGTH = Symbol('length')
+const LENGTH_CALCULATOR = Symbol('lengthCalculator')
+const ALLOW_STALE = Symbol('allowStale')
+const MAX_AGE = Symbol('maxAge')
+const DISPOSE = Symbol('dispose')
+const NO_DISPOSE_ON_SET = Symbol('noDisposeOnSet')
+const LRU_LIST = Symbol('lruList')
+const CACHE = Symbol('cache')
+const UPDATE_AGE_ON_GET = Symbol('updateAgeOnGet')
+
+const naiveLength = () => 1
+
+// lruList is a yallist where the head is the youngest
+// item, and the tail is the oldest.  the list contains the Hit
+// objects as the entries.
+// Each Hit object has a reference to its Yallist.Node.  This
+// never changes.
+//
+// cache is a Map (or PseudoMap) that matches the keys to
+// the Yallist.Node object.
+class LRUCache {
+  constructor (options) {
+    if (typeof options === 'number')
+      options = { max: options }
+
+    if (!options)
+      options = {}
+
+    if (options.max && (typeof options.max !== 'number' || options.max < 0))
+      throw new TypeError('max must be a non-negative number')
+    // Kind of weird to have a default max of Infinity, but oh well.
+    const max = this[MAX] = options.max || Infinity
+
+    const lc = options.length || naiveLength
+    this[LENGTH_CALCULATOR] = (typeof lc !== 'function') ? naiveLength : lc
+    this[ALLOW_STALE] = options.stale || false
+    if (options.maxAge && typeof options.maxAge !== 'number')
+      throw new TypeError('maxAge must be a number')
+    this[MAX_AGE] = options.maxAge || 0
+    this[DISPOSE] = options.dispose
+    this[NO_DISPOSE_ON_SET] = options.noDisposeOnSet || false
+    this[UPDATE_AGE_ON_GET] = options.updateAgeOnGet || false
+    this.reset()
+  }
+
+  // resize the cache when the max changes.
+  set max (mL) {
+    if (typeof mL !== 'number' || mL < 0)
+      throw new TypeError('max must be a non-negative number')
+
+    this[MAX] = mL || Infinity
+    trim(this)
+  }
+  get max () {
+    return this[MAX]
+  }
+
+  set allowStale (allowStale) {
+    this[ALLOW_STALE] = !!allowStale
+  }
+  get allowStale () {
+    return this[ALLOW_STALE]
+  }
+
+  set maxAge (mA) {
+    if (typeof mA !== 'number')
+      throw new TypeError('maxAge must be a non-negative number')
+
+    this[MAX_AGE] = mA
+    trim(this)
+  }
+  get maxAge () {
+    return this[MAX_AGE]
+  }
+
+  // resize the cache when the lengthCalculator changes.
+  set lengthCalculator (lC) {
+    if (typeof lC !== 'function')
+      lC = naiveLength
+
+    if (lC !== this[LENGTH_CALCULATOR]) {
+      this[LENGTH_CALCULATOR] = lC
+      this[LENGTH] = 0
+      this[LRU_LIST].forEach(hit => {
+        hit.length = this[LENGTH_CALCULATOR](hit.value, hit.key)
+        this[LENGTH] += hit.length
+      })
+    }
+    trim(this)
+  }
+  get lengthCalculator () { return this[LENGTH_CALCULATOR] }
+
+  get length () { return this[LENGTH] }
+  get itemCount () { return this[LRU_LIST].length }
+
+  rforEach (fn, thisp) {
+    thisp = thisp || this
+    for (let walker = this[LRU_LIST].tail; walker !== null;) {
+      const prev = walker.prev
+      forEachStep(this, fn, walker, thisp)
+      walker = prev
+    }
+  }
+
+  forEach (fn, thisp) {
+    thisp = thisp || this
+    for (let walker = this[LRU_LIST].head; walker !== null;) {
+      const next = walker.next
+      forEachStep(this, fn, walker, thisp)
+      walker = next
+    }
+  }
+
+  keys () {
+    return this[LRU_LIST].toArray().map(k => k.key)
+  }
+
+  values () {
+    return this[LRU_LIST].toArray().map(k => k.value)
+  }
+
+  reset () {
+    if (this[DISPOSE] &&
+        this[LRU_LIST] &&
+        this[LRU_LIST].length) {
+      this[LRU_LIST].forEach(hit => this[DISPOSE](hit.key, hit.value))
+    }
+
+    this[CACHE] = new Map() // hash of items by key
+    this[LRU_LIST] = new Yallist() // list of items in order of use recency
+    this[LENGTH] = 0 // length of items in the list
+  }
+
+  dump () {
+    return this[LRU_LIST].map(hit =>
+      isStale(this, hit) ? false : {
+        k: hit.key,
+        v: hit.value,
+        e: hit.now + (hit.maxAge || 0)
+      }).toArray().filter(h => h)
+  }
+
+  dumpLru () {
+    return this[LRU_LIST]
+  }
+
+  set (key, value, maxAge) {
+    maxAge = maxAge || this[MAX_AGE]
+
+    if (maxAge && typeof maxAge !== 'number')
+      throw new TypeError('maxAge must be a number')
+
+    const now = maxAge ? Date.now() : 0
+    const len = this[LENGTH_CALCULATOR](value, key)
+
+    if (this[CACHE].has(key)) {
+      if (len > this[MAX]) {
+        del(this, this[CACHE].get(key))
+        return false
+      }
+
+      const node = this[CACHE].get(key)
+      const item = node.value
+
+      // dispose of the old one before overwriting
+      // split out into 2 ifs for better coverage tracking
+      if (this[DISPOSE]) {
+        if (!this[NO_DISPOSE_ON_SET])
+          this[DISPOSE](key, item.value)
+      }
+
+      item.now = now
+      item.maxAge = maxAge
+      item.value = value
+      this[LENGTH] += len - item.length
+      item.length = len
+      this.get(key)
+      trim(this)
+      return true
+    }
+
+    const hit = new Entry(key, value, len, now, maxAge)
+
+    // oversized objects fall out of cache automatically.
+    if (hit.length > this[MAX]) {
+      if (this[DISPOSE])
+        this[DISPOSE](key, value)
+
+      return false
+    }
+
+    this[LENGTH] += hit.length
+    this[LRU_LIST].unshift(hit)
+    this[CACHE].set(key, this[LRU_LIST].head)
+    trim(this)
+    return true
+  }
+
+  has (key) {
+    if (!this[CACHE].has(key)) return false
+    const hit = this[CACHE].get(key).value
+    return !isStale(this, hit)
+  }
+
+  get (key) {
+    return get(this, key, true)
+  }
+
+  peek (key) {
+    return get(this, key, false)
+  }
+
+  pop () {
+    const node = this[LRU_LIST].tail
+    if (!node)
+      return null
+
+    del(this, node)
+    return node.value
+  }
+
+  del (key) {
+    del(this, this[CACHE].get(key))
+  }
+
+  load (arr) {
+    // reset the cache
+    this.reset()
+
+    const now = Date.now()
+    // A previous serialized cache has the most recent items first
+    for (let l = arr.length - 1; l >= 0; l--) {
+      const hit = arr[l]
+      const expiresAt = hit.e || 0
+      if (expiresAt === 0)
+        // the item was created without expiration in a non aged cache
+        this.set(hit.k, hit.v)
+      else {
+        const maxAge = expiresAt - now
+        // dont add already expired items
+        if (maxAge > 0) {
+          this.set(hit.k, hit.v, maxAge)
+        }
+      }
+    }
+  }
+
+  prune () {
+    this[CACHE].forEach((value, key) => get(this, key, false))
+  }
+}
+
+const get = (self, key, doUse) => {
+  const node = self[CACHE].get(key)
+  if (node) {
+    const hit = node.value
+    if (isStale(self, hit)) {
+      del(self, node)
+      if (!self[ALLOW_STALE])
+        return undefined
+    } else {
+      if (doUse) {
+        if (self[UPDATE_AGE_ON_GET])
+          node.value.now = Date.now()
+        self[LRU_LIST].unshiftNode(node)
+      }
+    }
+    return hit.value
+  }
+}
+
+const isStale = (self, hit) => {
+  if (!hit || (!hit.maxAge && !self[MAX_AGE]))
+    return false
+
+  const diff = Date.now() - hit.now
+  return hit.maxAge ? diff > hit.maxAge
+    : self[MAX_AGE] && (diff > self[MAX_AGE])
+}
+
+const trim = self => {
+  if (self[LENGTH] > self[MAX]) {
+    for (let walker = self[LRU_LIST].tail;
+      self[LENGTH] > self[MAX] && walker !== null;) {
+      // We know that we're about to delete this one, and also
+      // what the next least recently used key will be, so just
+      // go ahead and set it now.
+      const prev = walker.prev
+      del(self, walker)
+      walker = prev
+    }
+  }
+}
+
+const del = (self, node) => {
+  if (node) {
+    const hit = node.value
+    if (self[DISPOSE])
+      self[DISPOSE](hit.key, hit.value)
+
+    self[LENGTH] -= hit.length
+    self[CACHE].delete(hit.key)
+    self[LRU_LIST].removeNode(node)
+  }
+}
+
+class Entry {
+  constructor (key, value, length, now, maxAge) {
+    this.key = key
+    this.value = value
+    this.length = length
+    this.now = now
+    this.maxAge = maxAge || 0
+  }
+}
+
+const forEachStep = (self, fn, node, thisp) => {
+  let hit = node.value
+  if (isStale(self, hit)) {
+    del(self, node)
+    if (!self[ALLOW_STALE])
+      hit = undefined
+  }
+  if (hit)
+    fn.call(thisp, hit.value, hit.key, self)
+}
+
+module.exports = LRUCache
 
 
 /***/ }),
@@ -27798,6 +28381,179 @@ module.exports = class CachePolicy {
     }
 };
 
+
+/***/ }),
+
+/***/ 77492:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const net_1 = __importDefault(__nccwpck_require__(41808));
+const tls_1 = __importDefault(__nccwpck_require__(24404));
+const url_1 = __importDefault(__nccwpck_require__(57310));
+const debug_1 = __importDefault(__nccwpck_require__(38237));
+const once_1 = __importDefault(__nccwpck_require__(81040));
+const agent_base_1 = __nccwpck_require__(49690);
+const debug = (0, debug_1.default)('http-proxy-agent');
+function isHTTPS(protocol) {
+    return typeof protocol === 'string' ? /^https:?$/i.test(protocol) : false;
+}
+/**
+ * The `HttpProxyAgent` implements an HTTP Agent subclass that connects
+ * to the specified "HTTP proxy server" in order to proxy HTTP requests.
+ *
+ * @api public
+ */
+class HttpProxyAgent extends agent_base_1.Agent {
+    constructor(_opts) {
+        let opts;
+        if (typeof _opts === 'string') {
+            opts = url_1.default.parse(_opts);
+        }
+        else {
+            opts = _opts;
+        }
+        if (!opts) {
+            throw new Error('an HTTP(S) proxy server `host` and `port` must be specified!');
+        }
+        debug('Creating new HttpProxyAgent instance: %o', opts);
+        super(opts);
+        const proxy = Object.assign({}, opts);
+        // If `true`, then connect to the proxy server over TLS.
+        // Defaults to `false`.
+        this.secureProxy = opts.secureProxy || isHTTPS(proxy.protocol);
+        // Prefer `hostname` over `host`, and set the `port` if needed.
+        proxy.host = proxy.hostname || proxy.host;
+        if (typeof proxy.port === 'string') {
+            proxy.port = parseInt(proxy.port, 10);
+        }
+        if (!proxy.port && proxy.host) {
+            proxy.port = this.secureProxy ? 443 : 80;
+        }
+        if (proxy.host && proxy.path) {
+            // If both a `host` and `path` are specified then it's most likely
+            // the result of a `url.parse()` call... we need to remove the
+            // `path` portion so that `net.connect()` doesn't attempt to open
+            // that as a Unix socket file.
+            delete proxy.path;
+            delete proxy.pathname;
+        }
+        this.proxy = proxy;
+    }
+    /**
+     * Called when the node-core HTTP client library is creating a
+     * new HTTP request.
+     *
+     * @api protected
+     */
+    callback(req, opts) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { proxy, secureProxy } = this;
+            const parsed = url_1.default.parse(req.path);
+            if (!parsed.protocol) {
+                parsed.protocol = 'http:';
+            }
+            if (!parsed.hostname) {
+                parsed.hostname = opts.hostname || opts.host || null;
+            }
+            if (parsed.port == null && typeof opts.port) {
+                parsed.port = String(opts.port);
+            }
+            if (parsed.port === '80') {
+                // if port is 80, then we can remove the port so that the
+                // ":80" portion is not on the produced URL
+                parsed.port = '';
+            }
+            // Change the `http.ClientRequest` instance's "path" field
+            // to the absolute path of the URL that will be requested.
+            req.path = url_1.default.format(parsed);
+            // Inject the `Proxy-Authorization` header if necessary.
+            if (proxy.auth) {
+                req.setHeader('Proxy-Authorization', `Basic ${Buffer.from(proxy.auth).toString('base64')}`);
+            }
+            // Create a socket connection to the proxy server.
+            let socket;
+            if (secureProxy) {
+                debug('Creating `tls.Socket`: %o', proxy);
+                socket = tls_1.default.connect(proxy);
+            }
+            else {
+                debug('Creating `net.Socket`: %o', proxy);
+                socket = net_1.default.connect(proxy);
+            }
+            // At this point, the http ClientRequest's internal `_header` field
+            // might have already been set. If this is the case then we'll need
+            // to re-generate the string since we just changed the `req.path`.
+            if (req._header) {
+                let first;
+                let endOfHeaders;
+                debug('Regenerating stored HTTP header string for request');
+                req._header = null;
+                req._implicitHeader();
+                if (req.output && req.output.length > 0) {
+                    // Node < 12
+                    debug('Patching connection write() output buffer with updated header');
+                    first = req.output[0];
+                    endOfHeaders = first.indexOf('\r\n\r\n') + 4;
+                    req.output[0] = req._header + first.substring(endOfHeaders);
+                    debug('Output buffer: %o', req.output);
+                }
+                else if (req.outputData && req.outputData.length > 0) {
+                    // Node >= 12
+                    debug('Patching connection write() output buffer with updated header');
+                    first = req.outputData[0].data;
+                    endOfHeaders = first.indexOf('\r\n\r\n') + 4;
+                    req.outputData[0].data =
+                        req._header + first.substring(endOfHeaders);
+                    debug('Output buffer: %o', req.outputData[0].data);
+                }
+            }
+            // Wait for the socket's `connect` event, so that this `callback()`
+            // function throws instead of the `http` request machinery. This is
+            // important for i.e. `PacProxyAgent` which determines a failed proxy
+            // connection via the `callback()` function throwing.
+            yield (0, once_1.default)(socket, 'connect');
+            return socket;
+        });
+    }
+}
+exports["default"] = HttpProxyAgent;
+//# sourceMappingURL=agent.js.map
+
+/***/ }),
+
+/***/ 23764:
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+const agent_1 = __importDefault(__nccwpck_require__(77492));
+function createHttpProxyAgent(opts) {
+    return new agent_1.default(opts);
+}
+(function (createHttpProxyAgent) {
+    createHttpProxyAgent.HttpProxyAgent = agent_1.default;
+    createHttpProxyAgent.prototype = agent_1.default.prototype;
+})(createHttpProxyAgent || (createHttpProxyAgent = {}));
+module.exports = createHttpProxyAgent;
+//# sourceMappingURL=index.js.map
 
 /***/ }),
 
@@ -56423,343 +57179,2195 @@ module.exports = (iterable, tester, opts) => {
 /***/ }),
 
 /***/ 7129:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+/***/ ((module) => {
 
-"use strict";
+const perf = typeof performance === 'object' && performance &&
+  typeof performance.now === 'function' ? performance : Date
 
+const hasAbortController = typeof AbortController !== 'undefined'
 
-// A linked list to keep track of recently-used-ness
-const Yallist = __nccwpck_require__(40665)
+/* istanbul ignore next - minimal backwards compatibility polyfill */
+const AC = hasAbortController ? AbortController : Object.assign(
+  class AbortController {
+    constructor () { this.signal = new AC.AbortSignal }
+    abort () { this.signal.aborted = true }
+  },
+  { AbortSignal: class AbortSignal { constructor () { this.aborted = false }}}
+)
 
-const MAX = Symbol('max')
-const LENGTH = Symbol('length')
-const LENGTH_CALCULATOR = Symbol('lengthCalculator')
-const ALLOW_STALE = Symbol('allowStale')
-const MAX_AGE = Symbol('maxAge')
-const DISPOSE = Symbol('dispose')
-const NO_DISPOSE_ON_SET = Symbol('noDisposeOnSet')
-const LRU_LIST = Symbol('lruList')
-const CACHE = Symbol('cache')
-const UPDATE_AGE_ON_GET = Symbol('updateAgeOnGet')
-
-const naiveLength = () => 1
-
-// lruList is a yallist where the head is the youngest
-// item, and the tail is the oldest.  the list contains the Hit
-// objects as the entries.
-// Each Hit object has a reference to its Yallist.Node.  This
-// never changes.
-//
-// cache is a Map (or PseudoMap) that matches the keys to
-// the Yallist.Node object.
-class LRUCache {
-  constructor (options) {
-    if (typeof options === 'number')
-      options = { max: options }
-
-    if (!options)
-      options = {}
-
-    if (options.max && (typeof options.max !== 'number' || options.max < 0))
-      throw new TypeError('max must be a non-negative number')
-    // Kind of weird to have a default max of Infinity, but oh well.
-    const max = this[MAX] = options.max || Infinity
-
-    const lc = options.length || naiveLength
-    this[LENGTH_CALCULATOR] = (typeof lc !== 'function') ? naiveLength : lc
-    this[ALLOW_STALE] = options.stale || false
-    if (options.maxAge && typeof options.maxAge !== 'number')
-      throw new TypeError('maxAge must be a number')
-    this[MAX_AGE] = options.maxAge || 0
-    this[DISPOSE] = options.dispose
-    this[NO_DISPOSE_ON_SET] = options.noDisposeOnSet || false
-    this[UPDATE_AGE_ON_GET] = options.updateAgeOnGet || false
-    this.reset()
+const warned = new Set()
+const deprecatedOption = (opt, instead) => {
+  const code = `LRU_CACHE_OPTION_${opt}`
+  if (shouldWarn(code)) {
+    warn(code, `${opt} option`, `options.${instead}`, LRUCache)
   }
-
-  // resize the cache when the max changes.
-  set max (mL) {
-    if (typeof mL !== 'number' || mL < 0)
-      throw new TypeError('max must be a non-negative number')
-
-    this[MAX] = mL || Infinity
-    trim(this)
+}
+const deprecatedMethod = (method, instead) => {
+  const code = `LRU_CACHE_METHOD_${method}`
+  if (shouldWarn(code)) {
+    const { prototype } = LRUCache
+    const { get } = Object.getOwnPropertyDescriptor(prototype, method)
+    warn(code, `${method} method`, `cache.${instead}()`, get)
   }
-  get max () {
-    return this[MAX]
+}
+const deprecatedProperty = (field, instead) => {
+  const code = `LRU_CACHE_PROPERTY_${field}`
+  if (shouldWarn(code)) {
+    const { prototype } = LRUCache
+    const { get } = Object.getOwnPropertyDescriptor(prototype, field)
+    warn(code, `${field} property`, `cache.${instead}`, get)
   }
+}
 
-  set allowStale (allowStale) {
-    this[ALLOW_STALE] = !!allowStale
+const shouldWarn = code => typeof process === 'object' &&
+  process &&
+  !warned.has(code)
+
+const warn = (code, what, instead, fn) => {
+  warned.add(code)
+  const msg = `The ${what} is deprecated. Please use ${instead} instead.`
+  process.emitWarning(msg, 'DeprecationWarning', code, fn)
+}
+
+const isPosInt = n => n && n === Math.floor(n) && n > 0 && isFinite(n)
+
+/* istanbul ignore next - This is a little bit ridiculous, tbh.
+ * The maximum array length is 2^32-1 or thereabouts on most JS impls.
+ * And well before that point, you're caching the entire world, I mean,
+ * that's ~32GB of just integers for the next/prev links, plus whatever
+ * else to hold that many keys and values.  Just filling the memory with
+ * zeroes at init time is brutal when you get that big.
+ * But why not be complete?
+ * Maybe in the future, these limits will have expanded. */
+const getUintArray = max => !isPosInt(max) ? null
+: max <= Math.pow(2, 8) ? Uint8Array
+: max <= Math.pow(2, 16) ? Uint16Array
+: max <= Math.pow(2, 32) ? Uint32Array
+: max <= Number.MAX_SAFE_INTEGER ? ZeroArray
+: null
+
+class ZeroArray extends Array {
+  constructor (size) {
+    super(size)
+    this.fill(0)
   }
-  get allowStale () {
-    return this[ALLOW_STALE]
+}
+
+class Stack {
+  constructor (max) {
+    const UintArray = max ? getUintArray(max) : Array
+    this.heap = new UintArray(max)
+    this.length = 0
   }
-
-  set maxAge (mA) {
-    if (typeof mA !== 'number')
-      throw new TypeError('maxAge must be a non-negative number')
-
-    this[MAX_AGE] = mA
-    trim(this)
+  push (n) {
+    this.heap[this.length++] = n
   }
-  get maxAge () {
-    return this[MAX_AGE]
-  }
-
-  // resize the cache when the lengthCalculator changes.
-  set lengthCalculator (lC) {
-    if (typeof lC !== 'function')
-      lC = naiveLength
-
-    if (lC !== this[LENGTH_CALCULATOR]) {
-      this[LENGTH_CALCULATOR] = lC
-      this[LENGTH] = 0
-      this[LRU_LIST].forEach(hit => {
-        hit.length = this[LENGTH_CALCULATOR](hit.value, hit.key)
-        this[LENGTH] += hit.length
-      })
-    }
-    trim(this)
-  }
-  get lengthCalculator () { return this[LENGTH_CALCULATOR] }
-
-  get length () { return this[LENGTH] }
-  get itemCount () { return this[LRU_LIST].length }
-
-  rforEach (fn, thisp) {
-    thisp = thisp || this
-    for (let walker = this[LRU_LIST].tail; walker !== null;) {
-      const prev = walker.prev
-      forEachStep(this, fn, walker, thisp)
-      walker = prev
-    }
-  }
-
-  forEach (fn, thisp) {
-    thisp = thisp || this
-    for (let walker = this[LRU_LIST].head; walker !== null;) {
-      const next = walker.next
-      forEachStep(this, fn, walker, thisp)
-      walker = next
-    }
-  }
-
-  keys () {
-    return this[LRU_LIST].toArray().map(k => k.key)
-  }
-
-  values () {
-    return this[LRU_LIST].toArray().map(k => k.value)
-  }
-
-  reset () {
-    if (this[DISPOSE] &&
-        this[LRU_LIST] &&
-        this[LRU_LIST].length) {
-      this[LRU_LIST].forEach(hit => this[DISPOSE](hit.key, hit.value))
-    }
-
-    this[CACHE] = new Map() // hash of items by key
-    this[LRU_LIST] = new Yallist() // list of items in order of use recency
-    this[LENGTH] = 0 // length of items in the list
-  }
-
-  dump () {
-    return this[LRU_LIST].map(hit =>
-      isStale(this, hit) ? false : {
-        k: hit.key,
-        v: hit.value,
-        e: hit.now + (hit.maxAge || 0)
-      }).toArray().filter(h => h)
-  }
-
-  dumpLru () {
-    return this[LRU_LIST]
-  }
-
-  set (key, value, maxAge) {
-    maxAge = maxAge || this[MAX_AGE]
-
-    if (maxAge && typeof maxAge !== 'number')
-      throw new TypeError('maxAge must be a number')
-
-    const now = maxAge ? Date.now() : 0
-    const len = this[LENGTH_CALCULATOR](value, key)
-
-    if (this[CACHE].has(key)) {
-      if (len > this[MAX]) {
-        del(this, this[CACHE].get(key))
-        return false
-      }
-
-      const node = this[CACHE].get(key)
-      const item = node.value
-
-      // dispose of the old one before overwriting
-      // split out into 2 ifs for better coverage tracking
-      if (this[DISPOSE]) {
-        if (!this[NO_DISPOSE_ON_SET])
-          this[DISPOSE](key, item.value)
-      }
-
-      item.now = now
-      item.maxAge = maxAge
-      item.value = value
-      this[LENGTH] += len - item.length
-      item.length = len
-      this.get(key)
-      trim(this)
-      return true
-    }
-
-    const hit = new Entry(key, value, len, now, maxAge)
-
-    // oversized objects fall out of cache automatically.
-    if (hit.length > this[MAX]) {
-      if (this[DISPOSE])
-        this[DISPOSE](key, value)
-
-      return false
-    }
-
-    this[LENGTH] += hit.length
-    this[LRU_LIST].unshift(hit)
-    this[CACHE].set(key, this[LRU_LIST].head)
-    trim(this)
-    return true
-  }
-
-  has (key) {
-    if (!this[CACHE].has(key)) return false
-    const hit = this[CACHE].get(key).value
-    return !isStale(this, hit)
-  }
-
-  get (key) {
-    return get(this, key, true)
-  }
-
-  peek (key) {
-    return get(this, key, false)
-  }
-
   pop () {
-    const node = this[LRU_LIST].tail
-    if (!node)
-      return null
+    return this.heap[--this.length]
+  }
+}
 
-    del(this, node)
-    return node.value
+class LRUCache {
+  constructor (options = {}) {
+    const {
+      max = 0,
+      ttl,
+      ttlResolution = 1,
+      ttlAutopurge,
+      updateAgeOnGet,
+      allowStale,
+      dispose,
+      disposeAfter,
+      noDisposeOnSet,
+      noUpdateTTL,
+      maxSize = 0,
+      sizeCalculation,
+      fetchMethod,
+    } = options
+
+    // deprecated options, don't trigger a warning for getting them if
+    // the thing being passed in is another LRUCache we're copying.
+    const {
+      length,
+      maxAge,
+      stale,
+    } = options instanceof LRUCache ? {} : options
+
+    if (max !== 0 && !isPosInt(max)) {
+      throw new TypeError('max option must be a nonnegative integer')
+    }
+
+    const UintArray = max ? getUintArray(max) : Array
+    if (!UintArray) {
+      throw new Error('invalid max value: ' + max)
+    }
+
+    this.max = max
+    this.maxSize = maxSize
+    this.sizeCalculation = sizeCalculation || length
+    if (this.sizeCalculation) {
+      if (!this.maxSize) {
+        throw new TypeError('cannot set sizeCalculation without setting maxSize')
+      }
+      if (typeof this.sizeCalculation !== 'function') {
+        throw new TypeError('sizeCalculation set to non-function')
+      }
+    }
+
+    this.fetchMethod = fetchMethod || null
+    if (this.fetchMethod && typeof this.fetchMethod !== 'function') {
+      throw new TypeError('fetchMethod must be a function if specified')
+    }
+
+
+    this.keyMap = new Map()
+    this.keyList = new Array(max).fill(null)
+    this.valList = new Array(max).fill(null)
+    this.next = new UintArray(max)
+    this.prev = new UintArray(max)
+    this.head = 0
+    this.tail = 0
+    this.free = new Stack(max)
+    this.initialFill = 1
+    this.size = 0
+
+    if (typeof dispose === 'function') {
+      this.dispose = dispose
+    }
+    if (typeof disposeAfter === 'function') {
+      this.disposeAfter = disposeAfter
+      this.disposed = []
+    } else {
+      this.disposeAfter = null
+      this.disposed = null
+    }
+    this.noDisposeOnSet = !!noDisposeOnSet
+    this.noUpdateTTL = !!noUpdateTTL
+
+    if (this.maxSize !== 0) {
+      if (!isPosInt(this.maxSize)) {
+        throw new TypeError('maxSize must be a positive integer if specified')
+      }
+      this.initializeSizeTracking()
+    }
+
+    this.allowStale = !!allowStale || !!stale
+    this.updateAgeOnGet = !!updateAgeOnGet
+    this.ttlResolution = isPosInt(ttlResolution) || ttlResolution === 0
+      ? ttlResolution : 1
+    this.ttlAutopurge = !!ttlAutopurge
+    this.ttl = ttl || maxAge || 0
+    if (this.ttl) {
+      if (!isPosInt(this.ttl)) {
+        throw new TypeError('ttl must be a positive integer if specified')
+      }
+      this.initializeTTLTracking()
+    }
+
+    // do not allow completely unbounded caches
+    if (this.max === 0 && this.ttl === 0 && this.maxSize === 0) {
+      throw new TypeError('At least one of max, maxSize, or ttl is required')
+    }
+    if (!this.ttlAutopurge && !this.max && !this.maxSize) {
+      const code = 'LRU_CACHE_UNBOUNDED'
+      if (shouldWarn(code)) {
+        warned.add(code)
+        const msg = 'TTL caching without ttlAutopurge, max, or maxSize can ' +
+          'result in unbounded memory consumption.'
+        process.emitWarning(msg, 'UnboundedCacheWarning', code, LRUCache)
+      }
+    }
+
+    if (stale) {
+      deprecatedOption('stale', 'allowStale')
+    }
+    if (maxAge) {
+      deprecatedOption('maxAge', 'ttl')
+    }
+    if (length) {
+      deprecatedOption('length', 'sizeCalculation')
+    }
   }
 
-  del (key) {
-    del(this, this[CACHE].get(key))
+  getRemainingTTL (key) {
+    return this.has(key) ? Infinity : 0
   }
 
-  load (arr) {
-    // reset the cache
-    this.reset()
+  initializeTTLTracking () {
+    this.ttls = new ZeroArray(this.max)
+    this.starts = new ZeroArray(this.max)
 
-    const now = Date.now()
-    // A previous serialized cache has the most recent items first
-    for (let l = arr.length - 1; l >= 0; l--) {
-      const hit = arr[l]
-      const expiresAt = hit.e || 0
-      if (expiresAt === 0)
-        // the item was created without expiration in a non aged cache
-        this.set(hit.k, hit.v)
-      else {
-        const maxAge = expiresAt - now
-        // dont add already expired items
-        if (maxAge > 0) {
-          this.set(hit.k, hit.v, maxAge)
+    this.setItemTTL = (index, ttl) => {
+      this.starts[index] = ttl !== 0 ? perf.now() : 0
+      this.ttls[index] = ttl
+      if (ttl !== 0 && this.ttlAutopurge) {
+        const t = setTimeout(() => {
+          if (this.isStale(index)) {
+            this.delete(this.keyList[index])
+          }
+        }, ttl + 1)
+        /* istanbul ignore else - unref() not supported on all platforms */
+        if (t.unref) {
+          t.unref()
+        }
+      }
+    }
+
+    this.updateItemAge = (index) => {
+      this.starts[index] = this.ttls[index] !== 0 ? perf.now() : 0
+    }
+
+    // debounce calls to perf.now() to 1s so we're not hitting
+    // that costly call repeatedly.
+    let cachedNow = 0
+    const getNow = () => {
+      const n = perf.now()
+      if (this.ttlResolution > 0) {
+        cachedNow = n
+        const t = setTimeout(() => cachedNow = 0, this.ttlResolution)
+        /* istanbul ignore else - not available on all platforms */
+        if (t.unref) {
+          t.unref()
+        }
+      }
+      return n
+    }
+
+    this.getRemainingTTL = (key) => {
+      const index = this.keyMap.get(key)
+      if (index === undefined) {
+        return 0
+      }
+      return this.ttls[index] === 0 || this.starts[index] === 0 ? Infinity
+        : ((this.starts[index] + this.ttls[index]) - (cachedNow || getNow()))
+    }
+
+    this.isStale = (index) => {
+      return this.ttls[index] !== 0 && this.starts[index] !== 0 &&
+        ((cachedNow || getNow()) - this.starts[index] > this.ttls[index])
+    }
+  }
+  updateItemAge (index) {}
+  setItemTTL (index, ttl) {}
+  isStale (index) { return false }
+
+  initializeSizeTracking () {
+    this.calculatedSize = 0
+    this.sizes = new ZeroArray(this.max)
+    this.removeItemSize = index => this.calculatedSize -= this.sizes[index]
+    this.requireSize = (k, v, size, sizeCalculation) => {
+      if (!isPosInt(size)) {
+        if (sizeCalculation) {
+          if (typeof sizeCalculation !== 'function') {
+            throw new TypeError('sizeCalculation must be a function')
+          }
+          size = sizeCalculation(v, k)
+          if (!isPosInt(size)) {
+            throw new TypeError('sizeCalculation return invalid (expect positive integer)')
+          }
+        } else {
+          throw new TypeError('invalid size value (must be positive integer)')
+        }
+      }
+      return size
+    }
+    this.addItemSize = (index, v, k, size) => {
+      this.sizes[index] = size
+      const maxSize = this.maxSize - this.sizes[index]
+      while (this.calculatedSize > maxSize) {
+        this.evict()
+      }
+      this.calculatedSize += this.sizes[index]
+    }
+    this.delete = k => {
+      if (this.size !== 0) {
+        const index = this.keyMap.get(k)
+        if (index !== undefined) {
+          this.calculatedSize -= this.sizes[index]
+        }
+      }
+      return LRUCache.prototype.delete.call(this, k)
+    }
+  }
+  removeItemSize (index) {}
+  addItemSize (index, v, k, size) {}
+  requireSize (k, v, size, sizeCalculation) {
+    if (size || sizeCalculation) {
+      throw new TypeError('cannot set size without setting maxSize on cache')
+    }
+  }
+
+  *indexes ({ allowStale = this.allowStale } = {}) {
+    if (this.size) {
+      for (let i = this.tail; true; ) {
+        if (!this.isValidIndex(i)) {
+          break
+        }
+        if (allowStale || !this.isStale(i)) {
+          yield i
+        }
+        if (i === this.head) {
+          break
+        } else {
+          i = this.prev[i]
         }
       }
     }
   }
 
-  prune () {
-    this[CACHE].forEach((value, key) => get(this, key, false))
-  }
-}
-
-const get = (self, key, doUse) => {
-  const node = self[CACHE].get(key)
-  if (node) {
-    const hit = node.value
-    if (isStale(self, hit)) {
-      del(self, node)
-      if (!self[ALLOW_STALE])
-        return undefined
-    } else {
-      if (doUse) {
-        if (self[UPDATE_AGE_ON_GET])
-          node.value.now = Date.now()
-        self[LRU_LIST].unshiftNode(node)
+  *rindexes ({ allowStale = this.allowStale } = {}) {
+    if (this.size) {
+      for (let i = this.head; true; ) {
+        if (!this.isValidIndex(i)) {
+          break
+        }
+        if (allowStale || !this.isStale(i)) {
+          yield i
+        }
+        if (i === this.tail) {
+          break
+        } else {
+          i = this.next[i]
+        }
       }
     }
-    return hit.value
   }
-}
 
-const isStale = (self, hit) => {
-  if (!hit || (!hit.maxAge && !self[MAX_AGE]))
-    return false
+  isValidIndex (index) {
+    return this.keyMap.get(this.keyList[index]) === index
+  }
 
-  const diff = Date.now() - hit.now
-  return hit.maxAge ? diff > hit.maxAge
-    : self[MAX_AGE] && (diff > self[MAX_AGE])
-}
-
-const trim = self => {
-  if (self[LENGTH] > self[MAX]) {
-    for (let walker = self[LRU_LIST].tail;
-      self[LENGTH] > self[MAX] && walker !== null;) {
-      // We know that we're about to delete this one, and also
-      // what the next least recently used key will be, so just
-      // go ahead and set it now.
-      const prev = walker.prev
-      del(self, walker)
-      walker = prev
+  *entries () {
+    for (const i of this.indexes()) {
+      yield [this.keyList[i], this.valList[i]]
     }
   }
-}
-
-const del = (self, node) => {
-  if (node) {
-    const hit = node.value
-    if (self[DISPOSE])
-      self[DISPOSE](hit.key, hit.value)
-
-    self[LENGTH] -= hit.length
-    self[CACHE].delete(hit.key)
-    self[LRU_LIST].removeNode(node)
+  *rentries () {
+    for (const i of this.rindexes()) {
+      yield [this.keyList[i], this.valList[i]]
+    }
   }
-}
 
-class Entry {
-  constructor (key, value, length, now, maxAge) {
-    this.key = key
-    this.value = value
-    this.length = length
-    this.now = now
-    this.maxAge = maxAge || 0
+  *keys () {
+    for (const i of this.indexes()) {
+      yield this.keyList[i]
+    }
   }
-}
+  *rkeys () {
+    for (const i of this.rindexes()) {
+      yield this.keyList[i]
+    }
+  }
 
-const forEachStep = (self, fn, node, thisp) => {
-  let hit = node.value
-  if (isStale(self, hit)) {
-    del(self, node)
-    if (!self[ALLOW_STALE])
-      hit = undefined
+  *values () {
+    for (const i of this.indexes()) {
+      yield this.valList[i]
+    }
   }
-  if (hit)
-    fn.call(thisp, hit.value, hit.key, self)
+  *rvalues () {
+    for (const i of this.rindexes()) {
+      yield this.valList[i]
+    }
+  }
+
+  [Symbol.iterator] () {
+    return this.entries()
+  }
+
+  find (fn, getOptions = {}) {
+    for (const i of this.indexes()) {
+      if (fn(this.valList[i], this.keyList[i], this)) {
+        return this.get(this.keyList[i], getOptions)
+      }
+    }
+  }
+
+  forEach (fn, thisp = this) {
+    for (const i of this.indexes()) {
+      fn.call(thisp, this.valList[i], this.keyList[i], this)
+    }
+  }
+
+  rforEach (fn, thisp = this) {
+    for (const i of this.rindexes()) {
+      fn.call(thisp, this.valList[i], this.keyList[i], this)
+    }
+  }
+
+  get prune () {
+    deprecatedMethod('prune', 'purgeStale')
+    return this.purgeStale
+  }
+
+  purgeStale () {
+    let deleted = false
+    for (const i of this.rindexes({ allowStale: true })) {
+      if (this.isStale(i)) {
+        this.delete(this.keyList[i])
+        deleted = true
+      }
+    }
+    return deleted
+  }
+
+  dump () {
+    const arr = []
+    for (const i of this.indexes()) {
+      const key = this.keyList[i]
+      const value = this.valList[i]
+      const entry = { value }
+      if (this.ttls) {
+        entry.ttl = this.ttls[i]
+      }
+      if (this.sizes) {
+        entry.size = this.sizes[i]
+      }
+      arr.unshift([key, entry])
+    }
+    return arr
+  }
+
+  load (arr) {
+    this.clear()
+    for (const [key, entry] of arr) {
+      this.set(key, entry.value, entry)
+    }
+  }
+
+  dispose (v, k, reason) {}
+
+  set (k, v, {
+    ttl = this.ttl,
+    noDisposeOnSet = this.noDisposeOnSet,
+    size = 0,
+    sizeCalculation = this.sizeCalculation,
+    noUpdateTTL = this.noUpdateTTL,
+  } = {}) {
+    size = this.requireSize(k, v, size, sizeCalculation)
+    let index = this.size === 0 ? undefined : this.keyMap.get(k)
+    if (index === undefined) {
+      // addition
+      index = this.newIndex()
+      this.keyList[index] = k
+      this.valList[index] = v
+      this.keyMap.set(k, index)
+      this.next[this.tail] = index
+      this.prev[index] = this.tail
+      this.tail = index
+      this.size ++
+      this.addItemSize(index, v, k, size)
+      noUpdateTTL = false
+    } else {
+      // update
+      const oldVal = this.valList[index]
+      if (v !== oldVal) {
+        if (this.isBackgroundFetch(oldVal)) {
+          oldVal.__abortController.abort()
+        } else {
+          if (!noDisposeOnSet) {
+            this.dispose(oldVal, k, 'set')
+            if (this.disposeAfter) {
+              this.disposed.push([oldVal, k, 'set'])
+            }
+          }
+        }
+        this.removeItemSize(index)
+        this.valList[index] = v
+        this.addItemSize(index, v, k, size)
+      }
+      this.moveToTail(index)
+    }
+    if (ttl !== 0 && this.ttl === 0 && !this.ttls) {
+      this.initializeTTLTracking()
+    }
+    if (!noUpdateTTL) {
+      this.setItemTTL(index, ttl)
+    }
+    if (this.disposeAfter) {
+      while (this.disposed.length) {
+        this.disposeAfter(...this.disposed.shift())
+      }
+    }
+    return this
+  }
+
+  newIndex () {
+    if (this.size === 0) {
+      return this.tail
+    }
+    if (this.size === this.max) {
+      return this.evict()
+    }
+    if (this.free.length !== 0) {
+      return this.free.pop()
+    }
+    // initial fill, just keep writing down the list
+    return this.initialFill++
+  }
+
+  pop () {
+    if (this.size) {
+      const val = this.valList[this.head]
+      this.evict()
+      return val
+    }
+  }
+
+  evict () {
+    const head = this.head
+    const k = this.keyList[head]
+    const v = this.valList[head]
+    if (this.isBackgroundFetch(v)) {
+      v.__abortController.abort()
+    } else {
+      this.dispose(v, k, 'evict')
+      if (this.disposeAfter) {
+        this.disposed.push([v, k, 'evict'])
+      }
+    }
+    this.removeItemSize(head)
+    this.head = this.next[head]
+    this.keyMap.delete(k)
+    this.size --
+    return head
+  }
+
+  has (k) {
+    return this.keyMap.has(k) && !this.isStale(this.keyMap.get(k))
+  }
+
+  // like get(), but without any LRU updating or TTL expiration
+  peek (k, { allowStale = this.allowStale } = {}) {
+    const index = this.keyMap.get(k)
+    if (index !== undefined && (allowStale || !this.isStale(index))) {
+      return this.valList[index]
+    }
+  }
+
+  backgroundFetch (k, index, options) {
+    const v = index === undefined ? undefined : this.valList[index]
+    if (this.isBackgroundFetch(v)) {
+      return v
+    }
+    const ac = new AC()
+    const fetchOpts = {
+      signal: ac.signal,
+      options,
+    }
+    const p = Promise.resolve(this.fetchMethod(k, v, fetchOpts)).then(v => {
+      if (!ac.signal.aborted) {
+        this.set(k, v, fetchOpts.options)
+      }
+      return v
+    })
+    p.__abortController = ac
+    p.__staleWhileFetching = v
+    if (index === undefined) {
+      this.set(k, p, fetchOpts.options)
+      index = this.keyMap.get(k)
+    } else {
+      this.valList[index] = p
+    }
+    return p
+  }
+
+  isBackgroundFetch (p) {
+    return p && typeof p === 'object' && typeof p.then === 'function' &&
+      Object.prototype.hasOwnProperty.call(p, '__staleWhileFetching')
+  }
+
+  // this takes the union of get() and set() opts, because it does both
+  async fetch (k, {
+    allowStale = this.allowStale,
+    updateAgeOnGet = this.updateAgeOnGet,
+    ttl = this.ttl,
+    noDisposeOnSet = this.noDisposeOnSet,
+    size = 0,
+    sizeCalculation = this.sizeCalculation,
+    noUpdateTTL = this.noUpdateTTL,
+  } = {}) {
+    if (!this.fetchMethod) {
+      return this.get(k, {allowStale, updateAgeOnGet})
+    }
+
+    const options = {
+      allowStale,
+      updateAgeOnGet,
+      ttl,
+      noDisposeOnSet,
+      size,
+      sizeCalculation,
+      noUpdateTTL,
+    }
+
+    let index = this.keyMap.get(k)
+    if (index === undefined) {
+      return this.backgroundFetch(k, index, options)
+    } else {
+      // in cache, maybe already fetching
+      const v = this.valList[index]
+      if (this.isBackgroundFetch(v)) {
+        return allowStale && v.__staleWhileFetching !== undefined
+          ? v.__staleWhileFetching : v
+      }
+
+      if (!this.isStale(index)) {
+        this.moveToTail(index)
+        if (updateAgeOnGet) {
+          this.updateItemAge(index)
+        }
+        return v
+      }
+
+      // ok, it is stale, and not already fetching
+      // refresh the cache.
+      const p = this.backgroundFetch(k, index, options)
+      return allowStale && p.__staleWhileFetching !== undefined
+        ? p.__staleWhileFetching : p
+    }
+  }
+
+  get (k, {
+    allowStale = this.allowStale,
+    updateAgeOnGet = this.updateAgeOnGet,
+  } = {}) {
+    const index = this.keyMap.get(k)
+    if (index !== undefined) {
+      const value = this.valList[index]
+      const fetching = this.isBackgroundFetch(value)
+      if (this.isStale(index)) {
+        // delete only if not an in-flight background fetch
+        if (!fetching) {
+          this.delete(k)
+          return allowStale ? value : undefined
+        } else {
+          return allowStale ? value.__staleWhileFetching : undefined
+        }
+      } else {
+        // if we're currently fetching it, we don't actually have it yet
+        // it's not stale, which means this isn't a staleWhileRefetching,
+        // so we just return undefined
+        if (fetching) {
+          return undefined
+        }
+        this.moveToTail(index)
+        if (updateAgeOnGet) {
+          this.updateItemAge(index)
+        }
+        return value
+      }
+    }
+  }
+
+  connect (p, n) {
+    this.prev[n] = p
+    this.next[p] = n
+  }
+
+  moveToTail (index) {
+    // if tail already, nothing to do
+    // if head, move head to next[index]
+    // else
+    //   move next[prev[index]] to next[index] (head has no prev)
+    //   move prev[next[index]] to prev[index]
+    // prev[index] = tail
+    // next[tail] = index
+    // tail = index
+    if (index !== this.tail) {
+      if (index === this.head) {
+        this.head = this.next[index]
+      } else {
+        this.connect(this.prev[index], this.next[index])
+      }
+      this.connect(this.tail, index)
+      this.tail = index
+    }
+  }
+
+  get del () {
+    deprecatedMethod('del', 'delete')
+    return this.delete
+  }
+  delete (k) {
+    let deleted = false
+    if (this.size !== 0) {
+      const index = this.keyMap.get(k)
+      if (index !== undefined) {
+        deleted = true
+        if (this.size === 1) {
+          this.clear()
+        } else {
+          this.removeItemSize(index)
+          const v = this.valList[index]
+          if (this.isBackgroundFetch(v)) {
+            v.__abortController.abort()
+          } else {
+            this.dispose(v, k, 'delete')
+            if (this.disposeAfter) {
+              this.disposed.push([v, k, 'delete'])
+            }
+          }
+          this.keyMap.delete(k)
+          this.keyList[index] = null
+          this.valList[index] = null
+          if (index === this.tail) {
+            this.tail = this.prev[index]
+          } else if (index === this.head) {
+            this.head = this.next[index]
+          } else {
+            this.next[this.prev[index]] = this.next[index]
+            this.prev[this.next[index]] = this.prev[index]
+          }
+          this.size --
+          this.free.push(index)
+        }
+      }
+    }
+    if (this.disposed) {
+      while (this.disposed.length) {
+        this.disposeAfter(...this.disposed.shift())
+      }
+    }
+    return deleted
+  }
+
+  clear () {
+    for (const index of this.rindexes({ allowStale: true })) {
+      const v = this.valList[index]
+      if (this.isBackgroundFetch(v)) {
+        v.__abortController.abort()
+      } else {
+        const k = this.keyList[index]
+        this.dispose(v, k, 'delete')
+        if (this.disposeAfter) {
+          this.disposed.push([v, k, 'delete'])
+        }
+      }
+    }
+
+    this.keyMap.clear()
+    this.valList.fill(null)
+    this.keyList.fill(null)
+    if (this.ttls) {
+      this.ttls.fill(0)
+      this.starts.fill(0)
+    }
+    if (this.sizes) {
+      this.sizes.fill(0)
+    }
+    this.head = 0
+    this.tail = 0
+    this.initialFill = 1
+    this.free.length = 0
+    this.calculatedSize = 0
+    this.size = 0
+    if (this.disposed) {
+      while (this.disposed.length) {
+        this.disposeAfter(...this.disposed.shift())
+      }
+    }
+  }
+  get reset () {
+    deprecatedMethod('reset', 'clear')
+    return this.clear
+  }
+
+  get length () {
+    deprecatedProperty('length', 'size')
+    return this.size
+  }
 }
 
 module.exports = LRUCache
+
+
+/***/ }),
+
+/***/ 87959:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+const LRU = __nccwpck_require__(7129)
+const url = __nccwpck_require__(57310)
+const isLambda = __nccwpck_require__(94468)
+const dns = __nccwpck_require__(53779)
+
+const AGENT_CACHE = new LRU({ max: 50 })
+const HttpAgent = __nccwpck_require__(34623)
+const HttpsAgent = HttpAgent.HttpsAgent
+
+module.exports = getAgent
+
+const getAgentTimeout = timeout =>
+  typeof timeout !== 'number' || !timeout ? 0 : timeout + 1
+
+const getMaxSockets = maxSockets => maxSockets || 15
+
+function getAgent (uri, opts) {
+  const parsedUri = new url.URL(typeof uri === 'string' ? uri : uri.url)
+  const isHttps = parsedUri.protocol === 'https:'
+  const pxuri = getProxyUri(parsedUri.href, opts)
+
+  // If opts.timeout is zero, set the agentTimeout to zero as well. A timeout
+  // of zero disables the timeout behavior (OS limits still apply). Else, if
+  // opts.timeout is a non-zero value, set it to timeout + 1, to ensure that
+  // the node-fetch-npm timeout will always fire first, giving us more
+  // consistent errors.
+  const agentTimeout = getAgentTimeout(opts.timeout)
+  const agentMaxSockets = getMaxSockets(opts.maxSockets)
+
+  const key = [
+    `https:${isHttps}`,
+    pxuri
+      ? `proxy:${pxuri.protocol}//${pxuri.host}:${pxuri.port}`
+      : '>no-proxy<',
+    `local-address:${opts.localAddress || '>no-local-address<'}`,
+    `strict-ssl:${isHttps ? opts.rejectUnauthorized : '>no-strict-ssl<'}`,
+    `ca:${(isHttps && opts.ca) || '>no-ca<'}`,
+    `cert:${(isHttps && opts.cert) || '>no-cert<'}`,
+    `key:${(isHttps && opts.key) || '>no-key<'}`,
+    `timeout:${agentTimeout}`,
+    `maxSockets:${agentMaxSockets}`,
+  ].join(':')
+
+  if (opts.agent != null) { // `agent: false` has special behavior!
+    return opts.agent
+  }
+
+  // keep alive in AWS lambda makes no sense
+  const lambdaAgent = !isLambda ? null
+    : isHttps ? (__nccwpck_require__(95687).globalAgent)
+    : (__nccwpck_require__(13685).globalAgent)
+
+  if (isLambda && !pxuri) {
+    return lambdaAgent
+  }
+
+  if (AGENT_CACHE.peek(key)) {
+    return AGENT_CACHE.get(key)
+  }
+
+  if (pxuri) {
+    const pxopts = isLambda ? {
+      ...opts,
+      agent: lambdaAgent,
+    } : opts
+    const proxy = getProxy(pxuri, pxopts, isHttps)
+    AGENT_CACHE.set(key, proxy)
+    return proxy
+  }
+
+  const agent = isHttps ? new HttpsAgent({
+    maxSockets: agentMaxSockets,
+    ca: opts.ca,
+    cert: opts.cert,
+    key: opts.key,
+    localAddress: opts.localAddress,
+    rejectUnauthorized: opts.rejectUnauthorized,
+    timeout: agentTimeout,
+    freeSocketTimeout: 15000,
+    lookup: dns.getLookup(opts.dns),
+  }) : new HttpAgent({
+    maxSockets: agentMaxSockets,
+    localAddress: opts.localAddress,
+    timeout: agentTimeout,
+    freeSocketTimeout: 15000,
+    lookup: dns.getLookup(opts.dns),
+  })
+  AGENT_CACHE.set(key, agent)
+  return agent
+}
+
+function checkNoProxy (uri, opts) {
+  const host = new url.URL(uri).hostname.split('.').reverse()
+  let noproxy = (opts.noProxy || getProcessEnv('no_proxy'))
+  if (typeof noproxy === 'string') {
+    noproxy = noproxy.split(',').map(n => n.trim())
+  }
+
+  return noproxy && noproxy.some(no => {
+    const noParts = no.split('.').filter(x => x).reverse()
+    if (!noParts.length) {
+      return false
+    }
+    for (let i = 0; i < noParts.length; i++) {
+      if (host[i] !== noParts[i]) {
+        return false
+      }
+    }
+    return true
+  })
+}
+
+module.exports.getProcessEnv = getProcessEnv
+
+function getProcessEnv (env) {
+  if (!env) {
+    return
+  }
+
+  let value
+
+  if (Array.isArray(env)) {
+    for (const e of env) {
+      value = process.env[e] ||
+        process.env[e.toUpperCase()] ||
+        process.env[e.toLowerCase()]
+      if (typeof value !== 'undefined') {
+        break
+      }
+    }
+  }
+
+  if (typeof env === 'string') {
+    value = process.env[env] ||
+      process.env[env.toUpperCase()] ||
+      process.env[env.toLowerCase()]
+  }
+
+  return value
+}
+
+module.exports.getProxyUri = getProxyUri
+function getProxyUri (uri, opts) {
+  const protocol = new url.URL(uri).protocol
+
+  const proxy = opts.proxy ||
+    (
+      protocol === 'https:' &&
+      getProcessEnv('https_proxy')
+    ) ||
+    (
+      protocol === 'http:' &&
+      getProcessEnv(['https_proxy', 'http_proxy', 'proxy'])
+    )
+  if (!proxy) {
+    return null
+  }
+
+  const parsedProxy = (typeof proxy === 'string') ? new url.URL(proxy) : proxy
+
+  return !checkNoProxy(uri, opts) && parsedProxy
+}
+
+const getAuth = u =>
+  u.username && u.password ? decodeURIComponent(`${u.username}:${u.password}`)
+  : u.username ? decodeURIComponent(u.username)
+  : null
+
+const getPath = u => u.pathname + u.search + u.hash
+
+const HttpProxyAgent = __nccwpck_require__(23764)
+const HttpsProxyAgent = __nccwpck_require__(77219)
+const SocksProxyAgent = __nccwpck_require__(25038)
+module.exports.getProxy = getProxy
+function getProxy (proxyUrl, opts, isHttps) {
+  // our current proxy agents do not support an overridden dns lookup method, so will not
+  // benefit from the dns cache
+  const popts = {
+    host: proxyUrl.hostname,
+    port: proxyUrl.port,
+    protocol: proxyUrl.protocol,
+    path: getPath(proxyUrl),
+    auth: getAuth(proxyUrl),
+    ca: opts.ca,
+    cert: opts.cert,
+    key: opts.key,
+    timeout: getAgentTimeout(opts.timeout),
+    localAddress: opts.localAddress,
+    maxSockets: getMaxSockets(opts.maxSockets),
+    rejectUnauthorized: opts.rejectUnauthorized,
+  }
+
+  if (proxyUrl.protocol === 'http:' || proxyUrl.protocol === 'https:') {
+    if (!isHttps) {
+      return new HttpProxyAgent(popts)
+    } else {
+      return new HttpsProxyAgent(popts)
+    }
+  } else if (proxyUrl.protocol.startsWith('socks')) {
+    return new SocksProxyAgent(popts)
+  } else {
+    throw Object.assign(
+      new Error(`unsupported proxy protocol: '${proxyUrl.protocol}'`),
+      {
+        code: 'EUNSUPPORTEDPROXY',
+        url: proxyUrl.href,
+      }
+    )
+  }
+}
+
+
+/***/ }),
+
+/***/ 37943:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const { Request, Response } = __nccwpck_require__(68998)
+const Minipass = __nccwpck_require__(41077)
+const MinipassCollect = __nccwpck_require__(74658)
+const MinipassFlush = __nccwpck_require__(4181)
+const MinipassPipeline = __nccwpck_require__(69891)
+const cacache = __nccwpck_require__(85490)
+const url = __nccwpck_require__(57310)
+
+const CachePolicy = __nccwpck_require__(97986)
+const cacheKey = __nccwpck_require__(42147)
+const remote = __nccwpck_require__(32619)
+
+const hasOwnProperty = (obj, prop) => Object.prototype.hasOwnProperty.call(obj, prop)
+
+// maximum amount of data we will buffer into memory
+// if we'll exceed this, we switch to streaming
+const MAX_MEM_SIZE = 5 * 1024 * 1024 // 5MB
+
+// allow list for request headers that will be written to the cache index
+// note: we will also store any request headers
+// that are named in a response's vary header
+const KEEP_REQUEST_HEADERS = [
+  'accept-charset',
+  'accept-encoding',
+  'accept-language',
+  'accept',
+  'cache-control',
+]
+
+// allow list for response headers that will be written to the cache index
+// note: we must not store the real response's age header, or when we load
+// a cache policy based on the metadata it will think the cached response
+// is always stale
+const KEEP_RESPONSE_HEADERS = [
+  'cache-control',
+  'content-encoding',
+  'content-language',
+  'content-type',
+  'date',
+  'etag',
+  'expires',
+  'last-modified',
+  'location',
+  'pragma',
+  'vary',
+]
+
+// return an object containing all metadata to be written to the index
+const getMetadata = (request, response, options) => {
+  const metadata = {
+    time: Date.now(),
+    url: request.url,
+    reqHeaders: {},
+    resHeaders: {},
+
+    // options on which we must match the request and vary the response
+    options: {
+      compress: options.compress != null ? options.compress : request.compress,
+    },
+  }
+
+  // only save the status if it's not a 200 or 304
+  if (response.status !== 200 && response.status !== 304) {
+    metadata.status = response.status
+  }
+
+  for (const name of KEEP_REQUEST_HEADERS) {
+    if (request.headers.has(name)) {
+      metadata.reqHeaders[name] = request.headers.get(name)
+    }
+  }
+
+  // if the request's host header differs from the host in the url
+  // we need to keep it, otherwise it's just noise and we ignore it
+  const host = request.headers.get('host')
+  const parsedUrl = new url.URL(request.url)
+  if (host && parsedUrl.host !== host) {
+    metadata.reqHeaders.host = host
+  }
+
+  // if the response has a vary header, make sure
+  // we store the relevant request headers too
+  if (response.headers.has('vary')) {
+    const vary = response.headers.get('vary')
+    // a vary of "*" means every header causes a different response.
+    // in that scenario, we do not include any additional headers
+    // as the freshness check will always fail anyway and we don't
+    // want to bloat the cache indexes
+    if (vary !== '*') {
+      // copy any other request headers that will vary the response
+      const varyHeaders = vary.trim().toLowerCase().split(/\s*,\s*/)
+      for (const name of varyHeaders) {
+        if (request.headers.has(name)) {
+          metadata.reqHeaders[name] = request.headers.get(name)
+        }
+      }
+    }
+  }
+
+  for (const name of KEEP_RESPONSE_HEADERS) {
+    if (response.headers.has(name)) {
+      metadata.resHeaders[name] = response.headers.get(name)
+    }
+  }
+
+  return metadata
+}
+
+// symbols used to hide objects that may be lazily evaluated in a getter
+const _request = Symbol('request')
+const _response = Symbol('response')
+const _policy = Symbol('policy')
+
+class CacheEntry {
+  constructor ({ entry, request, response, options }) {
+    if (entry) {
+      this.key = entry.key
+      this.entry = entry
+      // previous versions of this module didn't write an explicit timestamp in
+      // the metadata, so fall back to the entry's timestamp. we can't use the
+      // entry timestamp to determine staleness because cacache will update it
+      // when it verifies its data
+      this.entry.metadata.time = this.entry.metadata.time || this.entry.time
+    } else {
+      this.key = cacheKey(request)
+    }
+
+    this.options = options
+
+    // these properties are behind getters that lazily evaluate
+    this[_request] = request
+    this[_response] = response
+    this[_policy] = null
+  }
+
+  // returns a CacheEntry instance that satisfies the given request
+  // or undefined if no existing entry satisfies
+  static async find (request, options) {
+    try {
+      // compacts the index and returns an array of unique entries
+      var matches = await cacache.index.compact(options.cachePath, cacheKey(request), (A, B) => {
+        const entryA = new CacheEntry({ entry: A, options })
+        const entryB = new CacheEntry({ entry: B, options })
+        return entryA.policy.satisfies(entryB.request)
+      }, {
+        validateEntry: (entry) => {
+          // clean out entries with a buggy content-encoding value
+          if (entry.metadata &&
+              entry.metadata.resHeaders &&
+              entry.metadata.resHeaders['content-encoding'] === null) {
+            return false
+          }
+
+          // if an integrity is null, it needs to have a status specified
+          if (entry.integrity === null) {
+            return !!(entry.metadata && entry.metadata.status)
+          }
+
+          return true
+        },
+      })
+    } catch (err) {
+      // if the compact request fails, ignore the error and return
+      return
+    }
+
+    // a cache mode of 'reload' means to behave as though we have no cache
+    // on the way to the network. return undefined to allow cacheFetch to
+    // create a brand new request no matter what.
+    if (options.cache === 'reload') {
+      return
+    }
+
+    // find the specific entry that satisfies the request
+    let match
+    for (const entry of matches) {
+      const _entry = new CacheEntry({
+        entry,
+        options,
+      })
+
+      if (_entry.policy.satisfies(request)) {
+        match = _entry
+        break
+      }
+    }
+
+    return match
+  }
+
+  // if the user made a PUT/POST/PATCH then we invalidate our
+  // cache for the same url by deleting the index entirely
+  static async invalidate (request, options) {
+    const key = cacheKey(request)
+    try {
+      await cacache.rm.entry(options.cachePath, key, { removeFully: true })
+    } catch (err) {
+      // ignore errors
+    }
+  }
+
+  get request () {
+    if (!this[_request]) {
+      this[_request] = new Request(this.entry.metadata.url, {
+        method: 'GET',
+        headers: this.entry.metadata.reqHeaders,
+        ...this.entry.metadata.options,
+      })
+    }
+
+    return this[_request]
+  }
+
+  get response () {
+    if (!this[_response]) {
+      this[_response] = new Response(null, {
+        url: this.entry.metadata.url,
+        counter: this.options.counter,
+        status: this.entry.metadata.status || 200,
+        headers: {
+          ...this.entry.metadata.resHeaders,
+          'content-length': this.entry.size,
+        },
+      })
+    }
+
+    return this[_response]
+  }
+
+  get policy () {
+    if (!this[_policy]) {
+      this[_policy] = new CachePolicy({
+        entry: this.entry,
+        request: this.request,
+        response: this.response,
+        options: this.options,
+      })
+    }
+
+    return this[_policy]
+  }
+
+  // wraps the response in a pipeline that stores the data
+  // in the cache while the user consumes it
+  async store (status) {
+    // if we got a status other than 200, 301, or 308,
+    // or the CachePolicy forbid storage, append the
+    // cache status header and return it untouched
+    if (
+      this.request.method !== 'GET' ||
+      ![200, 301, 308].includes(this.response.status) ||
+      !this.policy.storable()
+    ) {
+      this.response.headers.set('x-local-cache-status', 'skip')
+      return this.response
+    }
+
+    const size = this.response.headers.get('content-length')
+    const fitsInMemory = !!size && Number(size) < MAX_MEM_SIZE
+    const shouldBuffer = this.options.memoize !== false && fitsInMemory
+    const cacheOpts = {
+      algorithms: this.options.algorithms,
+      metadata: getMetadata(this.request, this.response, this.options),
+      size,
+      memoize: fitsInMemory && this.options.memoize,
+    }
+
+    let body = null
+    // we only set a body if the status is a 200, redirects are
+    // stored as metadata only
+    if (this.response.status === 200) {
+      let cacheWriteResolve, cacheWriteReject
+      const cacheWritePromise = new Promise((resolve, reject) => {
+        cacheWriteResolve = resolve
+        cacheWriteReject = reject
+      })
+
+      body = new MinipassPipeline(new MinipassFlush({
+        flush () {
+          return cacheWritePromise
+        },
+      }))
+
+      let abortStream, onResume
+      if (shouldBuffer) {
+        // if the result fits in memory, use a collect stream to gather
+        // the response and write it to cacache while also passing it through
+        // to the user
+        onResume = () => {
+          const collector = new MinipassCollect.PassThrough()
+          abortStream = collector
+          collector.on('collect', (data) => {
+            // TODO if the cache write fails, log a warning but return the response anyway
+            cacache.put(this.options.cachePath, this.key, data, cacheOpts)
+              .then(cacheWriteResolve, cacheWriteReject)
+          })
+          body.unshift(collector)
+          body.unshift(this.response.body)
+        }
+      } else {
+        // if it does not fit in memory, create a tee stream and use
+        // that to pipe to both the cache and the user simultaneously
+        onResume = () => {
+          const tee = new Minipass()
+          const cacheStream = cacache.put.stream(this.options.cachePath, this.key, cacheOpts)
+          abortStream = cacheStream
+          tee.pipe(cacheStream)
+          // TODO if the cache write fails, log a warning but return the response anyway
+          cacheStream.promise().then(cacheWriteResolve, cacheWriteReject)
+          body.unshift(tee)
+          body.unshift(this.response.body)
+        }
+      }
+
+      body.once('resume', onResume)
+      body.once('end', () => body.removeListener('resume', onResume))
+      this.response.body.on('error', (err) => {
+        // the abortStream will either be a MinipassCollect if we buffer
+        // or a cacache write stream, either way be sure to listen for
+        // errors from the actual response and avoid writing data that we
+        // know to be invalid to the cache
+        abortStream.destroy(err)
+      })
+    } else {
+      await cacache.index.insert(this.options.cachePath, this.key, null, cacheOpts)
+    }
+
+    // note: we do not set the x-local-cache-hash header because we do not know
+    // the hash value until after the write to the cache completes, which doesn't
+    // happen until after the response has been sent and it's too late to write
+    // the header anyway
+    this.response.headers.set('x-local-cache', encodeURIComponent(this.options.cachePath))
+    this.response.headers.set('x-local-cache-key', encodeURIComponent(this.key))
+    this.response.headers.set('x-local-cache-mode', shouldBuffer ? 'buffer' : 'stream')
+    this.response.headers.set('x-local-cache-status', status)
+    this.response.headers.set('x-local-cache-time', new Date().toISOString())
+    const newResponse = new Response(body, {
+      url: this.response.url,
+      status: this.response.status,
+      headers: this.response.headers,
+      counter: this.options.counter,
+    })
+    return newResponse
+  }
+
+  // use the cached data to create a response and return it
+  async respond (method, options, status) {
+    let response
+    const size = Number(this.response.headers.get('content-length'))
+    const fitsInMemory = !!size && size < MAX_MEM_SIZE
+    const shouldBuffer = this.options.memoize !== false && fitsInMemory
+    if (method === 'HEAD' || [301, 308].includes(this.response.status)) {
+      // if the request is a HEAD, or the response is a redirect,
+      // then the metadata in the entry already includes everything
+      // we need to build a response
+      response = this.response
+    } else {
+      // we're responding with a full cached response, so create a body
+      // that reads from cacache and attach it to a new Response
+      const body = new Minipass()
+      const removeOnResume = () => body.removeListener('resume', onResume)
+      let onResume
+      if (shouldBuffer) {
+        onResume = async () => {
+          removeOnResume()
+          try {
+            const content = await cacache.get.byDigest(
+              this.options.cachePath, this.entry.integrity, { memoize: this.options.memoize }
+            )
+            body.end(content)
+          } catch (err) {
+            if (err.code === 'EINTEGRITY') {
+              await cacache.rm.content(
+                this.options.cachePath, this.entry.integrity, { memoize: this.options.memoize }
+              )
+            }
+            if (err.code === 'ENOENT' || err.code === 'EINTEGRITY') {
+              await CacheEntry.invalidate(this.request, this.options)
+            }
+            body.emit('error', err)
+          }
+        }
+      } else {
+        onResume = () => {
+          const cacheStream = cacache.get.stream.byDigest(
+            this.options.cachePath, this.entry.integrity, { memoize: this.options.memoize }
+          )
+          cacheStream.on('error', async (err) => {
+            cacheStream.pause()
+            if (err.code === 'EINTEGRITY') {
+              await cacache.rm.content(
+                this.options.cachePath, this.entry.integrity, { memoize: this.options.memoize }
+              )
+            }
+            if (err.code === 'ENOENT' || err.code === 'EINTEGRITY') {
+              await CacheEntry.invalidate(this.request, this.options)
+            }
+            body.emit('error', err)
+            cacheStream.resume()
+          })
+          cacheStream.pipe(body)
+        }
+      }
+
+      body.once('resume', onResume)
+      body.once('end', removeOnResume)
+      response = new Response(body, {
+        url: this.entry.metadata.url,
+        counter: options.counter,
+        status: 200,
+        headers: {
+          ...this.policy.responseHeaders(),
+        },
+      })
+    }
+
+    response.headers.set('x-local-cache', encodeURIComponent(this.options.cachePath))
+    response.headers.set('x-local-cache-hash', encodeURIComponent(this.entry.integrity))
+    response.headers.set('x-local-cache-key', encodeURIComponent(this.key))
+    response.headers.set('x-local-cache-mode', shouldBuffer ? 'buffer' : 'stream')
+    response.headers.set('x-local-cache-status', status)
+    response.headers.set('x-local-cache-time', new Date(this.entry.metadata.time).toUTCString())
+    return response
+  }
+
+  // use the provided request along with this cache entry to
+  // revalidate the stored response. returns a response, either
+  // from the cache or from the update
+  async revalidate (request, options) {
+    const revalidateRequest = new Request(request, {
+      headers: this.policy.revalidationHeaders(request),
+    })
+
+    try {
+      // NOTE: be sure to remove the headers property from the
+      // user supplied options, since we have already defined
+      // them on the new request object. if they're still in the
+      // options then those will overwrite the ones from the policy
+      var response = await remote(revalidateRequest, {
+        ...options,
+        headers: undefined,
+      })
+    } catch (err) {
+      // if the network fetch fails, return the stale
+      // cached response unless it has a cache-control
+      // of 'must-revalidate'
+      if (!this.policy.mustRevalidate) {
+        return this.respond(request.method, options, 'stale')
+      }
+
+      throw err
+    }
+
+    if (this.policy.revalidated(revalidateRequest, response)) {
+      // we got a 304, write a new index to the cache and respond from cache
+      const metadata = getMetadata(request, response, options)
+      // 304 responses do not include headers that are specific to the response data
+      // since they do not include a body, so we copy values for headers that were
+      // in the old cache entry to the new one, if the new metadata does not already
+      // include that header
+      for (const name of KEEP_RESPONSE_HEADERS) {
+        if (
+          !hasOwnProperty(metadata.resHeaders, name) &&
+          hasOwnProperty(this.entry.metadata.resHeaders, name)
+        ) {
+          metadata.resHeaders[name] = this.entry.metadata.resHeaders[name]
+        }
+      }
+
+      try {
+        await cacache.index.insert(options.cachePath, this.key, this.entry.integrity, {
+          size: this.entry.size,
+          metadata,
+        })
+      } catch (err) {
+        // if updating the cache index fails, we ignore it and
+        // respond anyway
+      }
+      return this.respond(request.method, options, 'revalidated')
+    }
+
+    // if we got a modified response, create a new entry based on it
+    const newEntry = new CacheEntry({
+      request,
+      response,
+      options,
+    })
+
+    // respond with the new entry while writing it to the cache
+    return newEntry.store('updated')
+  }
+}
+
+module.exports = CacheEntry
+
+
+/***/ }),
+
+/***/ 93104:
+/***/ ((module) => {
+
+class NotCachedError extends Error {
+  constructor (url) {
+    /* eslint-disable-next-line max-len */
+    super(`request to ${url} failed: cache mode is 'only-if-cached' but no cached response is available.`)
+    this.code = 'ENOTCACHED'
+  }
+}
+
+module.exports = {
+  NotCachedError,
+}
+
+
+/***/ }),
+
+/***/ 43189:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const { NotCachedError } = __nccwpck_require__(93104)
+const CacheEntry = __nccwpck_require__(37943)
+const remote = __nccwpck_require__(32619)
+
+// do whatever is necessary to get a Response and return it
+const cacheFetch = async (request, options) => {
+  // try to find a cached entry that satisfies this request
+  const entry = await CacheEntry.find(request, options)
+  if (!entry) {
+    // no cached result, if the cache mode is 'only-if-cached' that's a failure
+    if (options.cache === 'only-if-cached') {
+      throw new NotCachedError(request.url)
+    }
+
+    // otherwise, we make a request, store it and return it
+    const response = await remote(request, options)
+    const newEntry = new CacheEntry({ request, response, options })
+    return newEntry.store('miss')
+  }
+
+  // we have a cached response that satisfies this request, however if the cache
+  // mode is 'no-cache' then we send the revalidation request no matter what
+  if (options.cache === 'no-cache') {
+    return entry.revalidate(request, options)
+  }
+
+  // if the cached entry is not stale, or if the cache mode is 'force-cache' or
+  // 'only-if-cached' we can respond with the cached entry. set the status
+  // based on the result of needsRevalidation and respond
+  const _needsRevalidation = entry.policy.needsRevalidation(request)
+  if (options.cache === 'force-cache' ||
+      options.cache === 'only-if-cached' ||
+      !_needsRevalidation) {
+    return entry.respond(request.method, options, _needsRevalidation ? 'stale' : 'hit')
+  }
+
+  // if we got here, the cache entry is stale so revalidate it
+  return entry.revalidate(request, options)
+}
+
+cacheFetch.invalidate = async (request, options) => {
+  if (!options.cachePath) {
+    return
+  }
+
+  return CacheEntry.invalidate(request, options)
+}
+
+module.exports = cacheFetch
+
+
+/***/ }),
+
+/***/ 42147:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const { URL, format } = __nccwpck_require__(57310)
+
+// options passed to url.format() when generating a key
+const formatOptions = {
+  auth: false,
+  fragment: false,
+  search: true,
+  unicode: false,
+}
+
+// returns a string to be used as the cache key for the Request
+const cacheKey = (request) => {
+  const parsed = new URL(request.url)
+  return `make-fetch-happen:request-cache:${format(parsed, formatOptions)}`
+}
+
+module.exports = cacheKey
+
+
+/***/ }),
+
+/***/ 97986:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const CacheSemantics = __nccwpck_require__(61002)
+const Negotiator = __nccwpck_require__(95385)
+const ssri = __nccwpck_require__(6726)
+
+// options passed to http-cache-semantics constructor
+const policyOptions = {
+  shared: false,
+  ignoreCargoCult: true,
+}
+
+// a fake empty response, used when only testing the
+// request for storability
+const emptyResponse = { status: 200, headers: {} }
+
+// returns a plain object representation of the Request
+const requestObject = (request) => {
+  const _obj = {
+    method: request.method,
+    url: request.url,
+    headers: {},
+    compress: request.compress,
+  }
+
+  request.headers.forEach((value, key) => {
+    _obj.headers[key] = value
+  })
+
+  return _obj
+}
+
+// returns a plain object representation of the Response
+const responseObject = (response) => {
+  const _obj = {
+    status: response.status,
+    headers: {},
+  }
+
+  response.headers.forEach((value, key) => {
+    _obj.headers[key] = value
+  })
+
+  return _obj
+}
+
+class CachePolicy {
+  constructor ({ entry, request, response, options }) {
+    this.entry = entry
+    this.request = requestObject(request)
+    this.response = responseObject(response)
+    this.options = options
+    this.policy = new CacheSemantics(this.request, this.response, policyOptions)
+
+    if (this.entry) {
+      // if we have an entry, copy the timestamp to the _responseTime
+      // this is necessary because the CacheSemantics constructor forces
+      // the value to Date.now() which means a policy created from a
+      // cache entry is likely to always identify itself as stale
+      this.policy._responseTime = this.entry.metadata.time
+    }
+  }
+
+  // static method to quickly determine if a request alone is storable
+  static storable (request, options) {
+    // no cachePath means no caching
+    if (!options.cachePath) {
+      return false
+    }
+
+    // user explicitly asked not to cache
+    if (options.cache === 'no-store') {
+      return false
+    }
+
+    // we only cache GET and HEAD requests
+    if (!['GET', 'HEAD'].includes(request.method)) {
+      return false
+    }
+
+    // otherwise, let http-cache-semantics make the decision
+    // based on the request's headers
+    const policy = new CacheSemantics(requestObject(request), emptyResponse, policyOptions)
+    return policy.storable()
+  }
+
+  // returns true if the policy satisfies the request
+  satisfies (request) {
+    const _req = requestObject(request)
+    if (this.request.headers.host !== _req.headers.host) {
+      return false
+    }
+
+    if (this.request.compress !== _req.compress) {
+      return false
+    }
+
+    const negotiatorA = new Negotiator(this.request)
+    const negotiatorB = new Negotiator(_req)
+
+    if (JSON.stringify(negotiatorA.mediaTypes()) !== JSON.stringify(negotiatorB.mediaTypes())) {
+      return false
+    }
+
+    if (JSON.stringify(negotiatorA.languages()) !== JSON.stringify(negotiatorB.languages())) {
+      return false
+    }
+
+    if (JSON.stringify(negotiatorA.encodings()) !== JSON.stringify(negotiatorB.encodings())) {
+      return false
+    }
+
+    if (this.options.integrity) {
+      return ssri.parse(this.options.integrity).match(this.entry.integrity)
+    }
+
+    return true
+  }
+
+  // returns true if the request and response allow caching
+  storable () {
+    return this.policy.storable()
+  }
+
+  // NOTE: this is a hack to avoid parsing the cache-control
+  // header ourselves, it returns true if the response's
+  // cache-control contains must-revalidate
+  get mustRevalidate () {
+    return !!this.policy._rescc['must-revalidate']
+  }
+
+  // returns true if the cached response requires revalidation
+  // for the given request
+  needsRevalidation (request) {
+    const _req = requestObject(request)
+    // force method to GET because we only cache GETs
+    // but can serve a HEAD from a cached GET
+    _req.method = 'GET'
+    return !this.policy.satisfiesWithoutRevalidation(_req)
+  }
+
+  responseHeaders () {
+    return this.policy.responseHeaders()
+  }
+
+  // returns a new object containing the appropriate headers
+  // to send a revalidation request
+  revalidationHeaders (request) {
+    const _req = requestObject(request)
+    return this.policy.revalidationHeaders(_req)
+  }
+
+  // returns true if the request/response was revalidated
+  // successfully. returns false if a new response was received
+  revalidated (request, response) {
+    const _req = requestObject(request)
+    const _res = responseObject(response)
+    const policy = this.policy.revalidatedPolicy(_req, _res)
+    return !policy.modified
+  }
+}
+
+module.exports = CachePolicy
+
+
+/***/ }),
+
+/***/ 53779:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+const LRUCache = __nccwpck_require__(7129)
+const dns = __nccwpck_require__(17578)
+
+const defaultOptions = exports.defaultOptions = {
+  family: undefined,
+  hints: dns.ADDRCONFIG,
+  all: false,
+  verbatim: undefined,
+}
+
+const lookupCache = exports.lookupCache = new LRUCache({ max: 50 })
+
+// this is a factory so that each request can have its own opts (i.e. ttl)
+// while still sharing the cache across all requests
+exports.getLookup = (dnsOptions) => {
+  return (hostname, options, callback) => {
+    if (typeof options === 'function') {
+      callback = options
+      options = null
+    } else if (typeof options === 'number') {
+      options = { family: options }
+    }
+
+    options = { ...defaultOptions, ...options }
+
+    const key = JSON.stringify({
+      hostname,
+      family: options.family,
+      hints: options.hints,
+      all: options.all,
+      verbatim: options.verbatim,
+    })
+
+    if (lookupCache.has(key)) {
+      const [address, family] = lookupCache.get(key)
+      process.nextTick(callback, null, address, family)
+      return
+    }
+
+    dnsOptions.lookup(hostname, options, (err, address, family) => {
+      if (err) {
+        return callback(err)
+      }
+
+      lookupCache.set(key, [address, family], { ttl: dnsOptions.ttl })
+      return callback(null, address, family)
+    })
+  }
+}
+
+
+/***/ }),
+
+/***/ 11371:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+const { FetchError, Request, isRedirect } = __nccwpck_require__(68998)
+const url = __nccwpck_require__(57310)
+
+const CachePolicy = __nccwpck_require__(97986)
+const cache = __nccwpck_require__(43189)
+const remote = __nccwpck_require__(32619)
+
+// given a Request, a Response and user options
+// return true if the response is a redirect that
+// can be followed. we throw errors that will result
+// in the fetch being rejected if the redirect is
+// possible but invalid for some reason
+const canFollowRedirect = (request, response, options) => {
+  if (!isRedirect(response.status)) {
+    return false
+  }
+
+  if (options.redirect === 'manual') {
+    return false
+  }
+
+  if (options.redirect === 'error') {
+    throw new FetchError(`redirect mode is set to error: ${request.url}`,
+      'no-redirect', { code: 'ENOREDIRECT' })
+  }
+
+  if (!response.headers.has('location')) {
+    throw new FetchError(`redirect location header missing for: ${request.url}`,
+      'no-location', { code: 'EINVALIDREDIRECT' })
+  }
+
+  if (request.counter >= request.follow) {
+    throw new FetchError(`maximum redirect reached at: ${request.url}`,
+      'max-redirect', { code: 'EMAXREDIRECT' })
+  }
+
+  return true
+}
+
+// given a Request, a Response, and the user's options return an object
+// with a new Request and a new options object that will be used for
+// following the redirect
+const getRedirect = (request, response, options) => {
+  const _opts = { ...options }
+  const location = response.headers.get('location')
+  const redirectUrl = new url.URL(location, /^https?:/.test(location) ? undefined : request.url)
+  // Comment below is used under the following license:
+  /**
+   * @license
+   * Copyright (c) 2010-2012 Mikeal Rogers
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   * http://www.apache.org/licenses/LICENSE-2.0
+   * Unless required by applicable law or agreed to in writing,
+   * software distributed under the License is distributed on an "AS
+   * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+   * express or implied. See the License for the specific language
+   * governing permissions and limitations under the License.
+   */
+
+  // Remove authorization if changing hostnames (but not if just
+  // changing ports or protocols).  This matches the behavior of request:
+  // https://github.com/request/request/blob/b12a6245/lib/redirect.js#L134-L138
+  if (new url.URL(request.url).hostname !== redirectUrl.hostname) {
+    request.headers.delete('authorization')
+    request.headers.delete('cookie')
+  }
+
+  // for POST request with 301/302 response, or any request with 303 response,
+  // use GET when following redirect
+  if (
+    response.status === 303 ||
+    (request.method === 'POST' && [301, 302].includes(response.status))
+  ) {
+    _opts.method = 'GET'
+    _opts.body = null
+    request.headers.delete('content-length')
+  }
+
+  _opts.headers = {}
+  request.headers.forEach((value, key) => {
+    _opts.headers[key] = value
+  })
+
+  _opts.counter = ++request.counter
+  const redirectReq = new Request(url.format(redirectUrl), _opts)
+  return {
+    request: redirectReq,
+    options: _opts,
+  }
+}
+
+const fetch = async (request, options) => {
+  const response = CachePolicy.storable(request, options)
+    ? await cache(request, options)
+    : await remote(request, options)
+
+  // if the request wasn't a GET or HEAD, and the response
+  // status is between 200 and 399 inclusive, invalidate the
+  // request url
+  if (!['GET', 'HEAD'].includes(request.method) &&
+      response.status >= 200 &&
+      response.status <= 399) {
+    await cache.invalidate(request, options)
+  }
+
+  if (!canFollowRedirect(request, response, options)) {
+    return response
+  }
+
+  const redirect = getRedirect(request, response, options)
+  return fetch(redirect.request, redirect.options)
+}
+
+module.exports = fetch
+
+
+/***/ }),
+
+/***/ 9525:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const { FetchError, Headers, Request, Response } = __nccwpck_require__(68998)
+
+const configureOptions = __nccwpck_require__(35530)
+const fetch = __nccwpck_require__(11371)
+
+const makeFetchHappen = (url, opts) => {
+  const options = configureOptions(opts)
+
+  const request = new Request(url, options)
+  return fetch(request, options)
+}
+
+makeFetchHappen.defaults = (defaultUrl, defaultOptions = {}) => {
+  if (typeof defaultUrl === 'object') {
+    defaultOptions = defaultUrl
+    defaultUrl = null
+  }
+
+  const defaultedFetch = (url, options = {}) => {
+    const finalUrl = url || defaultUrl
+    const finalOptions = {
+      ...defaultOptions,
+      ...options,
+      headers: {
+        ...defaultOptions.headers,
+        ...options.headers,
+      },
+    }
+    return makeFetchHappen(finalUrl, finalOptions)
+  }
+
+  defaultedFetch.defaults = makeFetchHappen.defaults
+  return defaultedFetch
+}
+
+module.exports = makeFetchHappen
+module.exports.FetchError = FetchError
+module.exports.Headers = Headers
+module.exports.Request = Request
+module.exports.Response = Response
+
+
+/***/ }),
+
+/***/ 35530:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const dns = __nccwpck_require__(17578)
+
+const conditionalHeaders = [
+  'if-modified-since',
+  'if-none-match',
+  'if-unmodified-since',
+  'if-match',
+  'if-range',
+]
+
+const configureOptions = (opts) => {
+  const { strictSSL, ...options } = { ...opts }
+  options.method = options.method ? options.method.toUpperCase() : 'GET'
+  options.rejectUnauthorized = strictSSL !== false
+
+  if (!options.retry) {
+    options.retry = { retries: 0 }
+  } else if (typeof options.retry === 'string') {
+    const retries = parseInt(options.retry, 10)
+    if (isFinite(retries)) {
+      options.retry = { retries }
+    } else {
+      options.retry = { retries: 0 }
+    }
+  } else if (typeof options.retry === 'number') {
+    options.retry = { retries: options.retry }
+  } else {
+    options.retry = { retries: 0, ...options.retry }
+  }
+
+  options.dns = { ttl: 5 * 60 * 1000, lookup: dns.lookup, ...options.dns }
+
+  options.cache = options.cache || 'default'
+  if (options.cache === 'default') {
+    const hasConditionalHeader = Object.keys(options.headers || {}).some((name) => {
+      return conditionalHeaders.includes(name.toLowerCase())
+    })
+    if (hasConditionalHeader) {
+      options.cache = 'no-store'
+    }
+  }
+
+  // cacheManager is deprecated, but if it's set and
+  // cachePath is not we should copy it to the new field
+  if (options.cacheManager && !options.cachePath) {
+    options.cachePath = options.cacheManager
+  }
+
+  return options
+}
+
+module.exports = configureOptions
+
+
+/***/ }),
+
+/***/ 32619:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const Minipass = __nccwpck_require__(41077)
+const MinipassPipeline = __nccwpck_require__(69891)
+const fetch = __nccwpck_require__(68998)
+const promiseRetry = __nccwpck_require__(54742)
+const ssri = __nccwpck_require__(6726)
+
+const getAgent = __nccwpck_require__(87959)
+const pkg = __nccwpck_require__(80557)
+
+const USER_AGENT = `${pkg.name}/${pkg.version} (+https://npm.im/${pkg.name})`
+
+const RETRY_ERRORS = [
+  'ECONNRESET', // remote socket closed on us
+  'ECONNREFUSED', // remote host refused to open connection
+  'EADDRINUSE', // failed to bind to a local port (proxy?)
+  'ETIMEDOUT', // someone in the transaction is WAY TOO SLOW
+  'ERR_SOCKET_TIMEOUT', // same as above, but this one comes from agentkeepalive
+  // Known codes we do NOT retry on:
+  // ENOTFOUND (getaddrinfo failure. Either bad hostname, or offline)
+]
+
+const RETRY_TYPES = [
+  'request-timeout',
+]
+
+// make a request directly to the remote source,
+// retrying certain classes of errors as well as
+// following redirects (through the cache if necessary)
+// and verifying response integrity
+const remoteFetch = (request, options) => {
+  const agent = getAgent(request.url, options)
+  if (!request.headers.has('connection')) {
+    request.headers.set('connection', agent ? 'keep-alive' : 'close')
+  }
+
+  if (!request.headers.has('user-agent')) {
+    request.headers.set('user-agent', USER_AGENT)
+  }
+
+  // keep our own options since we're overriding the agent
+  // and the redirect mode
+  const _opts = {
+    ...options,
+    agent,
+    redirect: 'manual',
+  }
+
+  return promiseRetry(async (retryHandler, attemptNum) => {
+    const req = new fetch.Request(request, _opts)
+    try {
+      let res = await fetch(req, _opts)
+      if (_opts.integrity && res.status === 200) {
+        // we got a 200 response and the user has specified an expected
+        // integrity value, so wrap the response in an ssri stream to verify it
+        const integrityStream = ssri.integrityStream({ integrity: _opts.integrity })
+        res = new fetch.Response(new MinipassPipeline(res.body, integrityStream), res)
+      }
+
+      res.headers.set('x-fetch-attempts', attemptNum)
+
+      // do not retry POST requests, or requests with a streaming body
+      // do retry requests with a 408, 420, 429 or 500+ status in the response
+      const isStream = Minipass.isStream(req.body)
+      const isRetriable = req.method !== 'POST' &&
+          !isStream &&
+          ([408, 420, 429].includes(res.status) || res.status >= 500)
+
+      if (isRetriable) {
+        if (typeof options.onRetry === 'function') {
+          options.onRetry(res)
+        }
+
+        return retryHandler(res)
+      }
+
+      return res
+    } catch (err) {
+      const code = (err.code === 'EPROMISERETRY')
+        ? err.retried.code
+        : err.code
+
+      // err.retried will be the thing that was thrown from above
+      // if it's a response, we just got a bad status code and we
+      // can re-throw to allow the retry
+      const isRetryError = err.retried instanceof fetch.Response ||
+        (RETRY_ERRORS.includes(code) && RETRY_TYPES.includes(err.type))
+
+      if (req.method === 'POST' || isRetryError) {
+        throw err
+      }
+
+      if (typeof options.onRetry === 'function') {
+        options.onRetry(err)
+      }
+
+      return retryHandler(err)
+    }
+  }, options.retry).catch((err) => {
+    // don't reject for http errors, just return them
+    if (err.status >= 400 && err.type !== 'system') {
+      return err
+    }
+
+    throw err
+  })
+}
+
+module.exports = remoteFetch
 
 
 /***/ }),
@@ -58470,10 +61078,10 @@ class Blob {
         const buffer = element instanceof Buffer ? element
           : ArrayBuffer.isView(element)
             ? Buffer.from(element.buffer, element.byteOffset, element.byteLength)
-          : element instanceof ArrayBuffer ? Buffer.from(element)
-          : element instanceof Blob ? element[BUFFER]
-          : typeof element === 'string' ? Buffer.from(element)
-          : Buffer.from(String(element))
+            : element instanceof ArrayBuffer ? Buffer.from(element)
+            : element instanceof Blob ? element[BUFFER]
+            : typeof element === 'string' ? Buffer.from(element)
+            : Buffer.from(String(element))
         size += buffer.length
         buffers.push(buffer)
       }
@@ -58560,7 +61168,7 @@ const Minipass = __nccwpck_require__(41077)
 const MinipassSized = __nccwpck_require__(55952)
 
 const Blob = __nccwpck_require__(67911)
-const {BUFFER} = Blob
+const { BUFFER } = Blob
 const FetchError = __nccwpck_require__(92899)
 
 // optional dependency on 'encoding'
@@ -58581,10 +61189,10 @@ class Body {
       : Buffer.isBuffer(bodyArg) ? bodyArg
       : Object.prototype.toString.call(bodyArg) === '[object ArrayBuffer]'
         ? Buffer.from(bodyArg)
-      : ArrayBuffer.isView(bodyArg)
-        ? Buffer.from(bodyArg.buffer, bodyArg.byteOffset, bodyArg.byteLength)
-      : Minipass.isStream(bodyArg) ? bodyArg
-      : Buffer.from(String(bodyArg))
+        : ArrayBuffer.isView(bodyArg)
+          ? Buffer.from(bodyArg.buffer, bodyArg.byteOffset, bodyArg.byteLength)
+          : Minipass.isStream(bodyArg) ? bodyArg
+          : Buffer.from(String(bodyArg))
 
     this[INTERNALS] = {
       body,
@@ -58651,28 +61259,32 @@ class Body {
   }
 
   [CONSUME_BODY] () {
-    if (this[INTERNALS].disturbed)
+    if (this[INTERNALS].disturbed) {
       return Promise.reject(new TypeError(`body used already for: ${
         this.url}`))
+    }
 
     this[INTERNALS].disturbed = true
 
-    if (this[INTERNALS].error)
+    if (this[INTERNALS].error) {
       return Promise.reject(this[INTERNALS].error)
+    }
 
     // body is null
     if (this.body === null) {
       return Promise.resolve(Buffer.alloc(0))
     }
 
-    if (Buffer.isBuffer(this.body))
+    if (Buffer.isBuffer(this.body)) {
       return Promise.resolve(this.body)
+    }
 
     const upstream = isBlob(this.body) ? this.body.stream() : this.body
 
     /* istanbul ignore if: should never happen */
-    if (!Minipass.isStream(upstream))
+    if (!Minipass.isStream(upstream)) {
       return Promise.resolve(Buffer.alloc(0))
+    }
 
     const stream = this.size && upstream instanceof MinipassSized ? upstream
       : !this.size && upstream instanceof Minipass &&
@@ -58680,8 +61292,10 @@ class Body {
       : this.size ? new MinipassSized({ size: this.size })
       : new Minipass()
 
-    // allow timeout on slow response body
-    const resTimeout = this.timeout ? setTimeout(() => {
+    // allow timeout on slow response body, but only if the stream is still writable. this
+    // makes the timeout center on the socket stream from lib/index.js rather than the
+    // intermediary minipass stream we create to receive the data
+    const resTimeout = this.timeout && stream.writable ? setTimeout(() => {
       stream.emit('error', new FetchError(
         `Response timeout while trying to fetch ${
           this.url} (over ${this.timeout}ms)`, 'body-timeout'))
@@ -58689,7 +61303,7 @@ class Body {
 
     // do not keep the process open just for this timeout, even
     // though we expect it'll get cleared eventually.
-    if (resTimeout) {
+    if (resTimeout && resTimeout.unref) {
       resTimeout.unref()
     }
 
@@ -58709,21 +61323,23 @@ class Body {
     }).catch(er => {
       clearTimeout(resTimeout)
       // request was aborted, reject with this Error
-      if (er.name === 'AbortError' || er.name === 'FetchError')
+      if (er.name === 'AbortError' || er.name === 'FetchError') {
         throw er
-      else if (er.name === 'RangeError')
+      } else if (er.name === 'RangeError') {
         throw new FetchError(`Could not create Buffer from response body for ${
           this.url}: ${er.message}`, 'system', er)
-      else
+      } else {
         // other errors, such as incorrect content-encoding or content-length
         throw new FetchError(`Invalid response body while trying to fetch ${
           this.url}: ${er.message}`, 'system', er)
+      }
     })
   }
 
   static clone (instance) {
-    if (instance.bodyUsed)
+    if (instance.bodyUsed) {
       throw new Error('cannot clone body after it is used')
+    }
 
     const body = instance.body
 
@@ -58747,8 +61363,9 @@ class Body {
       // set instance body to one fork, return the other
       instance[INTERNALS].body = p1
       return p2
-    } else
+    } else {
       return instance.body
+    }
   }
 
   static extractContentType (body) {
@@ -58756,38 +61373,38 @@ class Body {
       : typeof body === 'string' ? 'text/plain;charset=UTF-8'
       : isURLSearchParams(body)
         ? 'application/x-www-form-urlencoded;charset=UTF-8'
-      : isBlob(body) ? body.type || null
-      : Buffer.isBuffer(body) ? null
-      : Object.prototype.toString.call(body) === '[object ArrayBuffer]' ? null
-      : ArrayBuffer.isView(body) ? null
-      : typeof body.getBoundary === 'function'
-        ? `multipart/form-data;boundary=${body.getBoundary()}`
-      : Minipass.isStream(body) ? null
-      : 'text/plain;charset=UTF-8'
+        : isBlob(body) ? body.type || null
+        : Buffer.isBuffer(body) ? null
+        : Object.prototype.toString.call(body) === '[object ArrayBuffer]' ? null
+        : ArrayBuffer.isView(body) ? null
+        : typeof body.getBoundary === 'function'
+          ? `multipart/form-data;boundary=${body.getBoundary()}`
+          : Minipass.isStream(body) ? null
+          : 'text/plain;charset=UTF-8'
   }
 
   static getTotalBytes (instance) {
-    const {body} = instance
+    const { body } = instance
     return (body === null || body === undefined) ? 0
-    : isBlob(body) ? body.size
-    : Buffer.isBuffer(body) ? body.length
-    : body && typeof body.getLengthSync === 'function' && (
+      : isBlob(body) ? body.size
+      : Buffer.isBuffer(body) ? body.length
+      : body && typeof body.getLengthSync === 'function' && (
         // detect form data input from form-data module
         body._lengthRetrievers &&
-        /* istanbul ignore next */ body._lengthRetrievers.length == 0 || // 1.x
+        /* istanbul ignore next */ body._lengthRetrievers.length === 0 || // 1.x
         body.hasKnownLength && body.hasKnownLength()) // 2.x
-      ? body.getLengthSync()
-    : null
+        ? body.getLengthSync()
+        : null
   }
 
   static writeToStream (dest, instance) {
-    const {body} = instance
+    const { body } = instance
 
-    if (body === null || body === undefined)
+    if (body === null || body === undefined) {
       dest.end()
-    else if (Buffer.isBuffer(body) || typeof body === 'string')
+    } else if (Buffer.isBuffer(body) || typeof body === 'string') {
       dest.end(body)
-    else {
+    } else {
       // body is stream or blob
       const stream = isBlob(body) ? body.stream() : body
       stream.on('error', er => dest.emit('error', er)).pipe(dest)
@@ -58803,9 +61420,8 @@ Object.defineProperties(Body.prototype, {
   arrayBuffer: { enumerable: true },
   blob: { enumerable: true },
   json: { enumerable: true },
-  text: { enumerable: true }
+  text: { enumerable: true },
 })
-
 
 const isURLSearchParams = obj =>
   // Duck-typing as a necessary condition.
@@ -58831,26 +61447,28 @@ const isBlob = obj =>
   /^(Blob|File)$/.test(obj.constructor.name) &&
   /^(Blob|File)$/.test(obj[Symbol.toStringTag])
 
-
 const convertBody = (buffer, headers) => {
   /* istanbul ignore if */
-  if (typeof convert !== 'function')
+  if (typeof convert !== 'function') {
     throw new Error('The package `encoding` must be installed to use the textConverted() function')
+  }
 
   const ct = headers && headers.get('content-type')
   let charset = 'utf-8'
-  let res, str
+  let res
 
   // header
-  if (ct)
+  if (ct) {
     res = /charset=([^;]*)/i.exec(ct)
+  }
 
   // no charset in content type, peek at response body for at most 1024 bytes
-  str = buffer.slice(0, 1024).toString()
+  const str = buffer.slice(0, 1024).toString()
 
   // html5
-  if (!res && str)
+  if (!res && str) {
     res = /<meta.+?charset=(['"])(.+?)\1/i.exec(str)
+  }
 
   // html4
   if (!res && str) {
@@ -58858,17 +61476,20 @@ const convertBody = (buffer, headers) => {
 
     if (!res) {
       res = /<meta[\s]+?content=(['"])(.+?)\1[\s]+?http-equiv=(['"])content-type\3/i.exec(str)
-      if (res)
-        res.pop() // drop last quote
+      if (res) {
+        res.pop()
+      } // drop last quote
     }
 
-    if (res)
+    if (res) {
       res = /charset=(.*)/i.exec(res.pop())
+    }
   }
 
   // xml
-  if (!res && str)
+  if (!res && str) {
     res = /<\?xml.+?encoding=(['"])(.+?)\1/i.exec(str)
+  }
 
   // found charset
   if (res) {
@@ -58876,8 +61497,9 @@ const convertBody = (buffer, headers) => {
 
     // prevent decode issues when sites use incorrect encoding
     // ref: https://hsivonen.fi/encoding-menu/
-    if (charset === 'gb2312' || charset === 'gbk')
+    if (charset === 'gb2312' || charset === 'gbk') {
       charset = 'gb18030'
+    }
   }
 
   // turn raw buffers into a single utf-8 buffer
@@ -58904,8 +61526,9 @@ class FetchError extends Error {
     this.code = 'FETCH_ERROR'
 
     // pick up code, expected, path, ...
-    if (systemError)
+    if (systemError) {
       Object.assign(this, systemError)
+    }
 
     this.errno = this.code
 
@@ -58937,26 +61560,29 @@ module.exports = FetchError
 
 "use strict";
 
-const invalidTokenRegex = /[^\^_`a-zA-Z\-0-9!#$%&'*+.|~]/
+const invalidTokenRegex = /[^^_`a-zA-Z\-0-9!#$%&'*+.|~]/
 const invalidHeaderCharRegex = /[^\t\x20-\x7e\x80-\xff]/
 
 const validateName = name => {
   name = `${name}`
-  if (invalidTokenRegex.test(name) || name === '')
+  if (invalidTokenRegex.test(name) || name === '') {
     throw new TypeError(`${name} is not a legal HTTP header name`)
+  }
 }
 
 const validateValue = value => {
   value = `${value}`
-  if (invalidHeaderCharRegex.test(value))
+  if (invalidHeaderCharRegex.test(value)) {
     throw new TypeError(`${value} is not a legal HTTP header value`)
+  }
 }
 
 const find = (map, name) => {
   name = name.toLowerCase()
   for (const key in map) {
-    if (key.toLowerCase() === name)
+    if (key.toLowerCase() === name) {
       return key
+    }
   }
   return undefined
 }
@@ -58977,25 +61603,29 @@ class Headers {
     }
 
     // no-op
-    if (init === undefined || init === null)
+    if (init === undefined || init === null) {
       return
+    }
 
     if (typeof init === 'object') {
       const method = init[Symbol.iterator]
       if (method !== null && method !== undefined) {
-        if (typeof method !== 'function')
+        if (typeof method !== 'function') {
           throw new TypeError('Header pairs must be iterable')
+        }
 
         // sequence<sequence<ByteString>>
         // Note: per spec we have to first exhaust the lists then process them
         const pairs = []
         for (const pair of init) {
           if (typeof pair !== 'object' ||
-              typeof pair[Symbol.iterator] !== 'function')
+              typeof pair[Symbol.iterator] !== 'function') {
             throw new TypeError('Each header pair must be iterable')
+          }
           const arrPair = Array.from(pair)
-          if (arrPair.length !== 2)
+          if (arrPair.length !== 2) {
             throw new TypeError('Each header pair must be a name/value tuple')
+          }
           pairs.push(arrPair)
         }
 
@@ -59008,16 +61638,18 @@ class Headers {
           this.append(key, init[key])
         }
       }
-    } else
+    } else {
       throw new TypeError('Provided initializer must be an object')
+    }
   }
 
   get (name) {
     name = `${name}`
     validateName(name)
     const key = find(this[MAP], name)
-    if (key === undefined)
+    if (key === undefined) {
       return null
+    }
 
     return this[MAP][key].join(', ')
   }
@@ -59047,10 +61679,11 @@ class Headers {
     validateName(name)
     validateValue(value)
     const key = find(this[MAP], name)
-    if (key !== undefined)
+    if (key !== undefined) {
       this[MAP][key].push(value)
-    else
+    } else {
       this[MAP][name] = [value]
+    }
   }
 
   has (name) {
@@ -59063,8 +61696,9 @@ class Headers {
     name = `${name}`
     validateName(name)
     const key = find(this[MAP], name)
-    if (key !== undefined)
+    if (key !== undefined) {
       delete this[MAP][key]
+    }
   }
 
   raw () {
@@ -59079,7 +61713,7 @@ class Headers {
     return new HeadersIterator(this, 'value')
   }
 
-  [Symbol.iterator]() {
+  [Symbol.iterator] () {
     return new HeadersIterator(this, 'key+value')
   }
 
@@ -59097,8 +61731,9 @@ class Headers {
     // http.request() only supports string as Host header. This hack makes
     // specifying custom Host header possible.
     const hostHeaderKey = find(headers[MAP], 'Host')
-    if (hostHeaderKey !== undefined)
+    if (hostHeaderKey !== undefined) {
       obj[hostHeaderKey] = obj[hostHeaderKey][0]
+    }
 
     return obj
   }
@@ -59106,21 +61741,25 @@ class Headers {
   static createHeadersLenient (obj) {
     const headers = new Headers()
     for (const name of Object.keys(obj)) {
-      if (invalidTokenRegex.test(name))
+      if (invalidTokenRegex.test(name)) {
         continue
+      }
 
       if (Array.isArray(obj[name])) {
         for (const val of obj[name]) {
-          if (invalidHeaderCharRegex.test(val))
+          if (invalidHeaderCharRegex.test(val)) {
             continue
+          }
 
-          if (headers[MAP][name] === undefined)
+          if (headers[MAP][name] === undefined) {
             headers[MAP][name] = [val]
-          else
+          } else {
             headers[MAP][name].push(val)
+          }
         }
-      } else if (!invalidHeaderCharRegex.test(obj[name]))
+      } else if (!invalidHeaderCharRegex.test(obj[name])) {
         headers[MAP][name] = [obj[name]]
+      }
     }
     return headers
   }
@@ -59162,8 +61801,9 @@ class HeadersIterator {
 
   next () {
     /* istanbul ignore if: should be impossible */
-    if (!this || Object.getPrototypeOf(this) !== HeadersIterator.prototype)
+    if (!this || Object.getPrototypeOf(this) !== HeadersIterator.prototype) {
       throw new TypeError('Value of `this` is not a HeadersIterator')
+    }
 
     const { target, kind, index } = this[INTERNAL]
     const values = getHeaders(target, kind)
@@ -59195,7 +61835,7 @@ module.exports = Headers
 
 "use strict";
 
-const Url = __nccwpck_require__(57310)
+const { URL } = __nccwpck_require__(57310)
 const http = __nccwpck_require__(13685)
 const https = __nccwpck_require__(95687)
 const zlib = __nccwpck_require__(33486)
@@ -59211,25 +61851,41 @@ const { getNodeRequestOptions } = Request
 const FetchError = __nccwpck_require__(92899)
 const AbortError = __nccwpck_require__(11078)
 
-const resolveUrl = Url.resolve
-
-const fetch = (url, opts) => {
+// XXX this should really be split up and unit-ized for easier testing
+// and better DRY implementation of data/http request aborting
+const fetch = async (url, opts) => {
   if (/^data:/.test(url)) {
     const request = new Request(url, opts)
-    try {
-      const split = url.split(',')
-      const data = Buffer.from(split[1], 'base64')
-      const type = split[0].match(/^data:(.*);base64$/)[1]
-      return Promise.resolve(new Response(data, {
-        headers: {
-          'Content-Type': type,
-          'Content-Length': data.length,
+    // delay 1 promise tick so that the consumer can abort right away
+    return Promise.resolve().then(() => new Promise((resolve, reject) => {
+      let type, data
+      try {
+        const { pathname, search } = new URL(url)
+        const split = pathname.split(',')
+        if (split.length < 2) {
+          throw new Error('invalid data: URI')
         }
-      }))
-    } catch (er) {
-      return Promise.reject(new FetchError(`[${request.method}] ${
-        request.url} invalid URL, ${er.message}`, 'system', er))
-    }
+        const mime = split.shift()
+        const base64 = /;base64$/.test(mime)
+        type = base64 ? mime.slice(0, -1 * ';base64'.length) : mime
+        const rawData = decodeURIComponent(split.join(',') + search)
+        data = base64 ? Buffer.from(rawData, 'base64') : Buffer.from(rawData)
+      } catch (er) {
+        return reject(new FetchError(`[${request.method}] ${
+          request.url} invalid URL, ${er.message}`, 'system', er))
+      }
+
+      const { signal } = request
+      if (signal && signal.aborted) {
+        return reject(new AbortError('The user aborted a request.'))
+      }
+
+      const headers = { 'Content-Length': data.length }
+      if (type) {
+        headers['Content-Type'] = type
+      }
+      return resolve(new Response(data, { headers }))
+    }))
   }
 
   return new Promise((resolve, reject) => {
@@ -59257,8 +61913,9 @@ const fetch = (url, opts) => {
       }
     }
 
-    if (signal && signal.aborted)
+    if (signal && signal.aborted) {
       return abort()
+    }
 
     const abortAndFinalize = () => {
       abort()
@@ -59267,16 +61924,18 @@ const fetch = (url, opts) => {
 
     const finalize = () => {
       req.abort()
-      if (signal)
+      if (signal) {
         signal.removeEventListener('abort', abortAndFinalize)
+      }
       clearTimeout(reqTimeout)
     }
 
     // send request
     const req = send(options)
 
-    if (signal)
+    if (signal) {
       signal.addEventListener('abort', abortAndFinalize)
+    }
 
     let reqTimeout = null
     if (request.timeout) {
@@ -59301,8 +61960,9 @@ const fetch = (url, opts) => {
       // exits without warning.
       // coverage skipped here due to the difficulty in testing
       // istanbul ignore next
-      if (req.res)
+      if (req.res) {
         req.res.emit('error', er)
+      }
       reject(new FetchError(`request to ${request.url} failed, reason: ${
         er.message}`, 'system', er))
       finalize()
@@ -59320,98 +61980,103 @@ const fetch = (url, opts) => {
 
         // HTTP fetch step 5.3
         const locationURL = location === null ? null
-          : resolveUrl(request.url, location)
+          : (new URL(location, request.url)).toString()
 
         // HTTP fetch step 5.5
-        switch (request.redirect) {
-          case 'error':
-            reject(new FetchError(`uri requested responds with a redirect, redirect mode is set to error: ${
-              request.url}`, 'no-redirect'))
+        if (request.redirect === 'error') {
+          reject(new FetchError('uri requested responds with a redirect, ' +
+            `redirect mode is set to error: ${request.url}`, 'no-redirect'))
+          finalize()
+          return
+        } else if (request.redirect === 'manual') {
+          // node-fetch-specific step: make manual redirect a bit easier to
+          // use by setting the Location header value to the resolved URL.
+          if (locationURL !== null) {
+            // handle corrupted header
+            try {
+              headers.set('Location', locationURL)
+            } catch (err) {
+              /* istanbul ignore next: nodejs server prevent invalid
+                 response headers, we can't test this through normal
+                 request */
+              reject(err)
+            }
+          }
+        } else if (request.redirect === 'follow' && locationURL !== null) {
+          // HTTP-redirect fetch step 5
+          if (request.counter >= request.follow) {
+            reject(new FetchError(`maximum redirect reached at: ${
+              request.url}`, 'max-redirect'))
             finalize()
             return
+          }
 
-          case 'manual':
-            // node-fetch-specific step: make manual redirect a bit easier to
-            // use by setting the Location header value to the resolved URL.
-            if (locationURL !== null) {
-              // handle corrupted header
-              try {
-                headers.set('Location', locationURL)
-              } catch (err) {
-                /* istanbul ignore next: nodejs server prevent invalid
-                   response headers, we can't test this through normal
-                   request */
-                reject(err)
-              }
-            }
-            break
-
-          case 'follow':
-            // HTTP-redirect fetch step 2
-            if (locationURL === null) {
-              break
-            }
-
-            // HTTP-redirect fetch step 5
-            if (request.counter >= request.follow) {
-              reject(new FetchError(`maximum redirect reached at: ${
-                request.url}`, 'max-redirect'))
-              finalize()
-              return
-            }
-
-            // HTTP-redirect fetch step 9
-            if (res.statusCode !== 303 &&
-                request.body &&
-                getTotalBytes(request) === null) {
-              reject(new FetchError(
-                'Cannot follow redirect with body being a readable stream',
-                'unsupported-redirect'
-              ))
-              finalize()
-              return
-            }
-
-            // Update host due to redirection
-            request.headers.set('host', Url.parse(locationURL).host)
-
-            // HTTP-redirect fetch step 6 (counter increment)
-            // Create a new Request object.
-            const requestOpts = {
-              headers: new Headers(request.headers),
-              follow: request.follow,
-              counter: request.counter + 1,
-              agent: request.agent,
-              compress: request.compress,
-              method: request.method,
-              body: request.body,
-              signal: request.signal,
-              timeout: request.timeout,
-            }
-
-            // HTTP-redirect fetch step 11
-            if (res.statusCode === 303 || (
-                (res.statusCode === 301 || res.statusCode === 302) &&
-                request.method === 'POST'
-            )) {
-              requestOpts.method = 'GET'
-              requestOpts.body = undefined
-              requestOpts.headers.delete('content-length')
-            }
-
-            // HTTP-redirect fetch step 15
-            resolve(fetch(new Request(locationURL, requestOpts)))
+          // HTTP-redirect fetch step 9
+          if (res.statusCode !== 303 &&
+              request.body &&
+              getTotalBytes(request) === null) {
+            reject(new FetchError(
+              'Cannot follow redirect with body being a readable stream',
+              'unsupported-redirect'
+            ))
             finalize()
             return
+          }
+
+          // Update host due to redirection
+          request.headers.set('host', (new URL(locationURL)).host)
+
+          // HTTP-redirect fetch step 6 (counter increment)
+          // Create a new Request object.
+          const requestOpts = {
+            headers: new Headers(request.headers),
+            follow: request.follow,
+            counter: request.counter + 1,
+            agent: request.agent,
+            compress: request.compress,
+            method: request.method,
+            body: request.body,
+            signal: request.signal,
+            timeout: request.timeout,
+          }
+
+          // if the redirect is to a new hostname, strip the authorization and cookie headers
+          const parsedOriginal = new URL(request.url)
+          const parsedRedirect = new URL(locationURL)
+          if (parsedOriginal.hostname !== parsedRedirect.hostname) {
+            requestOpts.headers.delete('authorization')
+            requestOpts.headers.delete('cookie')
+          }
+
+          // HTTP-redirect fetch step 11
+          if (res.statusCode === 303 || (
+            (res.statusCode === 301 || res.statusCode === 302) &&
+              request.method === 'POST'
+          )) {
+            requestOpts.method = 'GET'
+            requestOpts.body = undefined
+            requestOpts.headers.delete('content-length')
+          }
+
+          // HTTP-redirect fetch step 15
+          resolve(fetch(new Request(locationURL, requestOpts)))
+          finalize()
+          return
         }
       } // end if(isRedirect)
-
 
       // prepare response
       res.once('end', () =>
         signal && signal.removeEventListener('abort', abortAndFinalize))
 
       const body = new Minipass()
+      // if an error occurs, either on the response stream itself, on one of the
+      // decoder streams, or a response length timeout from the Body class, we
+      // forward the error through to our internal body stream. If we see an
+      // error event on that, we call finalize to abort the request and ensure
+      // we don't leave a socket believing a request is in flight.
+      // this is difficult to test, so lacks specific coverage.
+      body.on('error', finalize)
       // exceedingly rare that the stream would have an error,
       // but just in case we proxy it to the stream in use.
       res.on('error', /* istanbul ignore next */ er => body.emit('error', er))
@@ -59426,8 +62091,8 @@ const fetch = (url, opts) => {
         size: request.size,
         timeout: request.timeout,
         counter: request.counter,
-        trailer: new Promise(resolve =>
-          res.on('end', () => resolve(createHeadersLenient(res.trailers))))
+        trailer: new Promise(resolveTrailer =>
+          res.on('end', () => resolveTrailer(createHeadersLenient(res.trailers)))),
       }
 
       // HTTP-network fetch step 12.1.1.3
@@ -59451,7 +62116,6 @@ const fetch = (url, opts) => {
         return
       }
 
-
       // Be less strict when decoding compressed responses, since sometimes
       // servers send slightly invalid responses that are still accepted
       // by common browsers.
@@ -59462,7 +62126,7 @@ const fetch = (url, opts) => {
       }
 
       // for gzip
-      if (codings == 'gzip' || codings == 'x-gzip') {
+      if (codings === 'gzip' || codings === 'x-gzip') {
         const unzip = new zlib.Gunzip(zlibOptions)
         response = new Response(
           // exceedingly rare that the stream would have an error,
@@ -59475,7 +62139,7 @@ const fetch = (url, opts) => {
       }
 
       // for deflate
-      if (codings == 'deflate' || codings == 'x-deflate') {
+      if (codings === 'deflate' || codings === 'x-deflate') {
         // handle the infamous raw deflate response from old servers
         // a hack for old IIS and Apache servers
         const raw = res.pipe(new Minipass())
@@ -59493,9 +62157,8 @@ const fetch = (url, opts) => {
         return
       }
 
-
       // for br
-      if (codings == 'br') {
+      if (codings === 'br') {
         // ignoring coverage so tests don't have to fake support (or lack of) for brotli
         // istanbul ignore next
         try {
@@ -59535,6 +62198,7 @@ fetch.Headers = Headers
 fetch.Request = Request
 fetch.Response = Response
 fetch.FetchError = FetchError
+fetch.AbortError = AbortError
 
 
 /***/ }),
@@ -59544,7 +62208,7 @@ fetch.FetchError = FetchError
 
 "use strict";
 
-const Url = __nccwpck_require__(57310)
+const { URL } = __nccwpck_require__(57310)
 const Minipass = __nccwpck_require__(41077)
 const Headers = __nccwpck_require__(41504)
 const { exportNodeCompatibleHeaders } = Headers
@@ -59556,8 +62220,6 @@ const defaultUserAgent =
   `minipass-fetch/${version} (+https://github.com/isaacs/minipass-fetch)`
 
 const INTERNALS = Symbol('Request internals')
-
-const { parse: parseUrl, format: formatUrl } = Url
 
 const isRequest = input =>
   typeof input === 'object' && typeof input[INTERNALS] === 'object'
@@ -59573,21 +62235,23 @@ const isAbortSignal = signal => {
 
 class Request extends Body {
   constructor (input, init = {}) {
-    const parsedURL = isRequest(input) ? Url.parse(input.url)
-      : input && input.href ? Url.parse(input.href)
-      : Url.parse(`${input}`)
+    const parsedURL = isRequest(input) ? new URL(input.url)
+      : input && input.href ? new URL(input.href)
+      : new URL(`${input}`)
 
-    if (isRequest(input))
+    if (isRequest(input)) {
       init = { ...input[INTERNALS], ...init }
-    else if (!input || typeof input === 'string')
+    } else if (!input || typeof input === 'string') {
       input = {}
+    }
 
     const method = (init.method || input.method || 'GET').toUpperCase()
     const isGETHEAD = method === 'GET' || method === 'HEAD'
 
     if ((init.body !== null && init.body !== undefined ||
-        isRequest(input) && input.body !== null) && isGETHEAD)
+        isRequest(input) && input.body !== null) && isGETHEAD) {
       throw new TypeError('Request with GET/HEAD method cannot have body')
+    }
 
     const inputBody = init.body !== null && init.body !== undefined ? init.body
       : isRequest(input) && input.body !== null ? clone(input)
@@ -59603,15 +62267,17 @@ class Request extends Body {
     if (inputBody !== null && inputBody !== undefined &&
         !headers.has('Content-Type')) {
       const contentType = extractContentType(inputBody)
-      if (contentType)
+      if (contentType) {
         headers.append('Content-Type', contentType)
+      }
     }
 
     const signal = 'signal' in init ? init.signal
       : null
 
-    if (signal !== null && signal !== undefined && !isAbortSignal(signal))
+    if (signal !== null && signal !== undefined && !isAbortSignal(signal)) {
       throw new TypeError('Expected signal must be an instanceof AbortSignal')
+    }
 
     // TLS specific options that are handled by node
     const {
@@ -59670,23 +62336,23 @@ class Request extends Body {
     this.agent = init.agent || input.agent
   }
 
-  get method() {
+  get method () {
     return this[INTERNALS].method
   }
 
-  get url() {
-    return formatUrl(this[INTERNALS].parsedURL)
+  get url () {
+    return this[INTERNALS].parsedURL.toString()
   }
 
-  get headers() {
+  get headers () {
     return this[INTERNALS].headers
   }
 
-  get redirect() {
+  get redirect () {
     return this[INTERNALS].redirect
   }
 
-  get signal() {
+  get signal () {
     return this[INTERNALS].signal
   }
 
@@ -59703,15 +62369,14 @@ class Request extends Body {
     const headers = new Headers(request[INTERNALS].headers)
 
     // fetch step 1.3
-    if (!headers.has('Accept'))
+    if (!headers.has('Accept')) {
       headers.set('Accept', '*/*')
+    }
 
     // Basic fetch
-    if (!parsedURL.protocol || !parsedURL.hostname)
-      throw new TypeError('Only absolute URLs are supported')
-
-    if (!/^https?:$/.test(parsedURL.protocol))
+    if (!/^https?:$/.test(parsedURL.protocol)) {
       throw new TypeError('Only HTTP(S) protocols are supported')
+    }
 
     if (request.signal &&
         Minipass.isStream(request.body) &&
@@ -59726,25 +62391,29 @@ class Request extends Body {
         /^(POST|PUT)$/i.test(request.method) ? '0'
       : request.body !== null && request.body !== undefined
         ? getTotalBytes(request)
-      : null
+        : null
 
-    if (contentLengthValue)
+    if (contentLengthValue) {
       headers.set('Content-Length', contentLengthValue + '')
+    }
 
     // HTTP-network-or-cache fetch step 2.11
-    if (!headers.has('User-Agent'))
+    if (!headers.has('User-Agent')) {
       headers.set('User-Agent', defaultUserAgent)
+    }
 
     // HTTP-network-or-cache fetch step 2.15
-    if (request.compress && !headers.has('Accept-Encoding'))
+    if (request.compress && !headers.has('Accept-Encoding')) {
       headers.set('Accept-Encoding', 'gzip,deflate')
+    }
 
     const agent = typeof request.agent === 'function'
       ? request.agent(parsedURL)
       : request.agent
 
-    if (!headers.has('Connection') && !agent)
+    if (!headers.has('Connection') && !agent) {
       headers.set('Connection', 'close')
+    }
 
     // TLS specific options that are handled by node
     const {
@@ -59770,8 +62439,21 @@ class Request extends Body {
     // HTTP-network fetch step 4.2
     // chunked encoding is handled by Node.js
 
+    // we cannot spread parsedURL directly, so we have to read each property one-by-one
+    // and map them to the equivalent https?.request() method options
+    const urlProps = {
+      auth: parsedURL.username || parsedURL.password
+        ? `${parsedURL.username}:${parsedURL.password}`
+        : '',
+      host: parsedURL.host,
+      hostname: parsedURL.hostname,
+      path: `${parsedURL.pathname}${parsedURL.search}`,
+      port: parsedURL.port,
+      protocol: parsedURL.protocol,
+    }
+
     return {
-      ...parsedURL,
+      ...urlProps,
       method: request.method,
       headers: exportNodeCompatibleHeaders(headers),
       agent,
@@ -59833,8 +62515,9 @@ class Response extends Body {
 
     if (body !== null && body !== undefined && !headers.has('Content-Type')) {
       const contentType = extractContentType(body)
-      if (contentType)
+      if (contentType) {
         headers.append('Content-Type', contentType)
+      }
     }
 
     this[INTERNALS] = {
@@ -59859,7 +62542,7 @@ class Response extends Body {
     return this[INTERNALS].status
   }
 
-  get ok ()  {
+  get ok () {
     return this[INTERNALS].status >= 200 && this[INTERNALS].status < 300
   }
 
@@ -66701,600 +69384,6 @@ module.exports.implForWrapper = function (wrapper) {
 
 /***/ }),
 
-/***/ 16976:
-/***/ ((module) => {
-
-module.exports = extractDescription
-
-// Extracts description from contents of a readme file in markdown format
-function extractDescription (d) {
-  if (!d) {
-    return
-  }
-  if (d === 'ERROR: No README data found!') {
-    return
-  }
-  // the first block of text before the first heading
-  // that isn't the first line heading
-  d = d.trim().split('\n')
-  for (var s = 0; d[s] && d[s].trim().match(/^(#|$)/); s++) {
-    ;
-  }
-  var l = d.length
-  for (var e = s + 1; e < l && d[e].trim(); e++) {
-    ;
-  }
-  return d.slice(s, e).join(' ').trim()
-}
-
-
-/***/ }),
-
-/***/ 23492:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-var isValidSemver = __nccwpck_require__(19601)
-var cleanSemver = __nccwpck_require__(48848)
-var validateLicense = __nccwpck_require__(22524)
-var hostedGitInfo = __nccwpck_require__(88869)
-var isBuiltinModule = __nccwpck_require__(56873)
-var depTypes = ['dependencies', 'devDependencies', 'optionalDependencies']
-var extractDescription = __nccwpck_require__(16976)
-var url = __nccwpck_require__(57310)
-var typos = __nccwpck_require__(71947)
-
-module.exports = {
-  // default warning function
-  warn: function () {},
-
-  fixRepositoryField: function (data) {
-    if (data.repositories) {
-      this.warn('repositories')
-      data.repository = data.repositories[0]
-    }
-    if (!data.repository) {
-      return this.warn('missingRepository')
-    }
-    if (typeof data.repository === 'string') {
-      data.repository = {
-        type: 'git',
-        url: data.repository,
-      }
-    }
-    var r = data.repository.url || ''
-    if (r) {
-      var hosted = hostedGitInfo.fromUrl(r)
-      if (hosted) {
-        r = data.repository.url
-          = hosted.getDefaultRepresentation() === 'shortcut' ? hosted.https() : hosted.toString()
-      }
-    }
-
-    if (r.match(/github.com\/[^/]+\/[^/]+\.git\.git$/)) {
-      this.warn('brokenGitUrl', r)
-    }
-  },
-
-  fixTypos: function (data) {
-    Object.keys(typos.topLevel).forEach(function (d) {
-      if (Object.prototype.hasOwnProperty.call(data, d)) {
-        this.warn('typo', d, typos.topLevel[d])
-      }
-    }, this)
-  },
-
-  fixScriptsField: function (data) {
-    if (!data.scripts) {
-      return
-    }
-    if (typeof data.scripts !== 'object') {
-      this.warn('nonObjectScripts')
-      delete data.scripts
-      return
-    }
-    Object.keys(data.scripts).forEach(function (k) {
-      if (typeof data.scripts[k] !== 'string') {
-        this.warn('nonStringScript')
-        delete data.scripts[k]
-      } else if (typos.script[k] && !data.scripts[typos.script[k]]) {
-        this.warn('typo', k, typos.script[k], 'scripts')
-      }
-    }, this)
-  },
-
-  fixFilesField: function (data) {
-    var files = data.files
-    if (files && !Array.isArray(files)) {
-      this.warn('nonArrayFiles')
-      delete data.files
-    } else if (data.files) {
-      data.files = data.files.filter(function (file) {
-        if (!file || typeof file !== 'string') {
-          this.warn('invalidFilename', file)
-          return false
-        } else {
-          return true
-        }
-      }, this)
-    }
-  },
-
-  fixBinField: function (data) {
-    if (!data.bin) {
-      return
-    }
-    if (typeof data.bin === 'string') {
-      var b = {}
-      var match
-      if (match = data.name.match(/^@[^/]+[/](.*)$/)) {
-        b[match[1]] = data.bin
-      } else {
-        b[data.name] = data.bin
-      }
-      data.bin = b
-    }
-  },
-
-  fixManField: function (data) {
-    if (!data.man) {
-      return
-    }
-    if (typeof data.man === 'string') {
-      data.man = [data.man]
-    }
-  },
-  fixBundleDependenciesField: function (data) {
-    var bdd = 'bundledDependencies'
-    var bd = 'bundleDependencies'
-    if (data[bdd] && !data[bd]) {
-      data[bd] = data[bdd]
-      delete data[bdd]
-    }
-    if (data[bd] && !Array.isArray(data[bd])) {
-      this.warn('nonArrayBundleDependencies')
-      delete data[bd]
-    } else if (data[bd]) {
-      data[bd] = data[bd].filter(function (bd) {
-        if (!bd || typeof bd !== 'string') {
-          this.warn('nonStringBundleDependency', bd)
-          return false
-        } else {
-          if (!data.dependencies) {
-            data.dependencies = {}
-          }
-          if (Object.prototype.hasOwnProperty.call(data.dependencies, bd)) {
-            this.warn('nonDependencyBundleDependency', bd)
-            data.dependencies[bd] = '*'
-          }
-          return true
-        }
-      }, this)
-    }
-  },
-
-  fixDependencies: function (data, strict) {
-    objectifyDeps(data, this.warn)
-    addOptionalDepsToDeps(data, this.warn)
-    this.fixBundleDependenciesField(data)
-
-    ;['dependencies', 'devDependencies'].forEach(function (deps) {
-      if (!(deps in data)) {
-        return
-      }
-      if (!data[deps] || typeof data[deps] !== 'object') {
-        this.warn('nonObjectDependencies', deps)
-        delete data[deps]
-        return
-      }
-      Object.keys(data[deps]).forEach(function (d) {
-        var r = data[deps][d]
-        if (typeof r !== 'string') {
-          this.warn('nonStringDependency', d, JSON.stringify(r))
-          delete data[deps][d]
-        }
-        var hosted = hostedGitInfo.fromUrl(data[deps][d])
-        if (hosted) {
-          data[deps][d] = hosted.toString()
-        }
-      }, this)
-    }, this)
-  },
-
-  fixModulesField: function (data) {
-    if (data.modules) {
-      this.warn('deprecatedModules')
-      delete data.modules
-    }
-  },
-
-  fixKeywordsField: function (data) {
-    if (typeof data.keywords === 'string') {
-      data.keywords = data.keywords.split(/,\s+/)
-    }
-    if (data.keywords && !Array.isArray(data.keywords)) {
-      delete data.keywords
-      this.warn('nonArrayKeywords')
-    } else if (data.keywords) {
-      data.keywords = data.keywords.filter(function (kw) {
-        if (typeof kw !== 'string' || !kw) {
-          this.warn('nonStringKeyword')
-          return false
-        } else {
-          return true
-        }
-      }, this)
-    }
-  },
-
-  fixVersionField: function (data, strict) {
-    // allow "loose" semver 1.0 versions in non-strict mode
-    // enforce strict semver 2.0 compliance in strict mode
-    var loose = !strict
-    if (!data.version) {
-      data.version = ''
-      return true
-    }
-    if (!isValidSemver(data.version, loose)) {
-      throw new Error('Invalid version: "' + data.version + '"')
-    }
-    data.version = cleanSemver(data.version, loose)
-    return true
-  },
-
-  fixPeople: function (data) {
-    modifyPeople(data, unParsePerson)
-    modifyPeople(data, parsePerson)
-  },
-
-  fixNameField: function (data, options) {
-    if (typeof options === 'boolean') {
-      options = {strict: options}
-    } else if (typeof options === 'undefined') {
-      options = {}
-    }
-    var strict = options.strict
-    if (!data.name && !strict) {
-      data.name = ''
-      return
-    }
-    if (typeof data.name !== 'string') {
-      throw new Error('name field must be a string.')
-    }
-    if (!strict) {
-      data.name = data.name.trim()
-    }
-    ensureValidName(data.name, strict, options.allowLegacyCase)
-    if (isBuiltinModule(data.name)) {
-      this.warn('conflictingName', data.name)
-    }
-  },
-
-  fixDescriptionField: function (data) {
-    if (data.description && typeof data.description !== 'string') {
-      this.warn('nonStringDescription')
-      delete data.description
-    }
-    if (data.readme && !data.description) {
-      data.description = extractDescription(data.readme)
-    }
-    if (data.description === undefined) {
-      delete data.description
-    }
-    if (!data.description) {
-      this.warn('missingDescription')
-    }
-  },
-
-  fixReadmeField: function (data) {
-    if (!data.readme) {
-      this.warn('missingReadme')
-      data.readme = 'ERROR: No README data found!'
-    }
-  },
-
-  fixBugsField: function (data) {
-    if (!data.bugs && data.repository && data.repository.url) {
-      var hosted = hostedGitInfo.fromUrl(data.repository.url)
-      if (hosted && hosted.bugs()) {
-        data.bugs = {url: hosted.bugs()}
-      }
-    } else if (data.bugs) {
-      var emailRe = /^.+@.*\..+$/
-      if (typeof data.bugs === 'string') {
-        if (emailRe.test(data.bugs)) {
-          data.bugs = {email: data.bugs}
-        /* eslint-disable-next-line node/no-deprecated-api */
-        } else if (url.parse(data.bugs).protocol) {
-          data.bugs = {url: data.bugs}
-        } else {
-          this.warn('nonEmailUrlBugsString')
-        }
-      } else {
-        bugsTypos(data.bugs, this.warn)
-        var oldBugs = data.bugs
-        data.bugs = {}
-        if (oldBugs.url) {
-          /* eslint-disable-next-line node/no-deprecated-api */
-          if (typeof (oldBugs.url) === 'string' && url.parse(oldBugs.url).protocol) {
-            data.bugs.url = oldBugs.url
-          } else {
-            this.warn('nonUrlBugsUrlField')
-          }
-        }
-        if (oldBugs.email) {
-          if (typeof (oldBugs.email) === 'string' && emailRe.test(oldBugs.email)) {
-            data.bugs.email = oldBugs.email
-          } else {
-            this.warn('nonEmailBugsEmailField')
-          }
-        }
-      }
-      if (!data.bugs.email && !data.bugs.url) {
-        delete data.bugs
-        this.warn('emptyNormalizedBugs')
-      }
-    }
-  },
-
-  fixHomepageField: function (data) {
-    if (!data.homepage && data.repository && data.repository.url) {
-      var hosted = hostedGitInfo.fromUrl(data.repository.url)
-      if (hosted && hosted.docs()) {
-        data.homepage = hosted.docs()
-      }
-    }
-    if (!data.homepage) {
-      return
-    }
-
-    if (typeof data.homepage !== 'string') {
-      this.warn('nonUrlHomepage')
-      return delete data.homepage
-    }
-    /* eslint-disable-next-line node/no-deprecated-api */
-    if (!url.parse(data.homepage).protocol) {
-      data.homepage = 'http://' + data.homepage
-    }
-  },
-
-  fixLicenseField: function (data) {
-    const license = data.license || data.licence
-    if (!license) {
-      return this.warn('missingLicense')
-    }
-    if (
-      typeof (license) !== 'string' ||
-      license.length < 1 ||
-      license.trim() === ''
-    ) {
-      return this.warn('invalidLicense')
-    }
-    if (!validateLicense(license).validForNewPackages) {
-      return this.warn('invalidLicense')
-    }
-  },
-}
-
-function isValidScopedPackageName (spec) {
-  if (spec.charAt(0) !== '@') {
-    return false
-  }
-
-  var rest = spec.slice(1).split('/')
-  if (rest.length !== 2) {
-    return false
-  }
-
-  return rest[0] && rest[1] &&
-    rest[0] === encodeURIComponent(rest[0]) &&
-    rest[1] === encodeURIComponent(rest[1])
-}
-
-function isCorrectlyEncodedName (spec) {
-  return !spec.match(/[/@\s+%:]/) &&
-    spec === encodeURIComponent(spec)
-}
-
-function ensureValidName (name, strict, allowLegacyCase) {
-  if (name.charAt(0) === '.' ||
-      !(isValidScopedPackageName(name) || isCorrectlyEncodedName(name)) ||
-      (strict && (!allowLegacyCase) && name !== name.toLowerCase()) ||
-      name.toLowerCase() === 'node_modules' ||
-      name.toLowerCase() === 'favicon.ico') {
-    throw new Error('Invalid name: ' + JSON.stringify(name))
-  }
-}
-
-function modifyPeople (data, fn) {
-  if (data.author) {
-    data.author = fn(data.author)
-  }['maintainers', 'contributors'].forEach(function (set) {
-    if (!Array.isArray(data[set])) {
-      return
-    }
-    data[set] = data[set].map(fn)
-  })
-  return data
-}
-
-function unParsePerson (person) {
-  if (typeof person === 'string') {
-    return person
-  }
-  var name = person.name || ''
-  var u = person.url || person.web
-  var url = u ? (' (' + u + ')') : ''
-  var e = person.email || person.mail
-  var email = e ? (' <' + e + '>') : ''
-  return name + email + url
-}
-
-function parsePerson (person) {
-  if (typeof person !== 'string') {
-    return person
-  }
-  var name = person.match(/^([^(<]+)/)
-  var url = person.match(/\(([^)]+)\)/)
-  var email = person.match(/<([^>]+)>/)
-  var obj = {}
-  if (name && name[0].trim()) {
-    obj.name = name[0].trim()
-  }
-  if (email) {
-    obj.email = email[1]
-  }
-  if (url) {
-    obj.url = url[1]
-  }
-  return obj
-}
-
-function addOptionalDepsToDeps (data, warn) {
-  var o = data.optionalDependencies
-  if (!o) {
-    return
-  }
-  var d = data.dependencies || {}
-  Object.keys(o).forEach(function (k) {
-    d[k] = o[k]
-  })
-  data.dependencies = d
-}
-
-function depObjectify (deps, type, warn) {
-  if (!deps) {
-    return {}
-  }
-  if (typeof deps === 'string') {
-    deps = deps.trim().split(/[\n\r\s\t ,]+/)
-  }
-  if (!Array.isArray(deps)) {
-    return deps
-  }
-  warn('deprecatedArrayDependencies', type)
-  var o = {}
-  deps.filter(function (d) {
-    return typeof d === 'string'
-  }).forEach(function (d) {
-    d = d.trim().split(/(:?[@\s><=])/)
-    var dn = d.shift()
-    var dv = d.join('')
-    dv = dv.trim()
-    dv = dv.replace(/^@/, '')
-    o[dn] = dv
-  })
-  return o
-}
-
-function objectifyDeps (data, warn) {
-  depTypes.forEach(function (type) {
-    if (!data[type]) {
-      return
-    }
-    data[type] = depObjectify(data[type], type, warn)
-  })
-}
-
-function bugsTypos (bugs, warn) {
-  if (!bugs) {
-    return
-  }
-  Object.keys(bugs).forEach(function (k) {
-    if (typos.bugs[k]) {
-      warn('typo', k, typos.bugs[k], 'bugs')
-      bugs[typos.bugs[k]] = bugs[k]
-      delete bugs[k]
-    }
-  })
-}
-
-
-/***/ }),
-
-/***/ 29671:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-var util = __nccwpck_require__(73837)
-var messages = __nccwpck_require__(86271)
-
-module.exports = function () {
-  var args = Array.prototype.slice.call(arguments, 0)
-  var warningName = args.shift()
-  if (warningName === 'typo') {
-    return makeTypoWarning.apply(null, args)
-  } else {
-    var msgTemplate = messages[warningName] ? messages[warningName] : warningName + ": '%s'"
-    args.unshift(msgTemplate)
-    return util.format.apply(null, args)
-  }
-}
-
-function makeTypoWarning (providedName, probableName, field) {
-  if (field) {
-    providedName = field + "['" + providedName + "']"
-    probableName = field + "['" + probableName + "']"
-  }
-  return util.format(messages.typo, providedName, probableName)
-}
-
-
-/***/ }),
-
-/***/ 53188:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-module.exports = normalize
-
-var fixer = __nccwpck_require__(23492)
-normalize.fixer = fixer
-
-var makeWarning = __nccwpck_require__(29671)
-
-var fieldsToFix = ['name', 'version', 'description', 'repository', 'modules', 'scripts',
-  'files', 'bin', 'man', 'bugs', 'keywords', 'readme', 'homepage', 'license']
-var otherThingsToFix = ['dependencies', 'people', 'typos']
-
-var thingsToFix = fieldsToFix.map(function (fieldName) {
-  return ucFirst(fieldName) + 'Field'
-})
-// two ways to do this in CoffeeScript on only one line, sub-70 chars:
-// thingsToFix = fieldsToFix.map (name) -> ucFirst(name) + "Field"
-// thingsToFix = (ucFirst(name) + "Field" for name in fieldsToFix)
-thingsToFix = thingsToFix.concat(otherThingsToFix)
-
-function normalize (data, warn, strict) {
-  if (warn === true) {
-    warn = null
-    strict = true
-  }
-  if (!strict) {
-    strict = false
-  }
-  if (!warn || data.private) {
-    warn = function (msg) { /* noop */ }
-  }
-
-  if (data.scripts &&
-      data.scripts.install === 'node-gyp rebuild' &&
-      !data.scripts.preinstall) {
-    data.gypfile = true
-  }
-  fixer.warn = function () {
-    warn(makeWarning.apply(null, arguments))
-  }
-  thingsToFix.forEach(function (thingName) {
-    fixer['fix' + ucFirst(thingName)](data, strict)
-  })
-  data._id = data.name + '@' + data.version
-}
-
-function ucFirst (string) {
-  return string.charAt(0).toUpperCase() + string.slice(1)
-}
-
-
-/***/ }),
-
 /***/ 4265:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -67588,7 +69677,24 @@ by each project's maintainers. Default.`]);
     table.push(['newest', `Upgrade to the version with the most recent publish date, even if there are
 other version numbers that are higher. Includes prereleases.`]);
     table.push(['patch', `Upgrade to the highest patch version without bumping the minor or major versions.`]);
-    return `Set the target version that is upgraded to (default: "latest").\n\n${table.toString()}`;
+    return `Set the target version that is upgraded to (default: "latest").
+
+${table.toString()}
+
+You can also specify a custom function in your .ncurc.js file, or when importing npm-check-updates:
+
+  ${chalk_1.default.gray(`/** Custom target.
+    @param dependencyName The name of the dependency.
+    @param parsedVersion A parsed Semver object from semver-utils.
+      (See https://git.coolaj86.com/coolaj86/semver-utils.js#semverutils-parse-semverstring)
+    @returns One of the valid target values (specified in the table above).
+  */`)}
+  ${chalk_1.default.cyan('target')}: (dependencyName, [{ semver, version, operator, major, minor, patch, release, build }]) ${chalk_1.default.cyan('=>')} {
+    ${chalk_1.default.red('if')} (major ${chalk_1.default.red('===')} ${chalk_1.default.blue('0')}) ${chalk_1.default.red('return')} ${chalk_1.default.yellow('\'minor\'')}
+    ${chalk_1.default.red('return')} ${chalk_1.default.yellow('\'latest\'')}
+  }
+
+`;
 };
 // store CLI options separately from bin file so that they can be used to build type definitions
 const cliOptions = [
@@ -67855,6 +69961,7 @@ As a comparison: without using the --peer option, ncu will suggest the latest ve
         arg: 'value',
         description: 'Target version to upgrade to: latest, newest, greatest, minor, patch. Run "ncu --help --target" for details.` (default: "latest")',
         help: getHelpTargetTable(),
+        type: 'string | TargetFunction',
     },
     {
         long: 'timeout',
@@ -68141,9 +70248,8 @@ const doctor = async (run, options) => {
     };
     /** Install dependencies using "npm run install" or a custom script given by --doctorInstall. */
     const runInstall = async () => {
-        var _a;
         if (options.doctorInstall) {
-            const [installCommand, ...testArgs] = (_a = options.doctorInstall) === null || _a === void 0 ? void 0 : _a.split(' ');
+            const [installCommand, ...testArgs] = options.doctorInstall.split(' ');
             await (0, spawn_please_1.default)(installCommand, testArgs);
         }
         else {
@@ -68152,9 +70258,8 @@ const doctor = async (run, options) => {
     };
     /** Run the tests using "npm run test" or a custom script given by --doctorTest. */
     const runTests = async (spawnOptions) => {
-        var _a;
         if (options.doctorTest) {
-            const [testCommand, ...testArgs] = (_a = options.doctorTest) === null || _a === void 0 ? void 0 : _a.split(' ');
+            const [testCommand, ...testArgs] = options.doctorTest.split(' ');
             await (0, spawn_please_1.default)(testCommand, testArgs, spawnOptions);
         }
         else {
@@ -68438,7 +70543,11 @@ exports["default"] = findPackage;
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -68803,7 +70912,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const fs_1 = __importDefault(__nccwpck_require__(57147));
 const path_1 = __importDefault(__nccwpck_require__(71017));
 const url_1 = __nccwpck_require__(57310);
-const hosted_git_info_1 = __importDefault(__nccwpck_require__(88869));
+const hosted_git_info_1 = __importDefault(__nccwpck_require__(67104));
 // extract the defaultBranchPath so it can be stripped in the final output
 const defaultBranchPath = (_b = (_a = hosted_git_info_1.default.fromUrl('user/repo')) === null || _a === void 0 ? void 0 : _a.browse('').match(/(\/tree\/[a-z]+)/)) === null || _b === void 0 ? void 0 : _b[0];
 const regexDefaultBranchPath = new RegExp(`${defaultBranchPath}$`);
@@ -68991,7 +71100,11 @@ exports["default"] = initOptions;
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -69118,6 +71231,7 @@ const cint_1 = __importDefault(__nccwpck_require__(83592));
 const chalk_1 = __importDefault(__nccwpck_require__(78818));
 const p_map_1 = __importDefault(__nccwpck_require__(91855));
 const progress_1 = __importDefault(__nccwpck_require__(10892));
+const semver_utils_1 = __nccwpck_require__(44100);
 const constants_1 = __nccwpck_require__(98358);
 const getPackageManager_1 = __importDefault(__nccwpck_require__(57680));
 const package_managers_1 = __importDefault(__nccwpck_require__(58757));
@@ -69138,13 +71252,6 @@ async function queryVersions(packageMap, options = {}) {
         bar = new progress_1.default('[:bar] :current/:total :percent', { total: packageList.length, width: 20 });
         bar.render();
     }
-    // set the getPackageVersion function from options.target
-    // TODO: Remove "as GetVersion" and fix types
-    const getPackageVersion = packageManager[target];
-    if (!getPackageVersion) {
-        const packageManagerSupportedVersionTargets = constants_1.supportedVersionTargets.filter(t => t in packageManager);
-        return Promise.reject(new Error(`Unsupported target "${target}" for ${options.packageManager || 'npm'}. Supported version targets are: ${packageManagerSupportedVersionTargets.join(', ')}`));
-    }
     /**
      * Ignore 404 errors from getPackageVersion by having them return `null`
      * instead of rejecting.
@@ -69156,15 +71263,16 @@ async function queryVersions(packageMap, options = {}) {
         var _a;
         const npmAlias = (0, version_util_1.parseNpmAlias)(packageMap[dep]);
         const [name, version] = npmAlias || [dep, packageMap[dep]];
+        const targetResult = typeof target === 'string' ? target : target(name, (0, semver_utils_1.parseRange)(version));
         let versionNew = null;
         // use gitTags package manager for git urls
         if ((0, version_util_1.isGithubUrl)(packageMap[dep])) {
             // override packageManager and getPackageVersion just for this dependency
             const packageManager = package_managers_1.default.gitTags;
-            const getPackageVersion = packageManager[target];
+            const getPackageVersion = packageManager[targetResult];
             if (!getPackageVersion) {
                 const packageManagerSupportedVersionTargets = constants_1.supportedVersionTargets.filter(t => t in packageManager);
-                return Promise.reject(new Error(`Unsupported target "${target}" for github urls. Supported version targets are: ${packageManagerSupportedVersionTargets.join(', ')}`));
+                return Promise.reject(new Error(`Unsupported target "${targetResult}" for github urls. Supported version targets are: ${packageManagerSupportedVersionTargets.join(', ')}`));
             }
             versionNew = await getPackageVersion(name, version, {
                 ...options,
@@ -69173,6 +71281,13 @@ async function queryVersions(packageMap, options = {}) {
             });
         }
         else {
+            // set the getPackageVersion function from options.target
+            // TODO: Remove "as GetVersion" and fix types
+            const getPackageVersion = packageManager[targetResult];
+            if (!getPackageVersion) {
+                const packageManagerSupportedVersionTargets = constants_1.supportedVersionTargets.filter(t => t in packageManager);
+                return Promise.reject(new Error(`Unsupported target "${targetResult}" for ${options.packageManager || 'npm'}. Supported version targets are: ${packageManagerSupportedVersionTargets.join(', ')}`));
+            }
             try {
                 versionNew = await getPackageVersion(name, version, {
                     ...options,
@@ -69277,7 +71392,11 @@ exports["default"] = runGlobal;
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -69456,7 +71575,11 @@ exports["default"] = runLocal;
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -69734,6 +71857,16 @@ function createDependencyTable() {
     });
 }
 /**
+ * Extract just the version number from a package.json dep
+ *
+ * @param dep Raw dependency, could be version / npm: string / Git url
+ */
+function getVersion(dep) {
+    return (0, version_util_1.isGithubUrl)(dep) ? (0, version_util_1.getGithubUrlTag)(dep)
+        : (0, version_util_1.isNpmAlias)(dep) ? (0, version_util_1.parseNpmAlias)(dep)[1]
+            : dep;
+}
+/**
  * @param args
  * @param args.from
  * @param args.to
@@ -69745,15 +71878,13 @@ function toDependencyTable({ from: fromDeps, to: toDeps, ownersChangedDeps, form
     const rows = Object.keys(toDeps).map(dep => {
         const from = fromDeps[dep] || '';
         const toRaw = toDeps[dep] || '';
-        const to = (0, version_util_1.isGithubUrl)(toRaw) ? (0, version_util_1.getGithubUrlTag)(toRaw)
-            : (0, version_util_1.isNpmAlias)(toRaw) ? (0, version_util_1.parseNpmAlias)(toRaw)[1]
-                : toRaw;
+        const to = getVersion(toRaw);
         const ownerChanged = ownersChangedDeps
             ? dep in ownersChangedDeps
                 ? ownersChangedDeps[dep] ? '*owner changed*' : ''
                 : '*unknown*'
             : '';
-        const toColorized = (0, version_util_1.colorizeDiff)(from, to);
+        const toColorized = (0, version_util_1.colorizeDiff)(getVersion(from), to);
         const repoUrl = (format === null || format === void 0 ? void 0 : format.includes('repo'))
             ? (0, getRepoUrl_1.default)(dep) || ''
             : '';
@@ -69776,6 +71907,7 @@ function printUpgrades(options, { current, latest, upgraded, numUpgraded, total,
     print(options, '');
     // print everything is up-to-date
     const smiley = chalk.green.bold(':)');
+    const target = typeof options.target === 'string' ? options.target : 'target';
     if (numUpgraded === 0 && total === 0) {
         if (Object.keys(current).length === 0) {
             print(options, 'No dependencies.');
@@ -69787,7 +71919,7 @@ function printUpgrades(options, { current, latest, upgraded, numUpgraded, total,
             print(options, `All global packages are up-to-date ${smiley}`);
         }
         else {
-            print(options, `All dependencies match the ${options.target} package versions ${smiley}`);
+            print(options, `All dependencies match the ${target} package versions ${smiley}`);
         }
     }
     else if (numUpgraded === 0 && total > 0) {
@@ -69830,7 +71962,11 @@ exports.printIgnoredUpdates = printIgnoredUpdates;
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -69919,7 +72055,11 @@ exports.satisfiesPeerDependencies = satisfiesPeerDependencies;
 /** Fetches package metadata from Github tags. */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -70034,7 +72174,11 @@ exports.newest = exports.greatest;
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -70071,7 +72215,11 @@ exports["default"] = {
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -70131,7 +72279,12 @@ const readNpmConfig = () => {
     // needed until pacote supports full npm config compatibility
     // See: https://github.com/zkat/pacote/issues/156
     const config = {};
-    libnpmconfig_1.default.read().forEach((value, key) => {
+    // libnpmconfig incorrectly (?) ignores NPM_CONFIG_USERCONFIG because it is always overridden by the default builtin.userconfig
+    // set userconfig manually so that it is prioritized
+    const builtinsWithUserConfig = {
+        userconfig: process.env.npm_config_userconfig || process.env.NPM_CONFIG_USERCONFIG
+    };
+    libnpmconfig_1.default.read(null, builtinsWithUserConfig).forEach((value, key) => {
         // replace env ${VARS} in strings with the process.env value
         const normalizedValue = typeof value !== 'string' ? value
             // parse stringified booleans
@@ -70440,7 +72593,11 @@ exports["default"] = spawnNpm;
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -71794,6 +73951,569 @@ module.exports = {
 
 /***/ }),
 
+/***/ 53443:
+/***/ ((module) => {
+
+"use strict";
+/* eslint-disable max-len */
+
+const maybeJoin = (...args) => args.every(arg => arg) ? args.join('') : ''
+const maybeEncode = (arg) => arg ? encodeURIComponent(arg) : ''
+
+const defaults = {
+  sshtemplate: ({ domain, user, project, committish }) => `git@${domain}:${user}/${project}.git${maybeJoin('#', committish)}`,
+  sshurltemplate: ({ domain, user, project, committish }) => `git+ssh://git@${domain}/${user}/${project}.git${maybeJoin('#', committish)}`,
+  browsetemplate: ({ domain, user, project, committish, treepath }) => `https://${domain}/${user}/${project}${maybeJoin('/', treepath, '/', maybeEncode(committish))}`,
+  browsefiletemplate: ({ domain, user, project, committish, treepath, path, fragment, hashformat }) => `https://${domain}/${user}/${project}/${treepath}/${maybeEncode(committish || 'master')}/${path}${maybeJoin('#', hashformat(fragment || ''))}`,
+  docstemplate: ({ domain, user, project, treepath, committish }) => `https://${domain}/${user}/${project}${maybeJoin('/', treepath, '/', maybeEncode(committish))}#readme`,
+  httpstemplate: ({ auth, domain, user, project, committish }) => `git+https://${maybeJoin(auth, '@')}${domain}/${user}/${project}.git${maybeJoin('#', committish)}`,
+  filetemplate: ({ domain, user, project, committish, path }) => `https://${domain}/${user}/${project}/raw/${maybeEncode(committish) || 'master'}/${path}`,
+  shortcuttemplate: ({ type, user, project, committish }) => `${type}:${user}/${project}${maybeJoin('#', committish)}`,
+  pathtemplate: ({ user, project, committish }) => `${user}/${project}${maybeJoin('#', committish)}`,
+  bugstemplate: ({ domain, user, project }) => `https://${domain}/${user}/${project}/issues`,
+  hashformat: formatHashFragment,
+}
+
+const gitHosts = {}
+gitHosts.github = Object.assign({}, defaults, {
+  // First two are insecure and generally shouldn't be used any more, but
+  // they are still supported.
+  protocols: ['git:', 'http:', 'git+ssh:', 'git+https:', 'ssh:', 'https:'],
+  domain: 'github.com',
+  treepath: 'tree',
+  filetemplate: ({ auth, user, project, committish, path }) => `https://${maybeJoin(auth, '@')}raw.githubusercontent.com/${user}/${project}/${maybeEncode(committish) || 'master'}/${path}`,
+  gittemplate: ({ auth, domain, user, project, committish }) => `git://${maybeJoin(auth, '@')}${domain}/${user}/${project}.git${maybeJoin('#', committish)}`,
+  tarballtemplate: ({ domain, user, project, committish }) => `https://codeload.${domain}/${user}/${project}/tar.gz/${maybeEncode(committish) || 'master'}`,
+  extract: (url) => {
+    let [, user, project, type, committish] = url.pathname.split('/', 5)
+    if (type && type !== 'tree') {
+      return
+    }
+
+    if (!type) {
+      committish = url.hash.slice(1)
+    }
+
+    if (project && project.endsWith('.git')) {
+      project = project.slice(0, -4)
+    }
+
+    if (!user || !project) {
+      return
+    }
+
+    return { user, project, committish }
+  },
+})
+
+gitHosts.bitbucket = Object.assign({}, defaults, {
+  protocols: ['git+ssh:', 'git+https:', 'ssh:', 'https:'],
+  domain: 'bitbucket.org',
+  treepath: 'src',
+  tarballtemplate: ({ domain, user, project, committish }) => `https://${domain}/${user}/${project}/get/${maybeEncode(committish) || 'master'}.tar.gz`,
+  extract: (url) => {
+    let [, user, project, aux] = url.pathname.split('/', 4)
+    if (['get'].includes(aux)) {
+      return
+    }
+
+    if (project && project.endsWith('.git')) {
+      project = project.slice(0, -4)
+    }
+
+    if (!user || !project) {
+      return
+    }
+
+    return { user, project, committish: url.hash.slice(1) }
+  },
+})
+
+gitHosts.gitlab = Object.assign({}, defaults, {
+  protocols: ['git+ssh:', 'git+https:', 'ssh:', 'https:'],
+  domain: 'gitlab.com',
+  treepath: 'tree',
+  httpstemplate: ({ auth, domain, user, project, committish }) => `git+https://${maybeJoin(auth, '@')}${domain}/${user}/${project}.git${maybeJoin('#', committish)}`,
+  tarballtemplate: ({ domain, user, project, committish }) => `https://${domain}/${user}/${project}/repository/archive.tar.gz?ref=${maybeEncode(committish) || 'master'}`,
+  extract: (url) => {
+    const path = url.pathname.slice(1)
+    if (path.includes('/-/') || path.includes('/archive.tar.gz')) {
+      return
+    }
+
+    const segments = path.split('/')
+    let project = segments.pop()
+    if (project.endsWith('.git')) {
+      project = project.slice(0, -4)
+    }
+
+    const user = segments.join('/')
+    if (!user || !project) {
+      return
+    }
+
+    return { user, project, committish: url.hash.slice(1) }
+  },
+})
+
+gitHosts.gist = Object.assign({}, defaults, {
+  protocols: ['git:', 'git+ssh:', 'git+https:', 'ssh:', 'https:'],
+  domain: 'gist.github.com',
+  sshtemplate: ({ domain, project, committish }) => `git@${domain}:${project}.git${maybeJoin('#', committish)}`,
+  sshurltemplate: ({ domain, project, committish }) => `git+ssh://git@${domain}/${project}.git${maybeJoin('#', committish)}`,
+  browsetemplate: ({ domain, project, committish }) => `https://${domain}/${project}${maybeJoin('/', maybeEncode(committish))}`,
+  browsefiletemplate: ({ domain, project, committish, path, hashformat }) => `https://${domain}/${project}${maybeJoin('/', maybeEncode(committish))}${maybeJoin('#', hashformat(path))}`,
+  docstemplate: ({ domain, project, committish }) => `https://${domain}/${project}${maybeJoin('/', maybeEncode(committish))}`,
+  httpstemplate: ({ domain, project, committish }) => `git+https://${domain}/${project}.git${maybeJoin('#', committish)}`,
+  filetemplate: ({ user, project, committish, path }) => `https://gist.githubusercontent.com/${user}/${project}/raw${maybeJoin('/', maybeEncode(committish))}/${path}`,
+  shortcuttemplate: ({ type, project, committish }) => `${type}:${project}${maybeJoin('#', committish)}`,
+  pathtemplate: ({ project, committish }) => `${project}${maybeJoin('#', committish)}`,
+  bugstemplate: ({ domain, project }) => `https://${domain}/${project}`,
+  gittemplate: ({ domain, project, committish }) => `git://${domain}/${project}.git${maybeJoin('#', committish)}`,
+  tarballtemplate: ({ project, committish }) => `https://codeload.github.com/gist/${project}/tar.gz/${maybeEncode(committish) || 'master'}`,
+  extract: (url) => {
+    let [, user, project, aux] = url.pathname.split('/', 4)
+    if (aux === 'raw') {
+      return
+    }
+
+    if (!project) {
+      if (!user) {
+        return
+      }
+
+      project = user
+      user = null
+    }
+
+    if (project.endsWith('.git')) {
+      project = project.slice(0, -4)
+    }
+
+    return { user, project, committish: url.hash.slice(1) }
+  },
+  hashformat: function (fragment) {
+    return fragment && 'file-' + formatHashFragment(fragment)
+  },
+})
+
+gitHosts.sourcehut = Object.assign({}, defaults, {
+  protocols: ['git+ssh:', 'https:'],
+  domain: 'git.sr.ht',
+  treepath: 'tree',
+  browsefiletemplate: ({ domain, user, project, committish, treepath, path, fragment, hashformat }) => `https://${domain}/${user}/${project}/${treepath}/${maybeEncode(committish || 'main')}/${path}${maybeJoin('#', hashformat(fragment || ''))}`,
+  filetemplate: ({ domain, user, project, committish, path }) => `https://${domain}/${user}/${project}/blob/${maybeEncode(committish) || 'main'}/${path}`,
+  httpstemplate: ({ domain, user, project, committish }) => `https://${domain}/${user}/${project}.git${maybeJoin('#', committish)}`,
+  tarballtemplate: ({ domain, user, project, committish }) => `https://${domain}/${user}/${project}/archive/${maybeEncode(committish) || 'main'}.tar.gz`,
+  bugstemplate: ({ domain, user, project }) => `https://todo.sr.ht/${user}/${project}`,
+  docstemplate: ({ domain, user, project, treepath, committish }) => `https://${domain}/${user}/${project}${maybeJoin('/', treepath, '/', maybeEncode(committish))}#readme`,
+  extract: (url) => {
+    let [, user, project, aux] = url.pathname.split('/', 4)
+
+    // tarball url
+    if (['archive'].includes(aux)) {
+      return
+    }
+
+    if (project && project.endsWith('.git')) {
+      project = project.slice(0, -4)
+    }
+
+    if (!user || !project) {
+      return
+    }
+
+    return { user, project, committish: url.hash.slice(1) }
+  },
+})
+
+const names = Object.keys(gitHosts)
+gitHosts.byShortcut = {}
+gitHosts.byDomain = {}
+for (const name of names) {
+  gitHosts.byShortcut[`${name}:`] = name
+  gitHosts.byDomain[gitHosts[name].domain] = name
+}
+
+function formatHashFragment (fragment) {
+  return fragment.toLowerCase().replace(/^\W+|\/|\W+$/g, '').replace(/\W+/g, '-')
+}
+
+module.exports = gitHosts
+
+
+/***/ }),
+
+/***/ 75325:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+const gitHosts = __nccwpck_require__(53443)
+
+class GitHost {
+  constructor (type, user, auth, project, committish, defaultRepresentation, opts = {}) {
+    Object.assign(this, gitHosts[type])
+    this.type = type
+    this.user = user
+    this.auth = auth
+    this.project = project
+    this.committish = committish
+    this.default = defaultRepresentation
+    this.opts = opts
+  }
+
+  hash () {
+    return this.committish ? `#${this.committish}` : ''
+  }
+
+  ssh (opts) {
+    return this._fill(this.sshtemplate, opts)
+  }
+
+  _fill (template, opts) {
+    if (typeof template === 'function') {
+      const options = { ...this, ...this.opts, ...opts }
+
+      // the path should always be set so we don't end up with 'undefined' in urls
+      if (!options.path) {
+        options.path = ''
+      }
+
+      // template functions will insert the leading slash themselves
+      if (options.path.startsWith('/')) {
+        options.path = options.path.slice(1)
+      }
+
+      if (options.noCommittish) {
+        options.committish = null
+      }
+
+      const result = template(options)
+      return options.noGitPlus && result.startsWith('git+') ? result.slice(4) : result
+    }
+
+    return null
+  }
+
+  sshurl (opts) {
+    return this._fill(this.sshurltemplate, opts)
+  }
+
+  browse (path, fragment, opts) {
+    // not a string, treat path as opts
+    if (typeof path !== 'string') {
+      return this._fill(this.browsetemplate, path)
+    }
+
+    if (typeof fragment !== 'string') {
+      opts = fragment
+      fragment = null
+    }
+    return this._fill(this.browsefiletemplate, { ...opts, fragment, path })
+  }
+
+  docs (opts) {
+    return this._fill(this.docstemplate, opts)
+  }
+
+  bugs (opts) {
+    return this._fill(this.bugstemplate, opts)
+  }
+
+  https (opts) {
+    return this._fill(this.httpstemplate, opts)
+  }
+
+  git (opts) {
+    return this._fill(this.gittemplate, opts)
+  }
+
+  shortcut (opts) {
+    return this._fill(this.shortcuttemplate, opts)
+  }
+
+  path (opts) {
+    return this._fill(this.pathtemplate, opts)
+  }
+
+  tarball (opts) {
+    return this._fill(this.tarballtemplate, { ...opts, noCommittish: false })
+  }
+
+  file (path, opts) {
+    return this._fill(this.filetemplate, { ...opts, path })
+  }
+
+  getDefaultRepresentation () {
+    return this.default
+  }
+
+  toString (opts) {
+    if (this.default && typeof this[this.default] === 'function') {
+      return this[this.default](opts)
+    }
+
+    return this.sshurl(opts)
+  }
+}
+module.exports = GitHost
+
+
+/***/ }),
+
+/***/ 67104:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+const url = __nccwpck_require__(57310)
+const gitHosts = __nccwpck_require__(53443)
+const GitHost = module.exports = __nccwpck_require__(75325)
+const LRU = __nccwpck_require__(7129)
+const cache = new LRU({ max: 1000 })
+
+const protocolToRepresentationMap = {
+  'git+ssh:': 'sshurl',
+  'git+https:': 'https',
+  'ssh:': 'sshurl',
+  'git:': 'git',
+}
+
+function protocolToRepresentation (protocol) {
+  return protocolToRepresentationMap[protocol] || protocol.slice(0, -1)
+}
+
+const authProtocols = {
+  'git:': true,
+  'https:': true,
+  'git+https:': true,
+  'http:': true,
+  'git+http:': true,
+}
+
+const knownProtocols = Object.keys(gitHosts.byShortcut)
+  .concat(['http:', 'https:', 'git:', 'git+ssh:', 'git+https:', 'ssh:'])
+
+module.exports.fromUrl = function (giturl, opts) {
+  if (typeof giturl !== 'string') {
+    return
+  }
+
+  const key = giturl + JSON.stringify(opts || {})
+
+  if (!cache.has(key)) {
+    cache.set(key, fromUrl(giturl, opts))
+  }
+
+  return cache.get(key)
+}
+
+function fromUrl (giturl, opts) {
+  if (!giturl) {
+    return
+  }
+
+  const url = isGitHubShorthand(giturl) ? 'github:' + giturl : correctProtocol(giturl)
+  const parsed = parseGitUrl(url)
+  if (!parsed) {
+    return parsed
+  }
+
+  const gitHostShortcut = gitHosts.byShortcut[parsed.protocol]
+  const gitHostDomain =
+    gitHosts.byDomain[parsed.hostname.startsWith('www.') ?
+      parsed.hostname.slice(4) :
+      parsed.hostname]
+  const gitHostName = gitHostShortcut || gitHostDomain
+  if (!gitHostName) {
+    return
+  }
+
+  const gitHostInfo = gitHosts[gitHostShortcut || gitHostDomain]
+  let auth = null
+  if (authProtocols[parsed.protocol] && (parsed.username || parsed.password)) {
+    auth = `${parsed.username}${parsed.password ? ':' + parsed.password : ''}`
+  }
+
+  let committish = null
+  let user = null
+  let project = null
+  let defaultRepresentation = null
+
+  try {
+    if (gitHostShortcut) {
+      let pathname = parsed.pathname.startsWith('/') ? parsed.pathname.slice(1) : parsed.pathname
+      const firstAt = pathname.indexOf('@')
+      // we ignore auth for shortcuts, so just trim it out
+      if (firstAt > -1) {
+        pathname = pathname.slice(firstAt + 1)
+      }
+
+      const lastSlash = pathname.lastIndexOf('/')
+      if (lastSlash > -1) {
+        user = decodeURIComponent(pathname.slice(0, lastSlash))
+        // we want nulls only, never empty strings
+        if (!user) {
+          user = null
+        }
+        project = decodeURIComponent(pathname.slice(lastSlash + 1))
+      } else {
+        project = decodeURIComponent(pathname)
+      }
+
+      if (project.endsWith('.git')) {
+        project = project.slice(0, -4)
+      }
+
+      if (parsed.hash) {
+        committish = decodeURIComponent(parsed.hash.slice(1))
+      }
+
+      defaultRepresentation = 'shortcut'
+    } else {
+      if (!gitHostInfo.protocols.includes(parsed.protocol)) {
+        return
+      }
+
+      const segments = gitHostInfo.extract(parsed)
+      if (!segments) {
+        return
+      }
+
+      user = segments.user && decodeURIComponent(segments.user)
+      project = decodeURIComponent(segments.project)
+      committish = decodeURIComponent(segments.committish)
+      defaultRepresentation = protocolToRepresentation(parsed.protocol)
+    }
+  } catch (err) {
+    /* istanbul ignore else */
+    if (err instanceof URIError) {
+      return
+    } else {
+      throw err
+    }
+  }
+
+  return new GitHost(gitHostName, user, auth, project, committish, defaultRepresentation, opts)
+}
+
+// accepts input like git:github.com:user/repo and inserts the // after the first :
+const correctProtocol = (arg) => {
+  const firstColon = arg.indexOf(':')
+  const proto = arg.slice(0, firstColon + 1)
+  if (knownProtocols.includes(proto)) {
+    return arg
+  }
+
+  const firstAt = arg.indexOf('@')
+  if (firstAt > -1) {
+    if (firstAt > firstColon) {
+      return `git+ssh://${arg}`
+    } else {
+      return arg
+    }
+  }
+
+  const doubleSlash = arg.indexOf('//')
+  if (doubleSlash === firstColon + 1) {
+    return arg
+  }
+
+  return arg.slice(0, firstColon + 1) + '//' + arg.slice(firstColon + 1)
+}
+
+// look for github shorthand inputs, such as npm/cli
+const isGitHubShorthand = (arg) => {
+  // it cannot contain whitespace before the first #
+  // it cannot start with a / because that's probably an absolute file path
+  // but it must include a slash since repos are username/repository
+  // it cannot start with a . because that's probably a relative file path
+  // it cannot start with an @ because that's a scoped package if it passes the other tests
+  // it cannot contain a : before a # because that tells us that there's a protocol
+  // a second / may not exist before a #
+  const firstHash = arg.indexOf('#')
+  const firstSlash = arg.indexOf('/')
+  const secondSlash = arg.indexOf('/', firstSlash + 1)
+  const firstColon = arg.indexOf(':')
+  const firstSpace = /\s/.exec(arg)
+  const firstAt = arg.indexOf('@')
+
+  const spaceOnlyAfterHash = !firstSpace || (firstHash > -1 && firstSpace.index > firstHash)
+  const atOnlyAfterHash = firstAt === -1 || (firstHash > -1 && firstAt > firstHash)
+  const colonOnlyAfterHash = firstColon === -1 || (firstHash > -1 && firstColon > firstHash)
+  const secondSlashOnlyAfterHash = secondSlash === -1 || (firstHash > -1 && secondSlash > firstHash)
+  const hasSlash = firstSlash > 0
+  // if a # is found, what we really want to know is that the character
+  // immediately before # is not a /
+  const doesNotEndWithSlash = firstHash > -1 ? arg[firstHash - 1] !== '/' : !arg.endsWith('/')
+  const doesNotStartWithDot = !arg.startsWith('.')
+
+  return spaceOnlyAfterHash && hasSlash && doesNotEndWithSlash &&
+    doesNotStartWithDot && atOnlyAfterHash && colonOnlyAfterHash &&
+    secondSlashOnlyAfterHash
+}
+
+// attempt to correct an scp style url so that it will parse with `new URL()`
+const correctUrl = (giturl) => {
+  const firstAt = giturl.indexOf('@')
+  const lastHash = giturl.lastIndexOf('#')
+  let firstColon = giturl.indexOf(':')
+  let lastColon = giturl.lastIndexOf(':', lastHash > -1 ? lastHash : Infinity)
+
+  let corrected
+  if (lastColon > firstAt) {
+    // the last : comes after the first @ (or there is no @)
+    // like it would in:
+    // proto://hostname.com:user/repo
+    // username@hostname.com:user/repo
+    // :password@hostname.com:user/repo
+    // username:password@hostname.com:user/repo
+    // proto://username@hostname.com:user/repo
+    // proto://:password@hostname.com:user/repo
+    // proto://username:password@hostname.com:user/repo
+    // then we replace the last : with a / to create a valid path
+    corrected = giturl.slice(0, lastColon) + '/' + giturl.slice(lastColon + 1)
+    // // and we find our new : positions
+    firstColon = corrected.indexOf(':')
+    lastColon = corrected.lastIndexOf(':')
+  }
+
+  if (firstColon === -1 && giturl.indexOf('//') === -1) {
+    // we have no : at all
+    // as it would be in:
+    // username@hostname.com/user/repo
+    // then we prepend a protocol
+    corrected = `git+ssh://${corrected}`
+  }
+
+  return corrected
+}
+
+// try to parse the url as its given to us, if that throws
+// then we try to clean the url and parse that result instead
+// THIS FUNCTION SHOULD NEVER THROW
+const parseGitUrl = (giturl) => {
+  let result
+  try {
+    result = new url.URL(giturl)
+  } catch (err) {}
+
+  if (result) {
+    return result
+  }
+
+  const correctedUrl = correctUrl(giturl)
+  try {
+    result = new url.URL(correctedUrl)
+  } catch (err) {}
+
+  return result
+}
+
+
+/***/ }),
+
 /***/ 18826:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -71870,6 +74590,17 @@ module.exports.sync = (paths, options) => {
 
 /***/ }),
 
+/***/ 2358:
+/***/ ((module) => {
+
+const isWindows = typeof process === 'object' &&
+  process &&
+  process.platform === 'win32'
+module.exports = isWindows ? { sep: '\\' } : { sep: '/' }
+
+
+/***/ }),
+
 /***/ 78241:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -71886,9 +74617,7 @@ const minimatch = module.exports = (p, pattern, options = {}) => {
 
 module.exports = minimatch
 
-const path = (() => { try { return __nccwpck_require__(71017) } catch (e) {}})() || {
-  sep: '/'
-}
+const path = __nccwpck_require__(2358)
 minimatch.sep = path.sep
 
 const GLOBSTAR = Symbol('globstar **')
@@ -73475,7 +76204,7 @@ function fromRegistry (res) {
 
 /***/ }),
 
-/***/ 41933:
+/***/ 87333:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
@@ -73539,6 +76268,7 @@ const defaultRules = [
   '*.orig',
   '/package-lock.json',
   '/yarn.lock',
+  '/pnpm-lock.yaml',
   '/archived-packages/**',
 ]
 
@@ -73729,7 +76459,7 @@ const npmWalker = Class => class Walker extends Class {
       }
     }
     const processResults = results => {
-      for (const {negate, fileList} of results) {
+      for (const { negate, fileList } of results) {
         if (negate) {
           fileList.forEach(f => {
             f = f.replace(/\/+$/, '')
@@ -73757,7 +76487,7 @@ const npmWalker = Class => class Walker extends Class {
     // maintain the index so that we process them in-order only once all
     // are completed, otherwise the parallelism messes things up, since a
     // glob like **/*.js will always be slower than a subsequent !foo.js
-    patterns.forEach(({pattern, negate}, i) =>
+    patterns.forEach(({ pattern, negate }, i) =>
       this.globFiles(pattern, (er, res) => then(pattern, negate, er, res, i)))
   }
 
@@ -74195,7 +76925,7 @@ module.exports = (packument, wanted, opts = {}) => {
 
 "use strict";
 
-const npa = __nccwpck_require__(20680)
+const npa = __nccwpck_require__(88100)
 const { URL } = __nccwpck_require__(57310)
 
 // Find the longest registry key that is used for some kind of auth
@@ -74322,6 +77052,7 @@ const errors = __nccwpck_require__(83774)
 const { Response } = __nccwpck_require__(68998)
 const defaultOpts = __nccwpck_require__(20305)
 const log = __nccwpck_require__(56528)
+const cleanUrl = __nccwpck_require__(38954)
 
 /* eslint-disable-next-line max-len */
 const moreInfoUrl = 'https://github.com/npm/cli/wiki/No-auth-for-URI,-but-auth-present-for-scoped-registry'
@@ -74363,19 +77094,7 @@ function logRequest (method, res, startTime) {
   const attemptStr = attempt && attempt > 1 ? ` attempt #${attempt}` : ''
   const cacheStatus = res.headers.get('x-local-cache-status')
   const cacheStr = cacheStatus ? ` (cache ${cacheStatus})` : ''
-
-  let urlStr
-  try {
-    const { URL } = __nccwpck_require__(57310)
-    const url = new URL(res.url)
-    if (url.password) {
-      url.password = '***'
-    }
-
-    urlStr = url.toString()
-  } catch (er) {
-    urlStr = res.url
-  }
+  const urlStr = cleanUrl(res.url)
 
   log.http(
     'fetch',
@@ -74425,6 +77144,37 @@ function checkErrors (method, res, startTime, opts) {
       }
     })
 }
+
+
+/***/ }),
+
+/***/ 38954:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const { URL } = __nccwpck_require__(57310)
+
+const replace = '***'
+const tokenRegex = /\bnpm_[a-zA-Z0-9]{36}\b/g
+const guidRegex = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/g
+
+const cleanUrl = (str) => {
+  if (typeof str !== 'string' || !str) {
+    return str
+  }
+
+  try {
+    const url = new URL(str)
+    if (url.password) {
+      str = str.replace(url.password, replace)
+    }
+  } catch {}
+
+  return str
+    .replace(tokenRegex, `npm_${replace}`)
+    .replace(guidRegex, `npm_${replace}`)
+}
+
+module.exports = cleanUrl
 
 
 /***/ }),
@@ -74552,9 +77302,9 @@ module.exports.HttpErrorAuthUnknown = HttpErrorAuthUnknown
 const { HttpErrorAuthOTP } = __nccwpck_require__(83774)
 const checkResponse = __nccwpck_require__(76302)
 const getAuth = __nccwpck_require__(67570)
-const fetch = __nccwpck_require__(85268)
+const fetch = __nccwpck_require__(9525)
 const JSONStream = __nccwpck_require__(20528)
-const npa = __nccwpck_require__(20680)
+const npa = __nccwpck_require__(88100)
 const qs = __nccwpck_require__(63477)
 const url = __nccwpck_require__(57310)
 const zlib = __nccwpck_require__(33486)
@@ -74653,11 +77403,11 @@ function regFetch (uri, /* istanbul ignore next */ opts_ = {}) {
     opts.preferOnline = true
   }
 
-  const doFetch = async body => {
+  const doFetch = async fetchBody => {
     const p = fetch(uri, {
       agent: opts.agent,
       algorithms: opts.algorithms,
-      body,
+      body: fetchBody,
       cache: getCacheMode(opts),
       cachePath: opts.cache,
       ca: opts.ca,
@@ -74789,2120 +77539,1146 @@ function getHeaders (uri, auth, opts) {
   return headers
 }
 
-
-/***/ }),
-
-/***/ 17012:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-function once(emitter, name, { signal } = {}) {
-    return new Promise((resolve, reject) => {
-        function cleanup() {
-            signal === null || signal === void 0 ? void 0 : signal.removeEventListener('abort', cleanup);
-            emitter.removeListener(name, onEvent);
-            emitter.removeListener('error', onError);
-        }
-        function onEvent(...args) {
-            cleanup();
-            resolve(args);
-        }
-        function onError(err) {
-            cleanup();
-            reject(err);
-        }
-        signal === null || signal === void 0 ? void 0 : signal.addEventListener('abort', cleanup);
-        emitter.on(name, onEvent);
-        emitter.on('error', onError);
-    });
-}
-exports["default"] = once;
-//# sourceMappingURL=index.js.map
-
-/***/ }),
-
-/***/ 66170:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const net_1 = __importDefault(__nccwpck_require__(41808));
-const tls_1 = __importDefault(__nccwpck_require__(24404));
-const url_1 = __importDefault(__nccwpck_require__(57310));
-const debug_1 = __importDefault(__nccwpck_require__(38237));
-const once_1 = __importDefault(__nccwpck_require__(17012));
-const agent_base_1 = __nccwpck_require__(49690);
-const debug = (0, debug_1.default)('http-proxy-agent');
-function isHTTPS(protocol) {
-    return typeof protocol === 'string' ? /^https:?$/i.test(protocol) : false;
-}
-/**
- * The `HttpProxyAgent` implements an HTTP Agent subclass that connects
- * to the specified "HTTP proxy server" in order to proxy HTTP requests.
- *
- * @api public
- */
-class HttpProxyAgent extends agent_base_1.Agent {
-    constructor(_opts) {
-        let opts;
-        if (typeof _opts === 'string') {
-            opts = url_1.default.parse(_opts);
-        }
-        else {
-            opts = _opts;
-        }
-        if (!opts) {
-            throw new Error('an HTTP(S) proxy server `host` and `port` must be specified!');
-        }
-        debug('Creating new HttpProxyAgent instance: %o', opts);
-        super(opts);
-        const proxy = Object.assign({}, opts);
-        // If `true`, then connect to the proxy server over TLS.
-        // Defaults to `false`.
-        this.secureProxy = opts.secureProxy || isHTTPS(proxy.protocol);
-        // Prefer `hostname` over `host`, and set the `port` if needed.
-        proxy.host = proxy.hostname || proxy.host;
-        if (typeof proxy.port === 'string') {
-            proxy.port = parseInt(proxy.port, 10);
-        }
-        if (!proxy.port && proxy.host) {
-            proxy.port = this.secureProxy ? 443 : 80;
-        }
-        if (proxy.host && proxy.path) {
-            // If both a `host` and `path` are specified then it's most likely
-            // the result of a `url.parse()` call... we need to remove the
-            // `path` portion so that `net.connect()` doesn't attempt to open
-            // that as a Unix socket file.
-            delete proxy.path;
-            delete proxy.pathname;
-        }
-        this.proxy = proxy;
-    }
-    /**
-     * Called when the node-core HTTP client library is creating a
-     * new HTTP request.
-     *
-     * @api protected
-     */
-    callback(req, opts) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const { proxy, secureProxy } = this;
-            const parsed = url_1.default.parse(req.path);
-            if (!parsed.protocol) {
-                parsed.protocol = 'http:';
-            }
-            if (!parsed.hostname) {
-                parsed.hostname = opts.hostname || opts.host || null;
-            }
-            if (parsed.port == null && typeof opts.port) {
-                parsed.port = String(opts.port);
-            }
-            if (parsed.port === '80') {
-                // if port is 80, then we can remove the port so that the
-                // ":80" portion is not on the produced URL
-                parsed.port = '';
-            }
-            // Change the `http.ClientRequest` instance's "path" field
-            // to the absolute path of the URL that will be requested.
-            req.path = url_1.default.format(parsed);
-            // Inject the `Proxy-Authorization` header if necessary.
-            if (proxy.auth) {
-                req.setHeader('Proxy-Authorization', `Basic ${Buffer.from(proxy.auth).toString('base64')}`);
-            }
-            // Create a socket connection to the proxy server.
-            let socket;
-            if (secureProxy) {
-                debug('Creating `tls.Socket`: %o', proxy);
-                socket = tls_1.default.connect(proxy);
-            }
-            else {
-                debug('Creating `net.Socket`: %o', proxy);
-                socket = net_1.default.connect(proxy);
-            }
-            // At this point, the http ClientRequest's internal `_header` field
-            // might have already been set. If this is the case then we'll need
-            // to re-generate the string since we just changed the `req.path`.
-            if (req._header) {
-                let first;
-                let endOfHeaders;
-                debug('Regenerating stored HTTP header string for request');
-                req._header = null;
-                req._implicitHeader();
-                if (req.output && req.output.length > 0) {
-                    // Node < 12
-                    debug('Patching connection write() output buffer with updated header');
-                    first = req.output[0];
-                    endOfHeaders = first.indexOf('\r\n\r\n') + 4;
-                    req.output[0] = req._header + first.substring(endOfHeaders);
-                    debug('Output buffer: %o', req.output);
-                }
-                else if (req.outputData && req.outputData.length > 0) {
-                    // Node >= 12
-                    debug('Patching connection write() output buffer with updated header');
-                    first = req.outputData[0].data;
-                    endOfHeaders = first.indexOf('\r\n\r\n') + 4;
-                    req.outputData[0].data =
-                        req._header + first.substring(endOfHeaders);
-                    debug('Output buffer: %o', req.outputData[0].data);
-                }
-            }
-            // Wait for the socket's `connect` event, so that this `callback()`
-            // function throws instead of the `http` request machinery. This is
-            // important for i.e. `PacProxyAgent` which determines a failed proxy
-            // connection via the `callback()` function throwing.
-            yield (0, once_1.default)(socket, 'connect');
-            return socket;
-        });
-    }
-}
-exports["default"] = HttpProxyAgent;
-//# sourceMappingURL=agent.js.map
-
-/***/ }),
-
-/***/ 92408:
-/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
-
-"use strict";
-
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-const agent_1 = __importDefault(__nccwpck_require__(66170));
-function createHttpProxyAgent(opts) {
-    return new agent_1.default(opts);
-}
-(function (createHttpProxyAgent) {
-    createHttpProxyAgent.HttpProxyAgent = agent_1.default;
-    createHttpProxyAgent.prototype = agent_1.default.prototype;
-})(createHttpProxyAgent || (createHttpProxyAgent = {}));
-module.exports = createHttpProxyAgent;
-//# sourceMappingURL=index.js.map
-
-/***/ }),
-
-/***/ 880:
-/***/ ((module) => {
-
-const perf = typeof performance === 'object' && performance &&
-  typeof performance.now === 'function' ? performance : Date
-
-const warned = new Set()
-const deprecatedOption = (opt, msg) => {
-  const code = `LRU_CACHE_OPTION_${opt}`
-  if (shouldWarn(code)) {
-    warn(code, `The ${opt} option is deprecated. ${msg}`, LRUCache)
-  }
-}
-const deprecatedMethod = (method, msg) => {
-  const code = `LRU_CACHE_METHOD_${method}`
-  if (shouldWarn(code)) {
-    const { prototype } = LRUCache
-    const { get } = Object.getOwnPropertyDescriptor(prototype, method)
-    warn(code, `The ${method} method is deprecated. ${msg}`, get)
-  }
-}
-const deprecatedProperty = (field, msg) => {
-  const code = `LRU_CACHE_PROPERTY_${field}`
-  if (shouldWarn(code)) {
-    const { prototype } = LRUCache
-    const { get } = Object.getOwnPropertyDescriptor(prototype, field)
-    warn(code, `The ${field} property is deprecated. ${msg}`, get)
-  }
-}
-const shouldWarn = (code) => !(process.noDeprecation || warned.has(code))
-const warn = (code, msg, fn) => {
-  warned.add(code)
-  process.emitWarning(msg, 'DeprecationWarning', code, fn)
-}
-
-const isPosInt = n => n && n === Math.floor(n) && n > 0 && isFinite(n)
-
-/* istanbul ignore next - This is a little bit ridiculous, tbh.
- * The maximum array length is 2^32-1 or thereabouts on most JS impls.
- * And well before that point, you're caching the entire world, I mean,
- * that's ~32GB of just integers for the next/prev links, plus whatever
- * else to hold that many keys and values.  Just filling the memory with
- * zeroes at init time is brutal when you get that big.
- * But why not be complete?
- * Maybe in the future, these limits will have expanded. */
-const getUintArray = max => !isPosInt(max) ? null
-: max <= Math.pow(2, 8) ? Uint8Array
-: max <= Math.pow(2, 16) ? Uint16Array
-: max <= Math.pow(2, 32) ? Uint32Array
-: max <= Number.MAX_SAFE_INTEGER ? ZeroArray
-: null
-
-class ZeroArray extends Array {
-  constructor (size) {
-    super(size)
-    this.fill(0)
-  }
-}
-
-class Stack {
-  constructor (max) {
-    const UintArray = getUintArray(max)
-    this.heap = new UintArray(max)
-    this.length = 0
-  }
-  push (n) {
-    this.heap[this.length++] = n
-  }
-  pop () {
-    return this.heap[--this.length]
-  }
-}
-
-class LRUCache {
-  constructor (options = {}) {
-    const {
-      max,
-      ttl,
-      ttlResolution = 1,
-      ttlAutopurge,
-      updateAgeOnGet,
-      allowStale,
-      dispose,
-      disposeAfter,
-      noDisposeOnSet,
-      maxSize,
-      sizeCalculation,
-    } = options
-
-    // deprecated options, don't trigger a warning for getting them if
-    // the thing being passed in is another LRUCache we're copying.
-    const {
-      length,
-      maxAge,
-      stale,
-    } = options instanceof LRUCache ? {} : options
-
-    if (!isPosInt(max)) {
-      throw new TypeError('max option must be an integer')
-    }
-
-    const UintArray = getUintArray(max)
-    if (!UintArray) {
-      throw new Error('invalid max value: ' + max)
-    }
-
-    this.max = max
-    this.maxSize = maxSize || 0
-    this.sizeCalculation = sizeCalculation || length
-    if (this.sizeCalculation) {
-      if (!this.maxSize) {
-        throw new TypeError('cannot set sizeCalculation without setting maxSize')
-      }
-      if (typeof this.sizeCalculation !== 'function') {
-        throw new TypeError('sizeCalculating set to non-function')
-      }
-    }
-    this.keyMap = new Map()
-    this.keyList = new Array(max).fill(null)
-    this.valList = new Array(max).fill(null)
-    this.next = new UintArray(max)
-    this.prev = new UintArray(max)
-    this.head = 0
-    this.tail = 0
-    this.free = new Stack(max)
-    this.initialFill = 1
-    this.size = 0
-
-    if (typeof dispose === 'function') {
-      this.dispose = dispose
-    }
-    if (typeof disposeAfter === 'function') {
-      this.disposeAfter = disposeAfter
-      this.disposed = []
-    } else {
-      this.disposeAfter = null
-      this.disposed = null
-    }
-    this.noDisposeOnSet = !!noDisposeOnSet
-
-    if (this.maxSize) {
-      if (!isPosInt(this.maxSize)) {
-        throw new TypeError('maxSize must be a positive integer if specified')
-      }
-      this.initializeSizeTracking()
-    }
-
-    this.allowStale = !!allowStale || !!stale
-    this.updateAgeOnGet = !!updateAgeOnGet
-    this.ttlResolution = isPosInt(ttlResolution) || ttlResolution === 0
-      ? ttlResolution : 1
-    this.ttlAutopurge = !!ttlAutopurge
-    this.ttl = ttl || maxAge || 0
-    if (this.ttl) {
-      if (!isPosInt(this.ttl)) {
-        throw new TypeError('ttl must be a positive integer if specified')
-      }
-      this.initializeTTLTracking()
-    }
-
-    if (stale) {
-      deprecatedOption('stale', 'please use options.allowStale instead')
-    }
-    if (maxAge) {
-      deprecatedOption('maxAge', 'please use options.ttl instead')
-    }
-    if (length) {
-      deprecatedOption('length', 'please use options.sizeCalculation instead')
-    }
-  }
-
-  initializeTTLTracking () {
-    this.ttls = new ZeroArray(this.max)
-    this.starts = new ZeroArray(this.max)
-    this.setItemTTL = (index, ttl) => {
-      this.starts[index] = ttl !== 0 ? perf.now() : 0
-      this.ttls[index] = ttl
-      if (ttl !== 0 && this.ttlAutopurge) {
-        const t = setTimeout(() => {
-          if (this.isStale(index)) {
-            this.delete(this.keyList[index])
-          }
-        }, ttl + 1)
-        /* istanbul ignore else - unref() not supported on all platforms */
-        if (t.unref) {
-          t.unref()
-        }
-      }
-    }
-    this.updateItemAge = (index) => {
-      this.starts[index] = this.ttls[index] !== 0 ? perf.now() : 0
-    }
-    // debounce calls to perf.now() to 1s so we're not hitting
-    // that costly call repeatedly.
-    let cachedNow = 0
-    const getNow = () => {
-      const n = perf.now()
-      if (this.ttlResolution > 0) {
-        cachedNow = n
-        const t = setTimeout(() => cachedNow = 0, this.ttlResolution)
-        /* istanbul ignore else - not available on all platforms */
-        if (t.unref) {
-          t.unref()
-        }
-      }
-      return n
-    }
-    this.isStale = (index) => {
-      return this.ttls[index] !== 0 && this.starts[index] !== 0 &&
-        ((cachedNow || getNow()) - this.starts[index] > this.ttls[index])
-    }
-  }
-  updateItemAge (index) {}
-  setItemTTL (index, ttl) {}
-  isStale (index) { return false }
-
-  initializeSizeTracking () {
-    this.calculatedSize = 0
-    this.sizes = new ZeroArray(this.max)
-    this.removeItemSize = index => this.calculatedSize -= this.sizes[index]
-    this.addItemSize = (index, v, k, size, sizeCalculation) => {
-      const s = size || (sizeCalculation ? sizeCalculation(v, k) : 0)
-      this.sizes[index] = isPosInt(s) ? s : 0
-      const maxSize = this.maxSize - this.sizes[index]
-      while (this.calculatedSize > maxSize) {
-        this.evict()
-      }
-      this.calculatedSize += this.sizes[index]
-    }
-    this.delete = k => {
-      if (this.size !== 0) {
-        const index = this.keyMap.get(k)
-        if (index !== undefined) {
-          this.calculatedSize -= this.sizes[index]
-        }
-      }
-      return LRUCache.prototype.delete.call(this, k)
-    }
-  }
-  removeItemSize (index) {}
-  addItemSize (index, v, k, size, sizeCalculation) {}
-
-  *indexes () {
-    if (this.size) {
-      for (let i = this.tail; true; i = this.prev[i]) {
-        if (!this.isStale(i)) {
-          yield i
-        }
-        if (i === this.head) {
-          break
-        }
-      }
-    }
-  }
-  *rindexes () {
-    if (this.size) {
-      for (let i = this.head; true; i = this.next[i]) {
-        if (!this.isStale(i)) {
-          yield i
-        }
-        if (i === this.tail) {
-          break
-        }
-      }
-    }
-  }
-
-  *entries () {
-    for (const i of this.indexes()) {
-      yield [this.keyList[i], this.valList[i]]
-    }
-  }
-
-  *keys () {
-    for (const i of this.indexes()) {
-      yield this.keyList[i]
-    }
-  }
-
-  *values () {
-    for (const i of this.indexes()) {
-      yield this.valList[i]
-    }
-  }
-
-  [Symbol.iterator] () {
-    return this.entries()
-  }
-
-  find (fn, getOptions = {}) {
-    for (const i of this.indexes()) {
-      if (fn(this.valList[i], this.keyList[i], this)) {
-        return this.get(this.keyList[i], getOptions)
-      }
-    }
-  }
-
-  forEach (fn, thisp = this) {
-    for (const i of this.indexes()) {
-      fn.call(thisp, this.valList[i], this.keyList[i], this)
-    }
-  }
-
-  rforEach (fn, thisp = this) {
-    for (const i of this.rindexes()) {
-      fn.call(thisp, this.valList[i], this.keyList[i], this)
-    }
-  }
-
-  get prune () {
-    deprecatedMethod('prune', 'Please use cache.purgeStale() instead.')
-    return this.purgeStale
-  }
-
-  purgeStale () {
-    let deleted = false
-    if (this.size) {
-      for (let i = this.head; true; i = this.next[i]) {
-        const b = i === this.tail
-        if (this.isStale(i)) {
-          this.delete(this.keyList[i])
-          deleted = true
-        }
-        if (b) {
-          break
-        }
-      }
-    }
-    return deleted
-  }
-
-  dump () {
-    const arr = []
-    for (const i of this.indexes()) {
-      const key = this.keyList[i]
-      const value = this.valList[i]
-      const entry = { value }
-      if (this.ttls) {
-        entry.ttl = this.ttls[i]
-      }
-      if (this.sizes) {
-        entry.size = this.sizes[i]
-      }
-      arr.unshift([key, entry])
-    }
-    return arr
-  }
-
-  load (arr) {
-    this.clear()
-    for (const [key, entry] of arr) {
-      this.set(key, entry.value, entry)
-    }
-  }
-
-  dispose (v, k, reason) {}
-
-  set (k, v, {
-    ttl = this.ttl,
-    noDisposeOnSet = this.noDisposeOnSet,
-    size = 0,
-    sizeCalculation = this.sizeCalculation,
-  } = {}) {
-    let index = this.size === 0 ? undefined : this.keyMap.get(k)
-    if (index === undefined) {
-      // addition
-      index = this.newIndex()
-      this.keyList[index] = k
-      this.valList[index] = v
-      this.keyMap.set(k, index)
-      this.next[this.tail] = index
-      this.prev[index] = this.tail
-      this.tail = index
-      this.size ++
-      this.addItemSize(index, v, k, size, sizeCalculation)
-    } else {
-      // update
-      const oldVal = this.valList[index]
-      if (v !== oldVal) {
-        if (!noDisposeOnSet) {
-          this.dispose(oldVal, k, 'set')
-          if (this.disposeAfter) {
-            this.disposed.push([oldVal, k, 'set'])
-          }
-        }
-        this.removeItemSize(index)
-        this.valList[index] = v
-        this.addItemSize(index, v, k, size, sizeCalculation)
-      }
-      this.moveToTail(index)
-    }
-    if (ttl !== 0 && this.ttl === 0 && !this.ttls) {
-      this.initializeTTLTracking()
-    }
-    this.setItemTTL(index, ttl)
-    if (this.disposeAfter) {
-      while (this.disposed.length) {
-        this.disposeAfter(...this.disposed.shift())
-      }
-    }
-    return this
-  }
-
-  newIndex () {
-    if (this.size === 0) {
-      return this.tail
-    }
-    if (this.size === this.max) {
-      return this.evict()
-    }
-    if (this.free.length !== 0) {
-      return this.free.pop()
-    }
-    // initial fill, just keep writing down the list
-    return this.initialFill++
-  }
-
-  pop () {
-    if (this.size) {
-      const val = this.valList[this.head]
-      this.evict()
-      return val
-    }
-  }
-
-  evict () {
-    const head = this.head
-    const k = this.keyList[head]
-    const v = this.valList[head]
-    this.dispose(v, k, 'evict')
-    if (this.disposeAfter) {
-      this.disposed.push([v, k, 'evict'])
-    }
-    this.removeItemSize(head)
-    this.head = this.next[head]
-    this.keyMap.delete(k)
-    this.size --
-    return head
-  }
-
-  has (k) {
-    return this.keyMap.has(k) && !this.isStale(this.keyMap.get(k))
-  }
-
-  // like get(), but without any LRU updating or TTL expiration
-  peek (k, { allowStale = this.allowStale } = {}) {
-    const index = this.keyMap.get(k)
-    if (index !== undefined && (allowStale || !this.isStale(index))) {
-      return this.valList[index]
-    }
-  }
-
-  get (k, {
-    allowStale = this.allowStale,
-    updateAgeOnGet = this.updateAgeOnGet,
-  } = {}) {
-    const index = this.keyMap.get(k)
-    if (index !== undefined) {
-      if (this.isStale(index)) {
-        const value = allowStale ? this.valList[index] : undefined
-        this.delete(k)
-        return value
-      } else {
-        this.moveToTail(index)
-        if (updateAgeOnGet) {
-          this.updateItemAge(index)
-        }
-        return this.valList[index]
-      }
-    }
-  }
-
-  connect (p, n) {
-    this.prev[n] = p
-    this.next[p] = n
-  }
-
-  moveToTail (index) {
-    // if tail already, nothing to do
-    // if head, move head to next[index]
-    // else
-    //   move next[prev[index]] to next[index] (head has no prev)
-    //   move prev[next[index]] to prev[index]
-    // prev[index] = tail
-    // next[tail] = index
-    // tail = index
-    if (index !== this.tail) {
-      if (index === this.head) {
-        this.head = this.next[index]
-      } else {
-        this.connect(this.prev[index], this.next[index])
-      }
-      this.connect(this.tail, index)
-      this.tail = index
-    }
-  }
-
-  get del () {
-    deprecatedMethod('del', 'Please use cache.delete() instead.')
-    return this.delete
-  }
-  delete (k) {
-    let deleted = false
-    if (this.size !== 0) {
-      const index = this.keyMap.get(k)
-      if (index !== undefined) {
-        deleted = true
-        if (this.size === 1) {
-          this.clear()
-        } else {
-          this.removeItemSize(index)
-          this.dispose(this.valList[index], k, 'delete')
-          if (this.disposeAfter) {
-            this.disposed.push([this.valList[index], k, 'delete'])
-          }
-          this.keyMap.delete(k)
-          this.keyList[index] = null
-          this.valList[index] = null
-          if (index === this.tail) {
-            this.tail = this.prev[index]
-          } else if (index === this.head) {
-            this.head = this.next[index]
-          } else {
-            this.next[this.prev[index]] = this.next[index]
-            this.prev[this.next[index]] = this.prev[index]
-          }
-          this.size --
-          this.free.push(index)
-        }
-      }
-    }
-    if (this.disposed) {
-      while (this.disposed.length) {
-        this.disposeAfter(...this.disposed.shift())
-      }
-    }
-    return deleted
-  }
-
-  clear () {
-    if (this.dispose !== LRUCache.prototype.dispose) {
-      for (const index of this.rindexes()) {
-        this.dispose(this.valList[index], this.keyList[index], 'delete')
-      }
-    }
-    if (this.disposeAfter) {
-      for (const index of this.rindexes()) {
-        this.disposed.push([this.valList[index], this.keyList[index], 'delete'])
-      }
-    }
-    this.keyMap.clear()
-    this.valList.fill(null)
-    this.keyList.fill(null)
-    if (this.ttls) {
-      this.ttls.fill(0)
-      this.starts.fill(0)
-    }
-    if (this.sizes) {
-      this.sizes.fill(0)
-    }
-    this.head = 0
-    this.tail = 0
-    this.initialFill = 1
-    this.free.length = 0
-    this.calculatedSize = 0
-    this.size = 0
-    if (this.disposed) {
-      while (this.disposed.length) {
-        this.disposeAfter(...this.disposed.shift())
-      }
-    }
-  }
-  get reset () {
-    deprecatedMethod('reset', 'Please use cache.clear() instead.')
-    return this.clear
-  }
-
-  get length () {
-    deprecatedProperty('length', 'Please use cache.size instead.')
-    return this.size
-  }
-}
-
-module.exports = LRUCache
+module.exports.cleanUrl = __nccwpck_require__(38954)
 
 
 /***/ }),
 
-/***/ 69573:
+/***/ 72708:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
-const LRU = __nccwpck_require__(880)
-const url = __nccwpck_require__(57310)
-const isLambda = __nccwpck_require__(94468)
 
-const AGENT_CACHE = new LRU({ max: 50 })
-const HttpAgent = __nccwpck_require__(34623)
-const HttpsAgent = HttpAgent.HttpsAgent
+const semver = __nccwpck_require__(11383)
 
-module.exports = getAgent
+const permanentModules = [
+  'assert',
+  'buffer',
+  'child_process',
+  'cluster',
+  'console',
+  'constants',
+  'crypto',
+  'dgram',
+  'dns',
+  'domain',
+  'events',
+  'fs',
+  'http',
+  'https',
+  'module',
+  'net',
+  'os',
+  'path',
+  'punycode',
+  'querystring',
+  'readline',
+  'repl',
+  'stream',
+  'string_decoder',
+  'sys',
+  'timers',
+  'tls',
+  'tty',
+  'url',
+  'util',
+  'vm',
+  'zlib'
+]
 
-const getAgentTimeout = timeout =>
-  typeof timeout !== 'number' || !timeout ? 0 : timeout + 1
-
-const getMaxSockets = maxSockets => maxSockets || 15
-
-function getAgent (uri, opts) {
-  const parsedUri = new url.URL(typeof uri === 'string' ? uri : uri.url)
-  const isHttps = parsedUri.protocol === 'https:'
-  const pxuri = getProxyUri(parsedUri.href, opts)
-
-  // If opts.timeout is zero, set the agentTimeout to zero as well. A timeout
-  // of zero disables the timeout behavior (OS limits still apply). Else, if
-  // opts.timeout is a non-zero value, set it to timeout + 1, to ensure that
-  // the node-fetch-npm timeout will always fire first, giving us more
-  // consistent errors.
-  const agentTimeout = getAgentTimeout(opts.timeout)
-  const agentMaxSockets = getMaxSockets(opts.maxSockets)
-
-  const key = [
-    `https:${isHttps}`,
-    pxuri
-      ? `proxy:${pxuri.protocol}//${pxuri.host}:${pxuri.port}`
-      : '>no-proxy<',
-    `local-address:${opts.localAddress || '>no-local-address<'}`,
-    `strict-ssl:${isHttps ? opts.rejectUnauthorized : '>no-strict-ssl<'}`,
-    `ca:${(isHttps && opts.ca) || '>no-ca<'}`,
-    `cert:${(isHttps && opts.cert) || '>no-cert<'}`,
-    `key:${(isHttps && opts.key) || '>no-key<'}`,
-    `timeout:${agentTimeout}`,
-    `maxSockets:${agentMaxSockets}`,
-  ].join(':')
-
-  if (opts.agent != null) { // `agent: false` has special behavior!
-    return opts.agent
-  }
-
-  // keep alive in AWS lambda makes no sense
-  const lambdaAgent = !isLambda ? null
-    : isHttps ? (__nccwpck_require__(95687).globalAgent)
-    : (__nccwpck_require__(13685).globalAgent)
-
-  if (isLambda && !pxuri) {
-    return lambdaAgent
-  }
-
-  if (AGENT_CACHE.peek(key)) {
-    return AGENT_CACHE.get(key)
-  }
-
-  if (pxuri) {
-    const pxopts = isLambda ? {
-      ...opts,
-      agent: lambdaAgent,
-    } : opts
-    const proxy = getProxy(pxuri, pxopts, isHttps)
-    AGENT_CACHE.set(key, proxy)
-    return proxy
-  }
-
-  const agent = isHttps ? new HttpsAgent({
-    maxSockets: agentMaxSockets,
-    ca: opts.ca,
-    cert: opts.cert,
-    key: opts.key,
-    localAddress: opts.localAddress,
-    rejectUnauthorized: opts.rejectUnauthorized,
-    timeout: agentTimeout,
-    freeSocketTimeout: 15000,
-  }) : new HttpAgent({
-    maxSockets: agentMaxSockets,
-    localAddress: opts.localAddress,
-    timeout: agentTimeout,
-    freeSocketTimeout: 15000,
-  })
-  AGENT_CACHE.set(key, agent)
-  return agent
+const versionLockedModules = {
+  freelist: '<6.0.0',
+  v8: '>=1.0.0',
+  process: '>=1.1.0',
+  inspector: '>=8.0.0',
+  async_hooks: '>=8.1.0',
+  http2: '>=8.4.0',
+  perf_hooks: '>=8.5.0',
+  trace_events: '>=10.0.0',
+  worker_threads: '>=12.0.0'
 }
 
-function checkNoProxy (uri, opts) {
-  const host = new url.URL(uri).hostname.split('.').reverse()
-  let noproxy = (opts.noProxy || getProcessEnv('no_proxy'))
-  if (typeof noproxy === 'string') {
-    noproxy = noproxy.split(',').map(n => n.trim())
-  }
-
-  return noproxy && noproxy.some(no => {
-    const noParts = no.split('.').filter(x => x).reverse()
-    if (!noParts.length) {
-      return false
-    }
-    for (let i = 0; i < noParts.length; i++) {
-      if (host[i] !== noParts[i]) {
-        return false
-      }
-    }
-    return true
-  })
+const experimentalModules = {
+  worker_threads: '>=10.5.0',
+  wasi: '>=12.16.0',
+  diagnostics_channel: '^14.17.0 || >=15.1.0'
 }
 
-module.exports.getProcessEnv = getProcessEnv
+module.exports = ({ version = process.version, experimental = false } = {}) => {
+  const builtins = [...permanentModules]
 
-function getProcessEnv (env) {
-  if (!env) {
-    return
+  for (const [name, semverRange] of Object.entries(versionLockedModules)) {
+    if (version === '*' || semver.satisfies(version, semverRange)) {
+      builtins.push(name)
+    }
   }
 
-  let value
-
-  if (Array.isArray(env)) {
-    for (const e of env) {
-      value = process.env[e] ||
-        process.env[e.toUpperCase()] ||
-        process.env[e.toLowerCase()]
-      if (typeof value !== 'undefined') {
-        break
+  if (experimental) {
+    for (const [name, semverRange] of Object.entries(experimentalModules)) {
+      if (
+        !builtins.includes(name) &&
+        (version === '*' || semver.satisfies(version, semverRange))
+      ) {
+        builtins.push(name)
       }
     }
   }
 
-  if (typeof env === 'string') {
-    value = process.env[env] ||
-      process.env[env.toUpperCase()] ||
-      process.env[env.toLowerCase()]
-  }
-
-  return value
+  return builtins
 }
 
-module.exports.getProxyUri = getProxyUri
-function getProxyUri (uri, opts) {
-  const protocol = new url.URL(uri).protocol
 
-  const proxy = opts.proxy ||
-    (
-      protocol === 'https:' &&
-      getProcessEnv('https_proxy')
-    ) ||
-    (
-      protocol === 'http:' &&
-      getProcessEnv(['https_proxy', 'http_proxy', 'proxy'])
-    )
-  if (!proxy) {
+/***/ }),
+
+/***/ 47417:
+/***/ ((module) => {
+
+"use strict";
+/* eslint-disable max-len */
+
+const maybeJoin = (...args) => args.every(arg => arg) ? args.join('') : ''
+const maybeEncode = (arg) => arg ? encodeURIComponent(arg) : ''
+
+const defaults = {
+  sshtemplate: ({ domain, user, project, committish }) => `git@${domain}:${user}/${project}.git${maybeJoin('#', committish)}`,
+  sshurltemplate: ({ domain, user, project, committish }) => `git+ssh://git@${domain}/${user}/${project}.git${maybeJoin('#', committish)}`,
+  browsetemplate: ({ domain, user, project, committish, treepath }) => `https://${domain}/${user}/${project}${maybeJoin('/', treepath, '/', maybeEncode(committish))}`,
+  browsefiletemplate: ({ domain, user, project, committish, treepath, path, fragment, hashformat }) => `https://${domain}/${user}/${project}/${treepath}/${maybeEncode(committish || 'master')}/${path}${maybeJoin('#', hashformat(fragment || ''))}`,
+  docstemplate: ({ domain, user, project, treepath, committish }) => `https://${domain}/${user}/${project}${maybeJoin('/', treepath, '/', maybeEncode(committish))}#readme`,
+  httpstemplate: ({ auth, domain, user, project, committish }) => `git+https://${maybeJoin(auth, '@')}${domain}/${user}/${project}.git${maybeJoin('#', committish)}`,
+  filetemplate: ({ domain, user, project, committish, path }) => `https://${domain}/${user}/${project}/raw/${maybeEncode(committish) || 'master'}/${path}`,
+  shortcuttemplate: ({ type, user, project, committish }) => `${type}:${user}/${project}${maybeJoin('#', committish)}`,
+  pathtemplate: ({ user, project, committish }) => `${user}/${project}${maybeJoin('#', committish)}`,
+  bugstemplate: ({ domain, user, project }) => `https://${domain}/${user}/${project}/issues`,
+  hashformat: formatHashFragment,
+}
+
+const gitHosts = {}
+gitHosts.github = Object.assign({}, defaults, {
+  // First two are insecure and generally shouldn't be used any more, but
+  // they are still supported.
+  protocols: ['git:', 'http:', 'git+ssh:', 'git+https:', 'ssh:', 'https:'],
+  domain: 'github.com',
+  treepath: 'tree',
+  filetemplate: ({ auth, user, project, committish, path }) => `https://${maybeJoin(auth, '@')}raw.githubusercontent.com/${user}/${project}/${maybeEncode(committish) || 'master'}/${path}`,
+  gittemplate: ({ auth, domain, user, project, committish }) => `git://${maybeJoin(auth, '@')}${domain}/${user}/${project}.git${maybeJoin('#', committish)}`,
+  tarballtemplate: ({ domain, user, project, committish }) => `https://codeload.${domain}/${user}/${project}/tar.gz/${maybeEncode(committish) || 'master'}`,
+  extract: (url) => {
+    let [, user, project, type, committish] = url.pathname.split('/', 5)
+    if (type && type !== 'tree') {
+      return
+    }
+
+    if (!type) {
+      committish = url.hash.slice(1)
+    }
+
+    if (project && project.endsWith('.git')) {
+      project = project.slice(0, -4)
+    }
+
+    if (!user || !project) {
+      return
+    }
+
+    return { user, project, committish }
+  },
+})
+
+gitHosts.bitbucket = Object.assign({}, defaults, {
+  protocols: ['git+ssh:', 'git+https:', 'ssh:', 'https:'],
+  domain: 'bitbucket.org',
+  treepath: 'src',
+  tarballtemplate: ({ domain, user, project, committish }) => `https://${domain}/${user}/${project}/get/${maybeEncode(committish) || 'master'}.tar.gz`,
+  extract: (url) => {
+    let [, user, project, aux] = url.pathname.split('/', 4)
+    if (['get'].includes(aux)) {
+      return
+    }
+
+    if (project && project.endsWith('.git')) {
+      project = project.slice(0, -4)
+    }
+
+    if (!user || !project) {
+      return
+    }
+
+    return { user, project, committish: url.hash.slice(1) }
+  },
+})
+
+gitHosts.gitlab = Object.assign({}, defaults, {
+  protocols: ['git+ssh:', 'git+https:', 'ssh:', 'https:'],
+  domain: 'gitlab.com',
+  treepath: 'tree',
+  httpstemplate: ({ auth, domain, user, project, committish }) => `git+https://${maybeJoin(auth, '@')}${domain}/${user}/${project}.git${maybeJoin('#', committish)}`,
+  tarballtemplate: ({ domain, user, project, committish }) => `https://${domain}/${user}/${project}/repository/archive.tar.gz?ref=${maybeEncode(committish) || 'master'}`,
+  extract: (url) => {
+    const path = url.pathname.slice(1)
+    if (path.includes('/-/') || path.includes('/archive.tar.gz')) {
+      return
+    }
+
+    const segments = path.split('/')
+    let project = segments.pop()
+    if (project.endsWith('.git')) {
+      project = project.slice(0, -4)
+    }
+
+    const user = segments.join('/')
+    if (!user || !project) {
+      return
+    }
+
+    return { user, project, committish: url.hash.slice(1) }
+  },
+})
+
+gitHosts.gist = Object.assign({}, defaults, {
+  protocols: ['git:', 'git+ssh:', 'git+https:', 'ssh:', 'https:'],
+  domain: 'gist.github.com',
+  sshtemplate: ({ domain, project, committish }) => `git@${domain}:${project}.git${maybeJoin('#', committish)}`,
+  sshurltemplate: ({ domain, project, committish }) => `git+ssh://git@${domain}/${project}.git${maybeJoin('#', committish)}`,
+  browsetemplate: ({ domain, project, committish }) => `https://${domain}/${project}${maybeJoin('/', maybeEncode(committish))}`,
+  browsefiletemplate: ({ domain, project, committish, path, hashformat }) => `https://${domain}/${project}${maybeJoin('/', maybeEncode(committish))}${maybeJoin('#', hashformat(path))}`,
+  docstemplate: ({ domain, project, committish }) => `https://${domain}/${project}${maybeJoin('/', maybeEncode(committish))}`,
+  httpstemplate: ({ domain, project, committish }) => `git+https://${domain}/${project}.git${maybeJoin('#', committish)}`,
+  filetemplate: ({ user, project, committish, path }) => `https://gist.githubusercontent.com/${user}/${project}/raw${maybeJoin('/', maybeEncode(committish))}/${path}`,
+  shortcuttemplate: ({ type, project, committish }) => `${type}:${project}${maybeJoin('#', committish)}`,
+  pathtemplate: ({ project, committish }) => `${project}${maybeJoin('#', committish)}`,
+  bugstemplate: ({ domain, project }) => `https://${domain}/${project}`,
+  gittemplate: ({ domain, project, committish }) => `git://${domain}/${project}.git${maybeJoin('#', committish)}`,
+  tarballtemplate: ({ project, committish }) => `https://codeload.github.com/gist/${project}/tar.gz/${maybeEncode(committish) || 'master'}`,
+  extract: (url) => {
+    let [, user, project, aux] = url.pathname.split('/', 4)
+    if (aux === 'raw') {
+      return
+    }
+
+    if (!project) {
+      if (!user) {
+        return
+      }
+
+      project = user
+      user = null
+    }
+
+    if (project.endsWith('.git')) {
+      project = project.slice(0, -4)
+    }
+
+    return { user, project, committish: url.hash.slice(1) }
+  },
+  hashformat: function (fragment) {
+    return fragment && 'file-' + formatHashFragment(fragment)
+  },
+})
+
+gitHosts.sourcehut = Object.assign({}, defaults, {
+  protocols: ['git+ssh:', 'https:'],
+  domain: 'git.sr.ht',
+  treepath: 'tree',
+  browsefiletemplate: ({ domain, user, project, committish, treepath, path, fragment, hashformat }) => `https://${domain}/${user}/${project}/${treepath}/${maybeEncode(committish || 'main')}/${path}${maybeJoin('#', hashformat(fragment || ''))}`,
+  filetemplate: ({ domain, user, project, committish, path }) => `https://${domain}/${user}/${project}/blob/${maybeEncode(committish) || 'main'}/${path}`,
+  httpstemplate: ({ domain, user, project, committish }) => `https://${domain}/${user}/${project}.git${maybeJoin('#', committish)}`,
+  tarballtemplate: ({ domain, user, project, committish }) => `https://${domain}/${user}/${project}/archive/${maybeEncode(committish) || 'main'}.tar.gz`,
+  bugstemplate: ({ domain, user, project }) => `https://todo.sr.ht/${user}/${project}`,
+  docstemplate: ({ domain, user, project, treepath, committish }) => `https://${domain}/${user}/${project}${maybeJoin('/', treepath, '/', maybeEncode(committish))}#readme`,
+  extract: (url) => {
+    let [, user, project, aux] = url.pathname.split('/', 4)
+
+    // tarball url
+    if (['archive'].includes(aux)) {
+      return
+    }
+
+    if (project && project.endsWith('.git')) {
+      project = project.slice(0, -4)
+    }
+
+    if (!user || !project) {
+      return
+    }
+
+    return { user, project, committish: url.hash.slice(1) }
+  },
+})
+
+const names = Object.keys(gitHosts)
+gitHosts.byShortcut = {}
+gitHosts.byDomain = {}
+for (const name of names) {
+  gitHosts.byShortcut[`${name}:`] = name
+  gitHosts.byDomain[gitHosts[name].domain] = name
+}
+
+function formatHashFragment (fragment) {
+  return fragment.toLowerCase().replace(/^\W+|\/|\W+$/g, '').replace(/\W+/g, '-')
+}
+
+module.exports = gitHosts
+
+
+/***/ }),
+
+/***/ 17613:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+const gitHosts = __nccwpck_require__(47417)
+
+class GitHost {
+  constructor (type, user, auth, project, committish, defaultRepresentation, opts = {}) {
+    Object.assign(this, gitHosts[type])
+    this.type = type
+    this.user = user
+    this.auth = auth
+    this.project = project
+    this.committish = committish
+    this.default = defaultRepresentation
+    this.opts = opts
+  }
+
+  hash () {
+    return this.committish ? `#${this.committish}` : ''
+  }
+
+  ssh (opts) {
+    return this._fill(this.sshtemplate, opts)
+  }
+
+  _fill (template, opts) {
+    if (typeof template === 'function') {
+      const options = { ...this, ...this.opts, ...opts }
+
+      // the path should always be set so we don't end up with 'undefined' in urls
+      if (!options.path) {
+        options.path = ''
+      }
+
+      // template functions will insert the leading slash themselves
+      if (options.path.startsWith('/')) {
+        options.path = options.path.slice(1)
+      }
+
+      if (options.noCommittish) {
+        options.committish = null
+      }
+
+      const result = template(options)
+      return options.noGitPlus && result.startsWith('git+') ? result.slice(4) : result
+    }
+
     return null
   }
 
-  const parsedProxy = (typeof proxy === 'string') ? new url.URL(proxy) : proxy
-
-  return !checkNoProxy(uri, opts) && parsedProxy
-}
-
-const getAuth = u =>
-  u.username && u.password ? decodeURIComponent(`${u.username}:${u.password}`)
-  : u.username ? decodeURIComponent(u.username)
-  : null
-
-const getPath = u => u.pathname + u.search + u.hash
-
-const HttpProxyAgent = __nccwpck_require__(92408)
-const HttpsProxyAgent = __nccwpck_require__(77219)
-const SocksProxyAgent = __nccwpck_require__(25038)
-module.exports.getProxy = getProxy
-function getProxy (proxyUrl, opts, isHttps) {
-  const popts = {
-    host: proxyUrl.hostname,
-    port: proxyUrl.port,
-    protocol: proxyUrl.protocol,
-    path: getPath(proxyUrl),
-    auth: getAuth(proxyUrl),
-    ca: opts.ca,
-    cert: opts.cert,
-    key: opts.key,
-    timeout: getAgentTimeout(opts.timeout),
-    localAddress: opts.localAddress,
-    maxSockets: getMaxSockets(opts.maxSockets),
-    rejectUnauthorized: opts.rejectUnauthorized,
+  sshurl (opts) {
+    return this._fill(this.sshurltemplate, opts)
   }
 
-  if (proxyUrl.protocol === 'http:' || proxyUrl.protocol === 'https:') {
-    if (!isHttps) {
-      return new HttpProxyAgent(popts)
-    } else {
-      return new HttpsProxyAgent(popts)
+  browse (path, fragment, opts) {
+    // not a string, treat path as opts
+    if (typeof path !== 'string') {
+      return this._fill(this.browsetemplate, path)
     }
-  } else if (proxyUrl.protocol.startsWith('socks')) {
-    return new SocksProxyAgent(popts)
-  } else {
-    throw Object.assign(
-      new Error(`unsupported proxy protocol: '${proxyUrl.protocol}'`),
-      {
-        url: proxyUrl.href,
-      }
-    )
+
+    if (typeof fragment !== 'string') {
+      opts = fragment
+      fragment = null
+    }
+    return this._fill(this.browsefiletemplate, { ...opts, fragment, path })
+  }
+
+  docs (opts) {
+    return this._fill(this.docstemplate, opts)
+  }
+
+  bugs (opts) {
+    return this._fill(this.bugstemplate, opts)
+  }
+
+  https (opts) {
+    return this._fill(this.httpstemplate, opts)
+  }
+
+  git (opts) {
+    return this._fill(this.gittemplate, opts)
+  }
+
+  shortcut (opts) {
+    return this._fill(this.shortcuttemplate, opts)
+  }
+
+  path (opts) {
+    return this._fill(this.pathtemplate, opts)
+  }
+
+  tarball (opts) {
+    return this._fill(this.tarballtemplate, { ...opts, noCommittish: false })
+  }
+
+  file (path, opts) {
+    return this._fill(this.filetemplate, { ...opts, path })
+  }
+
+  getDefaultRepresentation () {
+    return this.default
+  }
+
+  toString (opts) {
+    if (this.default && typeof this[this.default] === 'function') {
+      return this[this.default](opts)
+    }
+
+    return this.sshurl(opts)
   }
 }
+module.exports = GitHost
 
 
 /***/ }),
 
-/***/ 21301:
+/***/ 95250:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-const { Request, Response } = __nccwpck_require__(68998)
-const Minipass = __nccwpck_require__(41077)
-const MinipassCollect = __nccwpck_require__(74658)
-const MinipassFlush = __nccwpck_require__(4181)
-const MinipassPipeline = __nccwpck_require__(69891)
-const cacache = __nccwpck_require__(87234)
+"use strict";
+
 const url = __nccwpck_require__(57310)
+const gitHosts = __nccwpck_require__(47417)
+const GitHost = module.exports = __nccwpck_require__(17613)
+const LRU = __nccwpck_require__(7129)
+const cache = new LRU({ max: 1000 })
 
-const CachePolicy = __nccwpck_require__(69959)
-const cacheKey = __nccwpck_require__(2639)
-const remote = __nccwpck_require__(82298)
-
-const hasOwnProperty = (obj, prop) => Object.prototype.hasOwnProperty.call(obj, prop)
-
-// maximum amount of data we will buffer into memory
-// if we'll exceed this, we switch to streaming
-const MAX_MEM_SIZE = 5 * 1024 * 1024 // 5MB
-
-// allow list for request headers that will be written to the cache index
-// note: we will also store any request headers
-// that are named in a response's vary header
-const KEEP_REQUEST_HEADERS = [
-  'accept-charset',
-  'accept-encoding',
-  'accept-language',
-  'accept',
-  'cache-control',
-]
-
-// allow list for response headers that will be written to the cache index
-// note: we must not store the real response's age header, or when we load
-// a cache policy based on the metadata it will think the cached response
-// is always stale
-const KEEP_RESPONSE_HEADERS = [
-  'cache-control',
-  'content-encoding',
-  'content-language',
-  'content-type',
-  'date',
-  'etag',
-  'expires',
-  'last-modified',
-  'location',
-  'pragma',
-  'vary',
-]
-
-// return an object containing all metadata to be written to the index
-const getMetadata = (request, response, options) => {
-  const metadata = {
-    time: Date.now(),
-    url: request.url,
-    reqHeaders: {},
-    resHeaders: {},
-
-    // options on which we must match the request and vary the response
-    options: {
-      compress: options.compress != null ? options.compress : request.compress,
-    },
-  }
-
-  // only save the status if it's not a 200 or 304
-  if (response.status !== 200 && response.status !== 304) {
-    metadata.status = response.status
-  }
-
-  for (const name of KEEP_REQUEST_HEADERS) {
-    if (request.headers.has(name)) {
-      metadata.reqHeaders[name] = request.headers.get(name)
-    }
-  }
-
-  // if the request's host header differs from the host in the url
-  // we need to keep it, otherwise it's just noise and we ignore it
-  const host = request.headers.get('host')
-  const parsedUrl = new url.URL(request.url)
-  if (host && parsedUrl.host !== host) {
-    metadata.reqHeaders.host = host
-  }
-
-  // if the response has a vary header, make sure
-  // we store the relevant request headers too
-  if (response.headers.has('vary')) {
-    const vary = response.headers.get('vary')
-    // a vary of "*" means every header causes a different response.
-    // in that scenario, we do not include any additional headers
-    // as the freshness check will always fail anyway and we don't
-    // want to bloat the cache indexes
-    if (vary !== '*') {
-      // copy any other request headers that will vary the response
-      const varyHeaders = vary.trim().toLowerCase().split(/\s*,\s*/)
-      for (const name of varyHeaders) {
-        if (request.headers.has(name)) {
-          metadata.reqHeaders[name] = request.headers.get(name)
-        }
-      }
-    }
-  }
-
-  for (const name of KEEP_RESPONSE_HEADERS) {
-    if (response.headers.has(name)) {
-      metadata.resHeaders[name] = response.headers.get(name)
-    }
-  }
-
-  return metadata
+const protocolToRepresentationMap = {
+  'git+ssh:': 'sshurl',
+  'git+https:': 'https',
+  'ssh:': 'sshurl',
+  'git:': 'git',
 }
 
-// symbols used to hide objects that may be lazily evaluated in a getter
-const _request = Symbol('request')
-const _response = Symbol('response')
-const _policy = Symbol('policy')
-
-class CacheEntry {
-  constructor ({ entry, request, response, options }) {
-    if (entry) {
-      this.key = entry.key
-      this.entry = entry
-      // previous versions of this module didn't write an explicit timestamp in
-      // the metadata, so fall back to the entry's timestamp. we can't use the
-      // entry timestamp to determine staleness because cacache will update it
-      // when it verifies its data
-      this.entry.metadata.time = this.entry.metadata.time || this.entry.time
-    } else {
-      this.key = cacheKey(request)
-    }
-
-    this.options = options
-
-    // these properties are behind getters that lazily evaluate
-    this[_request] = request
-    this[_response] = response
-    this[_policy] = null
-  }
-
-  // returns a CacheEntry instance that satisfies the given request
-  // or undefined if no existing entry satisfies
-  static async find (request, options) {
-    try {
-      // compacts the index and returns an array of unique entries
-      var matches = await cacache.index.compact(options.cachePath, cacheKey(request), (A, B) => {
-        const entryA = new CacheEntry({ entry: A, options })
-        const entryB = new CacheEntry({ entry: B, options })
-        return entryA.policy.satisfies(entryB.request)
-      }, {
-        validateEntry: (entry) => {
-          // clean out entries with a buggy content-encoding value
-          if (entry.metadata &&
-              entry.metadata.resHeaders &&
-              entry.metadata.resHeaders['content-encoding'] === null) {
-            return false
-          }
-
-          // if an integrity is null, it needs to have a status specified
-          if (entry.integrity === null) {
-            return !!(entry.metadata && entry.metadata.status)
-          }
-
-          return true
-        },
-      })
-    } catch (err) {
-      // if the compact request fails, ignore the error and return
-      return
-    }
-
-    // a cache mode of 'reload' means to behave as though we have no cache
-    // on the way to the network. return undefined to allow cacheFetch to
-    // create a brand new request no matter what.
-    if (options.cache === 'reload') {
-      return
-    }
-
-    // find the specific entry that satisfies the request
-    let match
-    for (const entry of matches) {
-      const _entry = new CacheEntry({
-        entry,
-        options,
-      })
-
-      if (_entry.policy.satisfies(request)) {
-        match = _entry
-        break
-      }
-    }
-
-    return match
-  }
-
-  // if the user made a PUT/POST/PATCH then we invalidate our
-  // cache for the same url by deleting the index entirely
-  static async invalidate (request, options) {
-    const key = cacheKey(request)
-    try {
-      await cacache.rm.entry(options.cachePath, key, { removeFully: true })
-    } catch (err) {
-      // ignore errors
-    }
-  }
-
-  get request () {
-    if (!this[_request]) {
-      this[_request] = new Request(this.entry.metadata.url, {
-        method: 'GET',
-        headers: this.entry.metadata.reqHeaders,
-        ...this.entry.metadata.options,
-      })
-    }
-
-    return this[_request]
-  }
-
-  get response () {
-    if (!this[_response]) {
-      this[_response] = new Response(null, {
-        url: this.entry.metadata.url,
-        counter: this.options.counter,
-        status: this.entry.metadata.status || 200,
-        headers: {
-          ...this.entry.metadata.resHeaders,
-          'content-length': this.entry.size,
-        },
-      })
-    }
-
-    return this[_response]
-  }
-
-  get policy () {
-    if (!this[_policy]) {
-      this[_policy] = new CachePolicy({
-        entry: this.entry,
-        request: this.request,
-        response: this.response,
-        options: this.options,
-      })
-    }
-
-    return this[_policy]
-  }
-
-  // wraps the response in a pipeline that stores the data
-  // in the cache while the user consumes it
-  async store (status) {
-    // if we got a status other than 200, 301, or 308,
-    // or the CachePolicy forbid storage, append the
-    // cache status header and return it untouched
-    if (
-      this.request.method !== 'GET' ||
-      ![200, 301, 308].includes(this.response.status) ||
-      !this.policy.storable()
-    ) {
-      this.response.headers.set('x-local-cache-status', 'skip')
-      return this.response
-    }
-
-    const size = this.response.headers.get('content-length')
-    const fitsInMemory = !!size && Number(size) < MAX_MEM_SIZE
-    const shouldBuffer = this.options.memoize !== false && fitsInMemory
-    const cacheOpts = {
-      algorithms: this.options.algorithms,
-      metadata: getMetadata(this.request, this.response, this.options),
-      size,
-      memoize: fitsInMemory && this.options.memoize,
-    }
-
-    let body = null
-    // we only set a body if the status is a 200, redirects are
-    // stored as metadata only
-    if (this.response.status === 200) {
-      let cacheWriteResolve, cacheWriteReject
-      const cacheWritePromise = new Promise((resolve, reject) => {
-        cacheWriteResolve = resolve
-        cacheWriteReject = reject
-      })
-
-      body = new MinipassPipeline(new MinipassFlush({
-        flush () {
-          return cacheWritePromise
-        },
-      }))
-
-      let abortStream, onResume
-      if (shouldBuffer) {
-        // if the result fits in memory, use a collect stream to gather
-        // the response and write it to cacache while also passing it through
-        // to the user
-        onResume = () => {
-          const collector = new MinipassCollect.PassThrough()
-          abortStream = collector
-          collector.on('collect', (data) => {
-            // TODO if the cache write fails, log a warning but return the response anyway
-            cacache.put(this.options.cachePath, this.key, data, cacheOpts)
-              .then(cacheWriteResolve, cacheWriteReject)
-          })
-          body.unshift(collector)
-          body.unshift(this.response.body)
-        }
-      } else {
-        // if it does not fit in memory, create a tee stream and use
-        // that to pipe to both the cache and the user simultaneously
-        onResume = () => {
-          const tee = new Minipass()
-          const cacheStream = cacache.put.stream(this.options.cachePath, this.key, cacheOpts)
-          abortStream = cacheStream
-          tee.pipe(cacheStream)
-          // TODO if the cache write fails, log a warning but return the response anyway
-          cacheStream.promise().then(cacheWriteResolve, cacheWriteReject)
-          body.unshift(tee)
-          body.unshift(this.response.body)
-        }
-      }
-
-      body.once('resume', onResume)
-      body.once('end', () => body.removeListener('resume', onResume))
-      this.response.body.on('error', (err) => {
-        // the abortStream will either be a MinipassCollect if we buffer
-        // or a cacache write stream, either way be sure to listen for
-        // errors from the actual response and avoid writing data that we
-        // know to be invalid to the cache
-        abortStream.destroy(err)
-      })
-    } else {
-      await cacache.index.insert(this.options.cachePath, this.key, null, cacheOpts)
-    }
-
-    // note: we do not set the x-local-cache-hash header because we do not know
-    // the hash value until after the write to the cache completes, which doesn't
-    // happen until after the response has been sent and it's too late to write
-    // the header anyway
-    this.response.headers.set('x-local-cache', encodeURIComponent(this.options.cachePath))
-    this.response.headers.set('x-local-cache-key', encodeURIComponent(this.key))
-    this.response.headers.set('x-local-cache-mode', shouldBuffer ? 'buffer' : 'stream')
-    this.response.headers.set('x-local-cache-status', status)
-    this.response.headers.set('x-local-cache-time', new Date().toISOString())
-    const newResponse = new Response(body, {
-      url: this.response.url,
-      status: this.response.status,
-      headers: this.response.headers,
-      counter: this.options.counter,
-    })
-    return newResponse
-  }
-
-  // use the cached data to create a response and return it
-  async respond (method, options, status) {
-    let response
-    const size = Number(this.response.headers.get('content-length'))
-    const fitsInMemory = !!size && size < MAX_MEM_SIZE
-    const shouldBuffer = this.options.memoize !== false && fitsInMemory
-    if (method === 'HEAD' || [301, 308].includes(this.response.status)) {
-      // if the request is a HEAD, or the response is a redirect,
-      // then the metadata in the entry already includes everything
-      // we need to build a response
-      response = this.response
-    } else {
-      // we're responding with a full cached response, so create a body
-      // that reads from cacache and attach it to a new Response
-      const body = new Minipass()
-      const removeOnResume = () => body.removeListener('resume', onResume)
-      let onResume
-      if (shouldBuffer) {
-        onResume = async () => {
-          removeOnResume()
-          try {
-            const content = await cacache.get.byDigest(
-              this.options.cachePath, this.entry.integrity, { memoize: this.options.memoize }
-            )
-            body.end(content)
-          } catch (err) {
-            if (err.code === 'EINTEGRITY') {
-              await cacache.rm.content(
-                this.options.cachePath, this.entry.integrity, { memoize: this.options.memoize }
-              )
-            }
-            if (err.code === 'ENOENT' || err.code === 'EINTEGRITY') {
-              await CacheEntry.invalidate(this.request, this.options)
-            }
-            body.emit('error', err)
-          }
-        }
-      } else {
-        onResume = () => {
-          const cacheStream = cacache.get.stream.byDigest(
-            this.options.cachePath, this.entry.integrity, { memoize: this.options.memoize }
-          )
-          cacheStream.on('error', async (err) => {
-            cacheStream.pause()
-            if (err.code === 'EINTEGRITY') {
-              await cacache.rm.content(
-                this.options.cachePath, this.entry.integrity, { memoize: this.options.memoize }
-              )
-            }
-            if (err.code === 'ENOENT' || err.code === 'EINTEGRITY') {
-              await CacheEntry.invalidate(this.request, this.options)
-            }
-            body.emit('error', err)
-            cacheStream.resume()
-          })
-          cacheStream.pipe(body)
-        }
-      }
-
-      body.once('resume', onResume)
-      body.once('end', removeOnResume)
-      response = new Response(body, {
-        url: this.entry.metadata.url,
-        counter: options.counter,
-        status: 200,
-        headers: {
-          ...this.policy.responseHeaders(),
-        },
-      })
-    }
-
-    response.headers.set('x-local-cache', encodeURIComponent(this.options.cachePath))
-    response.headers.set('x-local-cache-hash', encodeURIComponent(this.entry.integrity))
-    response.headers.set('x-local-cache-key', encodeURIComponent(this.key))
-    response.headers.set('x-local-cache-mode', shouldBuffer ? 'buffer' : 'stream')
-    response.headers.set('x-local-cache-status', status)
-    response.headers.set('x-local-cache-time', new Date(this.entry.metadata.time).toUTCString())
-    return response
-  }
-
-  // use the provided request along with this cache entry to
-  // revalidate the stored response. returns a response, either
-  // from the cache or from the update
-  async revalidate (request, options) {
-    const revalidateRequest = new Request(request, {
-      headers: this.policy.revalidationHeaders(request),
-    })
-
-    try {
-      // NOTE: be sure to remove the headers property from the
-      // user supplied options, since we have already defined
-      // them on the new request object. if they're still in the
-      // options then those will overwrite the ones from the policy
-      var response = await remote(revalidateRequest, {
-        ...options,
-        headers: undefined,
-      })
-    } catch (err) {
-      // if the network fetch fails, return the stale
-      // cached response unless it has a cache-control
-      // of 'must-revalidate'
-      if (!this.policy.mustRevalidate) {
-        return this.respond(request.method, options, 'stale')
-      }
-
-      throw err
-    }
-
-    if (this.policy.revalidated(revalidateRequest, response)) {
-      // we got a 304, write a new index to the cache and respond from cache
-      const metadata = getMetadata(request, response, options)
-      // 304 responses do not include headers that are specific to the response data
-      // since they do not include a body, so we copy values for headers that were
-      // in the old cache entry to the new one, if the new metadata does not already
-      // include that header
-      for (const name of KEEP_RESPONSE_HEADERS) {
-        if (
-          !hasOwnProperty(metadata.resHeaders, name) &&
-          hasOwnProperty(this.entry.metadata.resHeaders, name)
-        ) {
-          metadata.resHeaders[name] = this.entry.metadata.resHeaders[name]
-        }
-      }
-
-      try {
-        await cacache.index.insert(options.cachePath, this.key, this.entry.integrity, {
-          size: this.entry.size,
-          metadata,
-        })
-      } catch (err) {
-        // if updating the cache index fails, we ignore it and
-        // respond anyway
-      }
-      return this.respond(request.method, options, 'revalidated')
-    }
-
-    // if we got a modified response, create a new entry based on it
-    const newEntry = new CacheEntry({
-      request,
-      response,
-      options,
-    })
-
-    // respond with the new entry while writing it to the cache
-    return newEntry.store('updated')
-  }
+function protocolToRepresentation (protocol) {
+  return protocolToRepresentationMap[protocol] || protocol.slice(0, -1)
 }
 
-module.exports = CacheEntry
-
-
-/***/ }),
-
-/***/ 35957:
-/***/ ((module) => {
-
-class NotCachedError extends Error {
-  constructor (url) {
-    /* eslint-disable-next-line max-len */
-    super(`request to ${url} failed: cache mode is 'only-if-cached' but no cached response is available.`)
-    this.code = 'ENOTCACHED'
-  }
+const authProtocols = {
+  'git:': true,
+  'https:': true,
+  'git+https:': true,
+  'http:': true,
+  'git+http:': true,
 }
 
-module.exports = {
-  NotCachedError,
-}
+const knownProtocols = Object.keys(gitHosts.byShortcut)
+  .concat(['http:', 'https:', 'git:', 'git+ssh:', 'git+https:', 'ssh:'])
 
-
-/***/ }),
-
-/***/ 71986:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const { NotCachedError } = __nccwpck_require__(35957)
-const CacheEntry = __nccwpck_require__(21301)
-const remote = __nccwpck_require__(82298)
-
-// do whatever is necessary to get a Response and return it
-const cacheFetch = async (request, options) => {
-  // try to find a cached entry that satisfies this request
-  const entry = await CacheEntry.find(request, options)
-  if (!entry) {
-    // no cached result, if the cache mode is 'only-if-cached' that's a failure
-    if (options.cache === 'only-if-cached') {
-      throw new NotCachedError(request.url)
-    }
-
-    // otherwise, we make a request, store it and return it
-    const response = await remote(request, options)
-    const entry = new CacheEntry({ request, response, options })
-    return entry.store('miss')
-  }
-
-  // we have a cached response that satisfies this request, however if the cache
-  // mode is 'no-cache' then we send the revalidation request no matter what
-  if (options.cache === 'no-cache') {
-    return entry.revalidate(request, options)
-  }
-
-  // if the cached entry is not stale, or if the cache mode is 'force-cache' or
-  // 'only-if-cached' we can respond with the cached entry. set the status
-  // based on the result of needsRevalidation and respond
-  const _needsRevalidation = entry.policy.needsRevalidation(request)
-  if (options.cache === 'force-cache' ||
-      options.cache === 'only-if-cached' ||
-      !_needsRevalidation) {
-    return entry.respond(request.method, options, _needsRevalidation ? 'stale' : 'hit')
-  }
-
-  // if we got here, the cache entry is stale so revalidate it
-  return entry.revalidate(request, options)
-}
-
-cacheFetch.invalidate = async (request, options) => {
-  if (!options.cachePath) {
+module.exports.fromUrl = function (giturl, opts) {
+  if (typeof giturl !== 'string') {
     return
   }
 
-  return CacheEntry.invalidate(request, options)
+  const key = giturl + JSON.stringify(opts || {})
+
+  if (!cache.has(key)) {
+    cache.set(key, fromUrl(giturl, opts))
+  }
+
+  return cache.get(key)
 }
 
-module.exports = cacheFetch
+function fromUrl (giturl, opts) {
+  if (!giturl) {
+    return
+  }
+
+  const url = isGitHubShorthand(giturl) ? 'github:' + giturl : correctProtocol(giturl)
+  const parsed = parseGitUrl(url)
+  if (!parsed) {
+    return parsed
+  }
+
+  const gitHostShortcut = gitHosts.byShortcut[parsed.protocol]
+  const gitHostDomain =
+    gitHosts.byDomain[parsed.hostname.startsWith('www.') ?
+      parsed.hostname.slice(4) :
+      parsed.hostname]
+  const gitHostName = gitHostShortcut || gitHostDomain
+  if (!gitHostName) {
+    return
+  }
+
+  const gitHostInfo = gitHosts[gitHostShortcut || gitHostDomain]
+  let auth = null
+  if (authProtocols[parsed.protocol] && (parsed.username || parsed.password)) {
+    auth = `${parsed.username}${parsed.password ? ':' + parsed.password : ''}`
+  }
+
+  let committish = null
+  let user = null
+  let project = null
+  let defaultRepresentation = null
+
+  try {
+    if (gitHostShortcut) {
+      let pathname = parsed.pathname.startsWith('/') ? parsed.pathname.slice(1) : parsed.pathname
+      const firstAt = pathname.indexOf('@')
+      // we ignore auth for shortcuts, so just trim it out
+      if (firstAt > -1) {
+        pathname = pathname.slice(firstAt + 1)
+      }
+
+      const lastSlash = pathname.lastIndexOf('/')
+      if (lastSlash > -1) {
+        user = decodeURIComponent(pathname.slice(0, lastSlash))
+        // we want nulls only, never empty strings
+        if (!user) {
+          user = null
+        }
+        project = decodeURIComponent(pathname.slice(lastSlash + 1))
+      } else {
+        project = decodeURIComponent(pathname)
+      }
+
+      if (project.endsWith('.git')) {
+        project = project.slice(0, -4)
+      }
+
+      if (parsed.hash) {
+        committish = decodeURIComponent(parsed.hash.slice(1))
+      }
+
+      defaultRepresentation = 'shortcut'
+    } else {
+      if (!gitHostInfo.protocols.includes(parsed.protocol)) {
+        return
+      }
+
+      const segments = gitHostInfo.extract(parsed)
+      if (!segments) {
+        return
+      }
+
+      user = segments.user && decodeURIComponent(segments.user)
+      project = decodeURIComponent(segments.project)
+      committish = decodeURIComponent(segments.committish)
+      defaultRepresentation = protocolToRepresentation(parsed.protocol)
+    }
+  } catch (err) {
+    /* istanbul ignore else */
+    if (err instanceof URIError) {
+      return
+    } else {
+      throw err
+    }
+  }
+
+  return new GitHost(gitHostName, user, auth, project, committish, defaultRepresentation, opts)
+}
+
+// accepts input like git:github.com:user/repo and inserts the // after the first :
+const correctProtocol = (arg) => {
+  const firstColon = arg.indexOf(':')
+  const proto = arg.slice(0, firstColon + 1)
+  if (knownProtocols.includes(proto)) {
+    return arg
+  }
+
+  const firstAt = arg.indexOf('@')
+  if (firstAt > -1) {
+    if (firstAt > firstColon) {
+      return `git+ssh://${arg}`
+    } else {
+      return arg
+    }
+  }
+
+  const doubleSlash = arg.indexOf('//')
+  if (doubleSlash === firstColon + 1) {
+    return arg
+  }
+
+  return arg.slice(0, firstColon + 1) + '//' + arg.slice(firstColon + 1)
+}
+
+// look for github shorthand inputs, such as npm/cli
+const isGitHubShorthand = (arg) => {
+  // it cannot contain whitespace before the first #
+  // it cannot start with a / because that's probably an absolute file path
+  // but it must include a slash since repos are username/repository
+  // it cannot start with a . because that's probably a relative file path
+  // it cannot start with an @ because that's a scoped package if it passes the other tests
+  // it cannot contain a : before a # because that tells us that there's a protocol
+  // a second / may not exist before a #
+  const firstHash = arg.indexOf('#')
+  const firstSlash = arg.indexOf('/')
+  const secondSlash = arg.indexOf('/', firstSlash + 1)
+  const firstColon = arg.indexOf(':')
+  const firstSpace = /\s/.exec(arg)
+  const firstAt = arg.indexOf('@')
+
+  const spaceOnlyAfterHash = !firstSpace || (firstHash > -1 && firstSpace.index > firstHash)
+  const atOnlyAfterHash = firstAt === -1 || (firstHash > -1 && firstAt > firstHash)
+  const colonOnlyAfterHash = firstColon === -1 || (firstHash > -1 && firstColon > firstHash)
+  const secondSlashOnlyAfterHash = secondSlash === -1 || (firstHash > -1 && secondSlash > firstHash)
+  const hasSlash = firstSlash > 0
+  // if a # is found, what we really want to know is that the character
+  // immediately before # is not a /
+  const doesNotEndWithSlash = firstHash > -1 ? arg[firstHash - 1] !== '/' : !arg.endsWith('/')
+  const doesNotStartWithDot = !arg.startsWith('.')
+
+  return spaceOnlyAfterHash && hasSlash && doesNotEndWithSlash &&
+    doesNotStartWithDot && atOnlyAfterHash && colonOnlyAfterHash &&
+    secondSlashOnlyAfterHash
+}
+
+// attempt to correct an scp style url so that it will parse with `new URL()`
+const correctUrl = (giturl) => {
+  const firstAt = giturl.indexOf('@')
+  const lastHash = giturl.lastIndexOf('#')
+  let firstColon = giturl.indexOf(':')
+  let lastColon = giturl.lastIndexOf(':', lastHash > -1 ? lastHash : Infinity)
+
+  let corrected
+  if (lastColon > firstAt) {
+    // the last : comes after the first @ (or there is no @)
+    // like it would in:
+    // proto://hostname.com:user/repo
+    // username@hostname.com:user/repo
+    // :password@hostname.com:user/repo
+    // username:password@hostname.com:user/repo
+    // proto://username@hostname.com:user/repo
+    // proto://:password@hostname.com:user/repo
+    // proto://username:password@hostname.com:user/repo
+    // then we replace the last : with a / to create a valid path
+    corrected = giturl.slice(0, lastColon) + '/' + giturl.slice(lastColon + 1)
+    // // and we find our new : positions
+    firstColon = corrected.indexOf(':')
+    lastColon = corrected.lastIndexOf(':')
+  }
+
+  if (firstColon === -1 && giturl.indexOf('//') === -1) {
+    // we have no : at all
+    // as it would be in:
+    // username@hostname.com/user/repo
+    // then we prepend a protocol
+    corrected = `git+ssh://${corrected}`
+  }
+
+  return corrected
+}
+
+// try to parse the url as its given to us, if that throws
+// then we try to clean the url and parse that result instead
+// THIS FUNCTION SHOULD NEVER THROW
+const parseGitUrl = (giturl) => {
+  let result
+  try {
+    result = new url.URL(giturl)
+  } catch (err) {}
+
+  if (result) {
+    return result
+  }
+
+  const correctedUrl = correctUrl(giturl)
+  try {
+    result = new url.URL(correctedUrl)
+  } catch (err) {}
+
+  return result
+}
 
 
 /***/ }),
 
-/***/ 2639:
+/***/ 88100:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-const { URL, format } = __nccwpck_require__(57310)
+"use strict";
 
-// options passed to url.format() when generating a key
-const formatOptions = {
-  auth: false,
-  fragment: false,
-  search: true,
-  unicode: false,
+module.exports = npa
+module.exports.resolve = resolve
+module.exports.Result = Result
+
+const url = __nccwpck_require__(57310)
+const HostedGit = __nccwpck_require__(95250)
+const semver = __nccwpck_require__(11383)
+const path = global.FAKE_WINDOWS ? (__nccwpck_require__(71017).win32) : __nccwpck_require__(71017)
+const validatePackageName = __nccwpck_require__(29614)
+const { homedir } = __nccwpck_require__(22037)
+
+const isWindows = process.platform === 'win32' || global.FAKE_WINDOWS
+const hasSlashes = isWindows ? /\\|[/]/ : /[/]/
+const isURL = /^(?:git[+])?[a-z]+:/i
+const isGit = /^[^@]+@[^:.]+\.[^:]+:.+$/i
+const isFilename = /[.](?:tgz|tar.gz|tar)$/i
+
+function npa (arg, where) {
+  let name
+  let spec
+  if (typeof arg === 'object') {
+    if (arg instanceof Result && (!where || where === arg.where)) {
+      return arg
+    } else if (arg.name && arg.rawSpec) {
+      return npa.resolve(arg.name, arg.rawSpec, where || arg.where)
+    } else {
+      return npa(arg.raw, where || arg.where)
+    }
+  }
+  const nameEndsAt = arg[0] === '@' ? arg.slice(1).indexOf('@') + 1 : arg.indexOf('@')
+  const namePart = nameEndsAt > 0 ? arg.slice(0, nameEndsAt) : arg
+  if (isURL.test(arg)) {
+    spec = arg
+  } else if (isGit.test(arg)) {
+    spec = `git+ssh://${arg}`
+  } else if (namePart[0] !== '@' && (hasSlashes.test(namePart) || isFilename.test(namePart))) {
+    spec = arg
+  } else if (nameEndsAt > 0) {
+    name = namePart
+    spec = arg.slice(nameEndsAt + 1)
+  } else {
+    const valid = validatePackageName(arg)
+    if (valid.validForOldPackages) {
+      name = arg
+    } else {
+      spec = arg
+    }
+  }
+  return resolve(name, spec, where, arg)
 }
 
-// returns a string to be used as the cache key for the Request
-const cacheKey = (request) => {
-  const parsed = new URL(request.url)
-  return `make-fetch-happen:request-cache:${format(parsed, formatOptions)}`
+const isFilespec = isWindows ? /^(?:[.]|~[/]|[/\\]|[a-zA-Z]:)/ : /^(?:[.]|~[/]|[/]|[a-zA-Z]:)/
+
+function resolve (name, spec, where, arg) {
+  const res = new Result({
+    raw: arg,
+    name: name,
+    rawSpec: spec,
+    fromArgument: arg != null,
+  })
+
+  if (name) {
+    res.setName(name)
+  }
+
+  if (spec && (isFilespec.test(spec) || /^file:/i.test(spec))) {
+    return fromFile(res, where)
+  } else if (spec && /^npm:/i.test(spec)) {
+    return fromAlias(res, where)
+  }
+
+  const hosted = HostedGit.fromUrl(spec, {
+    noGitPlus: true,
+    noCommittish: true,
+  })
+  if (hosted) {
+    return fromHostedGit(res, hosted)
+  } else if (spec && isURL.test(spec)) {
+    return fromURL(res)
+  } else if (spec && (hasSlashes.test(spec) || isFilename.test(spec))) {
+    return fromFile(res, where)
+  } else {
+    return fromRegistry(res)
+  }
 }
 
-module.exports = cacheKey
+function invalidPackageName (name, valid, raw) {
+  // eslint-disable-next-line max-len
+  const err = new Error(`Invalid package name "${name}" of package "${raw}": ${valid.errors.join('; ')}.`)
+  err.code = 'EINVALIDPACKAGENAME'
+  return err
+}
+
+function invalidTagName (name, raw) {
+  // eslint-disable-next-line max-len
+  const err = new Error(`Invalid tag name "${name}" of package "${raw}": Tags may not have any characters that encodeURIComponent encodes.`)
+  err.code = 'EINVALIDTAGNAME'
+  return err
+}
+
+function Result (opts) {
+  this.type = opts.type
+  this.registry = opts.registry
+  this.where = opts.where
+  if (opts.raw == null) {
+    this.raw = opts.name ? opts.name + '@' + opts.rawSpec : opts.rawSpec
+  } else {
+    this.raw = opts.raw
+  }
+
+  this.name = undefined
+  this.escapedName = undefined
+  this.scope = undefined
+  this.rawSpec = opts.rawSpec == null ? '' : opts.rawSpec
+  this.saveSpec = opts.saveSpec
+  this.fetchSpec = opts.fetchSpec
+  if (opts.name) {
+    this.setName(opts.name)
+  }
+  this.gitRange = opts.gitRange
+  this.gitCommittish = opts.gitCommittish
+  this.hosted = opts.hosted
+}
+
+Result.prototype.setName = function (name) {
+  const valid = validatePackageName(name)
+  if (!valid.validForOldPackages) {
+    throw invalidPackageName(name, valid, this.raw)
+  }
+
+  this.name = name
+  this.scope = name[0] === '@' ? name.slice(0, name.indexOf('/')) : undefined
+  // scoped packages in couch must have slash url-encoded, e.g. @foo%2Fbar
+  this.escapedName = name.replace('/', '%2f')
+  return this
+}
+
+Result.prototype.toString = function () {
+  const full = []
+  if (this.name != null && this.name !== '') {
+    full.push(this.name)
+  }
+  const spec = this.saveSpec || this.fetchSpec || this.rawSpec
+  if (spec != null && spec !== '') {
+    full.push(spec)
+  }
+  return full.length ? full.join('@') : this.raw
+}
+
+Result.prototype.toJSON = function () {
+  const result = Object.assign({}, this)
+  delete result.hosted
+  return result
+}
+
+function setGitCommittish (res, committish) {
+  if (committish != null && committish.length >= 7 && committish.slice(0, 7) === 'semver:') {
+    res.gitRange = decodeURIComponent(committish.slice(7))
+    res.gitCommittish = null
+  } else {
+    res.gitCommittish = committish === '' ? null : committish
+  }
+
+  return res
+}
+
+function fromFile (res, where) {
+  if (!where) {
+    where = process.cwd()
+  }
+  res.type = isFilename.test(res.rawSpec) ? 'file' : 'directory'
+  res.where = where
+
+  // always put the '/' on where when resolving urls, or else
+  // file:foo from /path/to/bar goes to /path/to/foo, when we want
+  // it to be /path/to/bar/foo
+
+  let specUrl
+  let resolvedUrl
+  const prefix = (!/^file:/.test(res.rawSpec) ? 'file:' : '')
+  const rawWithPrefix = prefix + res.rawSpec
+  let rawNoPrefix = rawWithPrefix.replace(/^file:/, '')
+  try {
+    resolvedUrl = new url.URL(rawWithPrefix, `file://${path.resolve(where)}/`)
+    specUrl = new url.URL(rawWithPrefix)
+  } catch (originalError) {
+    const er = new Error('Invalid file: URL, must comply with RFC 8909')
+    throw Object.assign(er, {
+      raw: res.rawSpec,
+      spec: res,
+      where,
+      originalError,
+    })
+  }
+
+  // environment switch for testing
+  if (process.env.NPM_PACKAGE_ARG_8909_STRICT !== '1') {
+    // XXX backwards compatibility lack of compliance with 8909
+    // Remove when we want a breaking change to come into RFC compliance.
+    if (resolvedUrl.host && resolvedUrl.host !== 'localhost') {
+      const rawSpec = res.rawSpec.replace(/^file:\/\//, 'file:///')
+      resolvedUrl = new url.URL(rawSpec, `file://${path.resolve(where)}/`)
+      specUrl = new url.URL(rawSpec)
+      rawNoPrefix = rawSpec.replace(/^file:/, '')
+    }
+    // turn file:/../foo into file:../foo
+    if (/^\/\.\.?(\/|$)/.test(rawNoPrefix)) {
+      const rawSpec = res.rawSpec.replace(/^file:\//, 'file:')
+      resolvedUrl = new url.URL(rawSpec, `file://${path.resolve(where)}/`)
+      specUrl = new url.URL(rawSpec)
+      rawNoPrefix = rawSpec.replace(/^file:/, '')
+    }
+    // XXX end 8909 violation backwards compatibility section
+  }
+
+  // file:foo - relative url to ./foo
+  // file:/foo - absolute path /foo
+  // file:///foo - absolute path to /foo, no authority host
+  // file://localhost/foo - absolute path to /foo, on localhost
+  // file://foo - absolute path to / on foo host (error!)
+  if (resolvedUrl.host && resolvedUrl.host !== 'localhost') {
+    const msg = `Invalid file: URL, must be absolute if // present`
+    throw Object.assign(new Error(msg), {
+      raw: res.rawSpec,
+      parsed: resolvedUrl,
+    })
+  }
+
+  // turn /C:/blah into just C:/blah on windows
+  let specPath = decodeURIComponent(specUrl.pathname)
+  let resolvedPath = decodeURIComponent(resolvedUrl.pathname)
+  if (isWindows) {
+    specPath = specPath.replace(/^\/+([a-z]:\/)/i, '$1')
+    resolvedPath = resolvedPath.replace(/^\/+([a-z]:\/)/i, '$1')
+  }
+
+  // replace ~ with homedir, but keep the ~ in the saveSpec
+  // otherwise, make it relative to where param
+  if (/^\/~(\/|$)/.test(specPath)) {
+    res.saveSpec = `file:${specPath.substr(1)}`
+    resolvedPath = path.resolve(homedir(), specPath.substr(3))
+  } else if (!path.isAbsolute(rawNoPrefix)) {
+    res.saveSpec = `file:${path.relative(where, resolvedPath)}`
+  } else {
+    res.saveSpec = `file:${path.resolve(resolvedPath)}`
+  }
+
+  res.fetchSpec = path.resolve(where, resolvedPath)
+  return res
+}
+
+function fromHostedGit (res, hosted) {
+  res.type = 'git'
+  res.hosted = hosted
+  res.saveSpec = hosted.toString({ noGitPlus: false, noCommittish: false })
+  res.fetchSpec = hosted.getDefaultRepresentation() === 'shortcut' ? null : hosted.toString()
+  return setGitCommittish(res, hosted.committish)
+}
+
+function unsupportedURLType (protocol, spec) {
+  const err = new Error(`Unsupported URL Type "${protocol}": ${spec}`)
+  err.code = 'EUNSUPPORTEDPROTOCOL'
+  return err
+}
+
+function matchGitScp (spec) {
+  // git ssh specifiers are overloaded to also use scp-style git
+  // specifiers, so we have to parse those out and treat them special.
+  // They are NOT true URIs, so we can't hand them to `url.parse`.
+  //
+  // This regex looks for things that look like:
+  // git+ssh://git@my.custom.git.com:username/project.git#deadbeef
+  //
+  // ...and various combinations. The username in the beginning is *required*.
+  const matched = spec.match(/^git\+ssh:\/\/([^:#]+:[^#]+(?:\.git)?)(?:#(.*))?$/i)
+  return matched && !matched[1].match(/:[0-9]+\/?.*$/i) && {
+    fetchSpec: matched[1],
+    gitCommittish: matched[2] == null ? null : matched[2],
+  }
+}
+
+function fromURL (res) {
+  // eslint-disable-next-line node/no-deprecated-api
+  const urlparse = url.parse(res.rawSpec)
+  res.saveSpec = res.rawSpec
+  // check the protocol, and then see if it's git or not
+  switch (urlparse.protocol) {
+    case 'git:':
+    case 'git+http:':
+    case 'git+https:':
+    case 'git+rsync:':
+    case 'git+ftp:':
+    case 'git+file:':
+    case 'git+ssh:': {
+      res.type = 'git'
+      const match = urlparse.protocol === 'git+ssh:' ? matchGitScp(res.rawSpec)
+        : null
+      if (match) {
+        setGitCommittish(res, match.gitCommittish)
+        res.fetchSpec = match.fetchSpec
+      } else {
+        setGitCommittish(res, urlparse.hash != null ? urlparse.hash.slice(1) : '')
+        urlparse.protocol = urlparse.protocol.replace(/^git[+]/, '')
+        if (urlparse.protocol === 'file:' && /^git\+file:\/\/[a-z]:/i.test(res.rawSpec)) {
+          // keep the drive letter : on windows file paths
+          urlparse.host += ':'
+          urlparse.hostname += ':'
+        }
+        delete urlparse.hash
+        res.fetchSpec = url.format(urlparse)
+      }
+      break
+    }
+    case 'http:':
+    case 'https:':
+      res.type = 'remote'
+      res.fetchSpec = res.saveSpec
+      break
+
+    default:
+      throw unsupportedURLType(urlparse.protocol, res.rawSpec)
+  }
+
+  return res
+}
+
+function fromAlias (res, where) {
+  const subSpec = npa(res.rawSpec.substr(4), where)
+  if (subSpec.type === 'alias') {
+    throw new Error('nested aliases not supported')
+  }
+
+  if (!subSpec.registry) {
+    throw new Error('aliases only work for registry deps')
+  }
+
+  res.subSpec = subSpec
+  res.registry = true
+  res.type = 'alias'
+  res.saveSpec = null
+  res.fetchSpec = null
+  return res
+}
+
+function fromRegistry (res) {
+  res.registry = true
+  const spec = res.rawSpec === '' ? 'latest' : res.rawSpec.trim()
+  // no save spec for registry components as we save based on the fetched
+  // version, not on the argument so this can't compute that.
+  res.saveSpec = null
+  res.fetchSpec = spec
+  const version = semver.valid(spec, true)
+  const range = semver.validRange(spec, true)
+  if (version) {
+    res.type = 'version'
+  } else if (range) {
+    res.type = 'range'
+  } else {
+    if (encodeURIComponent(spec) !== spec) {
+      throw invalidTagName(spec, res.raw)
+    }
+    res.type = 'tag'
+  }
+  return res
+}
 
 
 /***/ }),
 
-/***/ 69959:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const CacheSemantics = __nccwpck_require__(61002)
-const Negotiator = __nccwpck_require__(95385)
-const ssri = __nccwpck_require__(6726)
-
-// options passed to http-cache-semantics constructor
-const policyOptions = {
-  shared: false,
-  ignoreCargoCult: true,
-}
-
-// a fake empty response, used when only testing the
-// request for storability
-const emptyResponse = { status: 200, headers: {} }
-
-// returns a plain object representation of the Request
-const requestObject = (request) => {
-  const _obj = {
-    method: request.method,
-    url: request.url,
-    headers: {},
-    compress: request.compress,
-  }
-
-  request.headers.forEach((value, key) => {
-    _obj.headers[key] = value
-  })
-
-  return _obj
-}
-
-// returns a plain object representation of the Response
-const responseObject = (response) => {
-  const _obj = {
-    status: response.status,
-    headers: {},
-  }
-
-  response.headers.forEach((value, key) => {
-    _obj.headers[key] = value
-  })
-
-  return _obj
-}
-
-class CachePolicy {
-  constructor ({ entry, request, response, options }) {
-    this.entry = entry
-    this.request = requestObject(request)
-    this.response = responseObject(response)
-    this.options = options
-    this.policy = new CacheSemantics(this.request, this.response, policyOptions)
-
-    if (this.entry) {
-      // if we have an entry, copy the timestamp to the _responseTime
-      // this is necessary because the CacheSemantics constructor forces
-      // the value to Date.now() which means a policy created from a
-      // cache entry is likely to always identify itself as stale
-      this.policy._responseTime = this.entry.metadata.time
-    }
-  }
-
-  // static method to quickly determine if a request alone is storable
-  static storable (request, options) {
-    // no cachePath means no caching
-    if (!options.cachePath) {
-      return false
-    }
-
-    // user explicitly asked not to cache
-    if (options.cache === 'no-store') {
-      return false
-    }
-
-    // we only cache GET and HEAD requests
-    if (!['GET', 'HEAD'].includes(request.method)) {
-      return false
-    }
-
-    // otherwise, let http-cache-semantics make the decision
-    // based on the request's headers
-    const policy = new CacheSemantics(requestObject(request), emptyResponse, policyOptions)
-    return policy.storable()
-  }
-
-  // returns true if the policy satisfies the request
-  satisfies (request) {
-    const _req = requestObject(request)
-    if (this.request.headers.host !== _req.headers.host) {
-      return false
-    }
-
-    if (this.request.compress !== _req.compress) {
-      return false
-    }
-
-    const negotiatorA = new Negotiator(this.request)
-    const negotiatorB = new Negotiator(_req)
-
-    if (JSON.stringify(negotiatorA.mediaTypes()) !== JSON.stringify(negotiatorB.mediaTypes())) {
-      return false
-    }
-
-    if (JSON.stringify(negotiatorA.languages()) !== JSON.stringify(negotiatorB.languages())) {
-      return false
-    }
-
-    if (JSON.stringify(negotiatorA.encodings()) !== JSON.stringify(negotiatorB.encodings())) {
-      return false
-    }
-
-    if (this.options.integrity) {
-      return ssri.parse(this.options.integrity).match(this.entry.integrity)
-    }
-
-    return true
-  }
-
-  // returns true if the request and response allow caching
-  storable () {
-    return this.policy.storable()
-  }
-
-  // NOTE: this is a hack to avoid parsing the cache-control
-  // header ourselves, it returns true if the response's
-  // cache-control contains must-revalidate
-  get mustRevalidate () {
-    return !!this.policy._rescc['must-revalidate']
-  }
-
-  // returns true if the cached response requires revalidation
-  // for the given request
-  needsRevalidation (request) {
-    const _req = requestObject(request)
-    // force method to GET because we only cache GETs
-    // but can serve a HEAD from a cached GET
-    _req.method = 'GET'
-    return !this.policy.satisfiesWithoutRevalidation(_req)
-  }
-
-  responseHeaders () {
-    return this.policy.responseHeaders()
-  }
-
-  // returns a new object containing the appropriate headers
-  // to send a revalidation request
-  revalidationHeaders (request) {
-    const _req = requestObject(request)
-    return this.policy.revalidationHeaders(_req)
-  }
-
-  // returns true if the request/response was revalidated
-  // successfully. returns false if a new response was received
-  revalidated (request, response) {
-    const _req = requestObject(request)
-    const _res = responseObject(response)
-    const policy = this.policy.revalidatedPolicy(_req, _res)
-    return !policy.modified
-  }
-}
-
-module.exports = CachePolicy
-
-
-/***/ }),
-
-/***/ 81923:
+/***/ 29614:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
 
-const { FetchError, Request, isRedirect } = __nccwpck_require__(68998)
-const url = __nccwpck_require__(57310)
+var scopedPackagePattern = new RegExp('^(?:@([^/]+?)[/])?([^/]+?)$')
+var builtins = __nccwpck_require__(72708)
+var blacklist = [
+  'node_modules',
+  'favicon.ico',
+]
 
-const CachePolicy = __nccwpck_require__(69959)
-const cache = __nccwpck_require__(71986)
-const remote = __nccwpck_require__(82298)
+function validate (name) {
+  var warnings = []
+  var errors = []
 
-// given a Request, a Response and user options
-// return true if the response is a redirect that
-// can be followed. we throw errors that will result
-// in the fetch being rejected if the redirect is
-// possible but invalid for some reason
-const canFollowRedirect = (request, response, options) => {
-  if (!isRedirect(response.status)) {
-    return false
+  if (name === null) {
+    errors.push('name cannot be null')
+    return done(warnings, errors)
   }
 
-  if (options.redirect === 'manual') {
-    return false
+  if (name === undefined) {
+    errors.push('name cannot be undefined')
+    return done(warnings, errors)
   }
 
-  if (options.redirect === 'error') {
-    throw new FetchError(`redirect mode is set to error: ${request.url}`,
-      'no-redirect', { code: 'ENOREDIRECT' })
+  if (typeof name !== 'string') {
+    errors.push('name must be a string')
+    return done(warnings, errors)
   }
 
-  if (!response.headers.has('location')) {
-    throw new FetchError(`redirect location header missing for: ${request.url}`,
-      'no-location', { code: 'EINVALIDREDIRECT' })
+  if (!name.length) {
+    errors.push('name length must be greater than zero')
   }
 
-  if (request.counter >= request.follow) {
-    throw new FetchError(`maximum redirect reached at: ${request.url}`,
-      'max-redirect', { code: 'EMAXREDIRECT' })
+  if (name.match(/^\./)) {
+    errors.push('name cannot start with a period')
   }
 
-  return true
-}
-
-// given a Request, a Response, and the user's options return an object
-// with a new Request and a new options object that will be used for
-// following the redirect
-const getRedirect = (request, response, options) => {
-  const _opts = { ...options }
-  const location = response.headers.get('location')
-  const redirectUrl = new url.URL(location, /^https?:/.test(location) ? undefined : request.url)
-  // Comment below is used under the following license:
-  /**
-   * @license
-   * Copyright (c) 2010-2012 Mikeal Rogers
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   * http://www.apache.org/licenses/LICENSE-2.0
-   * Unless required by applicable law or agreed to in writing,
-   * software distributed under the License is distributed on an "AS
-   * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
-   * express or implied. See the License for the specific language
-   * governing permissions and limitations under the License.
-   */
-
-  // Remove authorization if changing hostnames (but not if just
-  // changing ports or protocols).  This matches the behavior of request:
-  // https://github.com/request/request/blob/b12a6245/lib/redirect.js#L134-L138
-  if (new url.URL(request.url).hostname !== redirectUrl.hostname) {
-    request.headers.delete('authorization')
-    request.headers.delete('cookie')
+  if (name.match(/^_/)) {
+    errors.push('name cannot start with an underscore')
   }
 
-  // for POST request with 301/302 response, or any request with 303 response,
-  // use GET when following redirect
-  if (
-    response.status === 303 ||
-    (request.method === 'POST' && [301, 302].includes(response.status))
-  ) {
-    _opts.method = 'GET'
-    _opts.body = null
-    request.headers.delete('content-length')
+  if (name.trim() !== name) {
+    errors.push('name cannot contain leading or trailing spaces')
   }
 
-  _opts.headers = {}
-  request.headers.forEach((value, key) => {
-    _opts.headers[key] = value
+  // No funny business
+  blacklist.forEach(function (blacklistedName) {
+    if (name.toLowerCase() === blacklistedName) {
+      errors.push(blacklistedName + ' is a blacklisted name')
+    }
   })
 
-  _opts.counter = ++request.counter
-  const redirectReq = new Request(url.format(redirectUrl), _opts)
-  return {
-    request: redirectReq,
-    options: _opts,
-  }
-}
+  // Generate warnings for stuff that used to be allowed
 
-const fetch = async (request, options) => {
-  const response = CachePolicy.storable(request, options)
-    ? await cache(request, options)
-    : await remote(request, options)
-
-  // if the request wasn't a GET or HEAD, and the response
-  // status is between 200 and 399 inclusive, invalidate the
-  // request url
-  if (!['GET', 'HEAD'].includes(request.method) &&
-      response.status >= 200 &&
-      response.status <= 399) {
-    await cache.invalidate(request, options)
-  }
-
-  if (!canFollowRedirect(request, response, options)) {
-    return response
-  }
-
-  const redirect = getRedirect(request, response, options)
-  return fetch(redirect.request, redirect.options)
-}
-
-module.exports = fetch
-
-
-/***/ }),
-
-/***/ 85268:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const { FetchError, Headers, Request, Response } = __nccwpck_require__(68998)
-
-const configureOptions = __nccwpck_require__(37855)
-const fetch = __nccwpck_require__(81923)
-
-const makeFetchHappen = (url, opts) => {
-  const options = configureOptions(opts)
-
-  const request = new Request(url, options)
-  return fetch(request, options)
-}
-
-makeFetchHappen.defaults = (defaultUrl, defaultOptions = {}) => {
-  if (typeof defaultUrl === 'object') {
-    defaultOptions = defaultUrl
-    defaultUrl = null
-  }
-
-  const defaultedFetch = (url, options = {}) => {
-    const finalUrl = url || defaultUrl
-    const finalOptions = {
-      ...defaultOptions,
-      ...options,
-      headers: {
-        ...defaultOptions.headers,
-        ...options.headers,
-      },
+  // core module names like http, events, util, etc
+  builtins({ version: '*' }).forEach(function (builtin) {
+    if (name.toLowerCase() === builtin) {
+      warnings.push(builtin + ' is a core module name')
     }
-    return makeFetchHappen(finalUrl, finalOptions)
-  }
-
-  defaultedFetch.defaults = makeFetchHappen.defaults
-  return defaultedFetch
-}
-
-module.exports = makeFetchHappen
-module.exports.FetchError = FetchError
-module.exports.Headers = Headers
-module.exports.Request = Request
-module.exports.Response = Response
-
-
-/***/ }),
-
-/***/ 37855:
-/***/ ((module) => {
-
-const conditionalHeaders = [
-  'if-modified-since',
-  'if-none-match',
-  'if-unmodified-since',
-  'if-match',
-  'if-range',
-]
-
-const configureOptions = (opts) => {
-  const { strictSSL, ...options } = { ...opts }
-  options.method = options.method ? options.method.toUpperCase() : 'GET'
-  options.rejectUnauthorized = strictSSL !== false
-
-  if (!options.retry) {
-    options.retry = { retries: 0 }
-  } else if (typeof options.retry === 'string') {
-    const retries = parseInt(options.retry, 10)
-    if (isFinite(retries)) {
-      options.retry = { retries }
-    } else {
-      options.retry = { retries: 0 }
-    }
-  } else if (typeof options.retry === 'number') {
-    options.retry = { retries: options.retry }
-  } else {
-    options.retry = { retries: 0, ...options.retry }
-  }
-
-  options.cache = options.cache || 'default'
-  if (options.cache === 'default') {
-    const hasConditionalHeader = Object.keys(options.headers || {}).some((name) => {
-      return conditionalHeaders.includes(name.toLowerCase())
-    })
-    if (hasConditionalHeader) {
-      options.cache = 'no-store'
-    }
-  }
-
-  // cacheManager is deprecated, but if it's set and
-  // cachePath is not we should copy it to the new field
-  if (options.cacheManager && !options.cachePath) {
-    options.cachePath = options.cacheManager
-  }
-
-  return options
-}
-
-module.exports = configureOptions
-
-
-/***/ }),
-
-/***/ 82298:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const Minipass = __nccwpck_require__(41077)
-const MinipassPipeline = __nccwpck_require__(69891)
-const fetch = __nccwpck_require__(68998)
-const promiseRetry = __nccwpck_require__(54742)
-const ssri = __nccwpck_require__(6726)
-
-const getAgent = __nccwpck_require__(69573)
-const pkg = __nccwpck_require__(87274)
-
-const USER_AGENT = `${pkg.name}/${pkg.version} (+https://npm.im/${pkg.name})`
-
-const RETRY_ERRORS = [
-  'ECONNRESET', // remote socket closed on us
-  'ECONNREFUSED', // remote host refused to open connection
-  'EADDRINUSE', // failed to bind to a local port (proxy?)
-  'ETIMEDOUT', // someone in the transaction is WAY TOO SLOW
-  'ERR_SOCKET_TIMEOUT', // same as above, but this one comes from agentkeepalive
-  // Known codes we do NOT retry on:
-  // ENOTFOUND (getaddrinfo failure. Either bad hostname, or offline)
-]
-
-const RETRY_TYPES = [
-  'request-timeout',
-]
-
-// make a request directly to the remote source,
-// retrying certain classes of errors as well as
-// following redirects (through the cache if necessary)
-// and verifying response integrity
-const remoteFetch = (request, options) => {
-  const agent = getAgent(request.url, options)
-  if (!request.headers.has('connection')) {
-    request.headers.set('connection', agent ? 'keep-alive' : 'close')
-  }
-
-  if (!request.headers.has('user-agent')) {
-    request.headers.set('user-agent', USER_AGENT)
-  }
-
-  // keep our own options since we're overriding the agent
-  // and the redirect mode
-  const _opts = {
-    ...options,
-    agent,
-    redirect: 'manual',
-  }
-
-  return promiseRetry(async (retryHandler, attemptNum) => {
-    const req = new fetch.Request(request, _opts)
-    try {
-      let res = await fetch(req, _opts)
-      if (_opts.integrity && res.status === 200) {
-        // we got a 200 response and the user has specified an expected
-        // integrity value, so wrap the response in an ssri stream to verify it
-        const integrityStream = ssri.integrityStream({ integrity: _opts.integrity })
-        res = new fetch.Response(new MinipassPipeline(res.body, integrityStream), res)
-      }
-
-      res.headers.set('x-fetch-attempts', attemptNum)
-
-      // do not retry POST requests, or requests with a streaming body
-      // do retry requests with a 408, 420, 429 or 500+ status in the response
-      const isStream = Minipass.isStream(req.body)
-      const isRetriable = req.method !== 'POST' &&
-          !isStream &&
-          ([408, 420, 429].includes(res.status) || res.status >= 500)
-
-      if (isRetriable) {
-        if (typeof options.onRetry === 'function') {
-          options.onRetry(res)
-        }
-
-        return retryHandler(res)
-      }
-
-      return res
-    } catch (err) {
-      const code = (err.code === 'EPROMISERETRY')
-        ? err.retried.code
-        : err.code
-
-      // err.retried will be the thing that was thrown from above
-      // if it's a response, we just got a bad status code and we
-      // can re-throw to allow the retry
-      const isRetryError = err.retried instanceof fetch.Response ||
-        (RETRY_ERRORS.includes(code) && RETRY_TYPES.includes(err.type))
-
-      if (req.method === 'POST' || isRetryError) {
-        throw err
-      }
-
-      if (typeof options.onRetry === 'function') {
-        options.onRetry(err)
-      }
-
-      return retryHandler(err)
-    }
-  }, options.retry).catch((err) => {
-    // don't reject for http errors, just return them
-    if (err.status >= 400 && err.type !== 'system') {
-      return err
-    }
-
-    throw err
   })
+
+  if (name.length > 214) {
+    warnings.push('name can no longer contain more than 214 characters')
+  }
+
+  // mIxeD CaSe nAMEs
+  if (name.toLowerCase() !== name) {
+    warnings.push('name can no longer contain capital letters')
+  }
+
+  if (/[~'!()*]/.test(name.split('/').slice(-1)[0])) {
+    warnings.push('name can no longer contain special characters ("~\'!()*")')
+  }
+
+  if (encodeURIComponent(name) !== name) {
+    // Maybe it's a scoped package name, like @user/package
+    var nameMatch = name.match(scopedPackagePattern)
+    if (nameMatch) {
+      var user = nameMatch[1]
+      var pkg = nameMatch[2]
+      if (encodeURIComponent(user) === user && encodeURIComponent(pkg) === pkg) {
+        return done(warnings, errors)
+      }
+    }
+
+    errors.push('name can only contain URL-friendly characters')
+  }
+
+  return done(warnings, errors)
 }
 
-module.exports = remoteFetch
+var done = function (warnings, errors) {
+  var result = {
+    validForNewPackages: errors.length === 0 && warnings.length === 0,
+    validForOldPackages: errors.length === 0,
+    warnings: warnings,
+    errors: errors,
+  }
+  if (!result.warnings.length) {
+    delete result.warnings
+  }
+  if (!result.errors.length) {
+    delete result.errors
+  }
+  return result
+}
+
+module.exports = validate
 
 
 /***/ }),
@@ -77134,7 +78910,7 @@ const Fetcher = __nccwpck_require__(45588)
 const FileFetcher = __nccwpck_require__(36720)
 const Minipass = __nccwpck_require__(41077)
 const tarCreateOptions = __nccwpck_require__(64274)
-const packlist = __nccwpck_require__(41933)
+const packlist = __nccwpck_require__(87333)
 const tar = __nccwpck_require__(74674)
 const _prepareDir = Symbol('_prepareDir')
 const { resolve } = __nccwpck_require__(71017)
@@ -77245,12 +79021,12 @@ const tar = __nccwpck_require__(74674)
 const log = __nccwpck_require__(56528)
 const retry = __nccwpck_require__(54742)
 const fsm = __nccwpck_require__(27714)
-const cacache = __nccwpck_require__(87234)
+const cacache = __nccwpck_require__(85490)
 const isPackageBin = __nccwpck_require__(75035)
 const removeTrailingSlashes = __nccwpck_require__(17480)
 const getContents = __nccwpck_require__(89019)
 const readPackageJsonFast = __nccwpck_require__(99234)
-const readPackageJson = promisify(__nccwpck_require__(28925))
+const readPackageJson = promisify(__nccwpck_require__(14086))
 
 // we only change ownership on unix platforms, and only if uid is 0
 const selfOwner = process.getuid && process.getuid() === 0 ? {
@@ -77768,7 +79544,7 @@ FetcherBase.get = (rawSpec, opts = {}) => {
 
 const Fetcher = __nccwpck_require__(45588)
 const fsm = __nccwpck_require__(27714)
-const cacache = __nccwpck_require__(87234)
+const cacache = __nccwpck_require__(85490)
 const _tarballFromResolved = Symbol.for('pacote.Fetcher._tarballFromResolved')
 const _exeBins = Symbol('_exeBins')
 const { resolve } = __nccwpck_require__(71017)
@@ -77878,7 +79654,7 @@ const git = __nccwpck_require__(25035)
 const pickManifest = __nccwpck_require__(3240)
 const npa = __nccwpck_require__(20680)
 const Minipass = __nccwpck_require__(41077)
-const cacache = __nccwpck_require__(87234)
+const cacache = __nccwpck_require__(85490)
 const log = __nccwpck_require__(56528)
 const npm = __nccwpck_require__(75893)
 
@@ -77909,6 +79685,13 @@ const addGitPlus = url => url && `git+${url}`.replace(/^(git\+)+/, 'git+')
 class GitFetcher extends Fetcher {
   constructor (spec, opts) {
     super(spec, opts)
+
+    // we never want to compare integrity for git dependencies: npm/rfcs#525
+    if (this.opts.integrity) {
+      delete this.opts.integrity
+      log.warn(`skipping integrity check for git dependency ${this.spec.fetchSpec}`)
+    }
+
     this.resolvedRef = null
     if (this.spec.hosted) {
       this.from = this.spec.hosted.shortcut({ noCommittish: false })
@@ -78065,7 +79848,6 @@ class GitFetcher extends Fetcher {
   [_tarballFromResolved] () {
     const stream = new Minipass()
     stream.resolved = this.resolved
-    stream.integrity = this.integrity
     stream.from = this.from
 
     // check it out and then shell out to the DirFetcher tarball packer
@@ -78175,7 +79957,6 @@ class GitFetcher extends Fetcher {
         this[_readPackageJson](dir + '/package.json')
           .then(mani => this.package = {
             ...mani,
-            _integrity: this.integrity && String(this.integrity),
             _resolved: this.resolved,
             _from: this.from,
           }))
@@ -81820,7 +83601,7 @@ module.exports = Hours;
 
 /***/ }),
 
-/***/ 29883:
+/***/ 92408:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
@@ -82676,7 +84457,7 @@ const _require2 = __nccwpck_require__(89571),
       erase = _require2.erase,
       cursor = _require2.cursor;
 
-const _require3 = __nccwpck_require__(29883),
+const _require3 = __nccwpck_require__(92408),
       DatePart = _require3.DatePart,
       Meridiem = _require3.Meridiem,
       Day = _require3.Day,
@@ -88084,7 +89865,7 @@ module.exports = rpj
 
 /***/ }),
 
-/***/ 28925:
+/***/ 14086:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 var fs = __nccwpck_require__(57147)
@@ -88092,7 +89873,7 @@ var fs = __nccwpck_require__(57147)
 var path = __nccwpck_require__(71017)
 
 var glob = __nccwpck_require__(91957)
-var normalizeData = __nccwpck_require__(53188)
+var normalizeData = __nccwpck_require__(73997)
 var safeJSON = __nccwpck_require__(89062)
 var util = __nccwpck_require__(73837)
 var normalizePackageBin = __nccwpck_require__(13262)
@@ -88439,7 +90220,9 @@ function mans (file, data, cb) {
     if (er) {
       return cb(er)
     }
-    data.man = mans.map(man => path.relative(dirname, path.join(cwd, man)))
+    data.man = mans.map(man =>
+      path.relative(dirname, path.join(cwd, man)).split(path.sep).join('/')
+    )
     return cb(null, data)
   })
 }
@@ -88611,6 +90394,10 @@ function final (file, data, log, strict, cb) {
 function fillTypes (file, data, cb) {
   var index = data.main ? data.main : 'index.js'
 
+  if (typeof index !== 'string') {
+    return cb(new TypeError('The "main" attribute must be of type string.'))
+  }
+
   // TODO exports is much more complicated than this in verbose format
   // We need to support for instance
 
@@ -88641,7 +90428,7 @@ function fillTypes (file, data, cb) {
   var dtsPath = path.join(path.dirname(file), dts)
   var hasDTSFields = 'types' in data || 'typings' in data
   if (!hasDTSFields && fs.existsSync(dtsPath)) {
-    data.types = dts
+    data.types = dts.split(path.sep).join('/')
   }
 
   cb(null, data)
@@ -88685,6 +90472,1164 @@ function parseError (ex, file) {
   e.code = 'EJSONPARSE'
   e.path = file
   return e
+}
+
+
+/***/ }),
+
+/***/ 40874:
+/***/ ((module) => {
+
+"use strict";
+/* eslint-disable max-len */
+
+const maybeJoin = (...args) => args.every(arg => arg) ? args.join('') : ''
+const maybeEncode = (arg) => arg ? encodeURIComponent(arg) : ''
+
+const defaults = {
+  sshtemplate: ({ domain, user, project, committish }) => `git@${domain}:${user}/${project}.git${maybeJoin('#', committish)}`,
+  sshurltemplate: ({ domain, user, project, committish }) => `git+ssh://git@${domain}/${user}/${project}.git${maybeJoin('#', committish)}`,
+  browsetemplate: ({ domain, user, project, committish, treepath }) => `https://${domain}/${user}/${project}${maybeJoin('/', treepath, '/', maybeEncode(committish))}`,
+  browsefiletemplate: ({ domain, user, project, committish, treepath, path, fragment, hashformat }) => `https://${domain}/${user}/${project}/${treepath}/${maybeEncode(committish || 'master')}/${path}${maybeJoin('#', hashformat(fragment || ''))}`,
+  docstemplate: ({ domain, user, project, treepath, committish }) => `https://${domain}/${user}/${project}${maybeJoin('/', treepath, '/', maybeEncode(committish))}#readme`,
+  httpstemplate: ({ auth, domain, user, project, committish }) => `git+https://${maybeJoin(auth, '@')}${domain}/${user}/${project}.git${maybeJoin('#', committish)}`,
+  filetemplate: ({ domain, user, project, committish, path }) => `https://${domain}/${user}/${project}/raw/${maybeEncode(committish) || 'master'}/${path}`,
+  shortcuttemplate: ({ type, user, project, committish }) => `${type}:${user}/${project}${maybeJoin('#', committish)}`,
+  pathtemplate: ({ user, project, committish }) => `${user}/${project}${maybeJoin('#', committish)}`,
+  bugstemplate: ({ domain, user, project }) => `https://${domain}/${user}/${project}/issues`,
+  hashformat: formatHashFragment,
+}
+
+const gitHosts = {}
+gitHosts.github = Object.assign({}, defaults, {
+  // First two are insecure and generally shouldn't be used any more, but
+  // they are still supported.
+  protocols: ['git:', 'http:', 'git+ssh:', 'git+https:', 'ssh:', 'https:'],
+  domain: 'github.com',
+  treepath: 'tree',
+  filetemplate: ({ auth, user, project, committish, path }) => `https://${maybeJoin(auth, '@')}raw.githubusercontent.com/${user}/${project}/${maybeEncode(committish) || 'master'}/${path}`,
+  gittemplate: ({ auth, domain, user, project, committish }) => `git://${maybeJoin(auth, '@')}${domain}/${user}/${project}.git${maybeJoin('#', committish)}`,
+  tarballtemplate: ({ domain, user, project, committish }) => `https://codeload.${domain}/${user}/${project}/tar.gz/${maybeEncode(committish) || 'master'}`,
+  extract: (url) => {
+    let [, user, project, type, committish] = url.pathname.split('/', 5)
+    if (type && type !== 'tree') {
+      return
+    }
+
+    if (!type) {
+      committish = url.hash.slice(1)
+    }
+
+    if (project && project.endsWith('.git')) {
+      project = project.slice(0, -4)
+    }
+
+    if (!user || !project) {
+      return
+    }
+
+    return { user, project, committish }
+  },
+})
+
+gitHosts.bitbucket = Object.assign({}, defaults, {
+  protocols: ['git+ssh:', 'git+https:', 'ssh:', 'https:'],
+  domain: 'bitbucket.org',
+  treepath: 'src',
+  tarballtemplate: ({ domain, user, project, committish }) => `https://${domain}/${user}/${project}/get/${maybeEncode(committish) || 'master'}.tar.gz`,
+  extract: (url) => {
+    let [, user, project, aux] = url.pathname.split('/', 4)
+    if (['get'].includes(aux)) {
+      return
+    }
+
+    if (project && project.endsWith('.git')) {
+      project = project.slice(0, -4)
+    }
+
+    if (!user || !project) {
+      return
+    }
+
+    return { user, project, committish: url.hash.slice(1) }
+  },
+})
+
+gitHosts.gitlab = Object.assign({}, defaults, {
+  protocols: ['git+ssh:', 'git+https:', 'ssh:', 'https:'],
+  domain: 'gitlab.com',
+  treepath: 'tree',
+  httpstemplate: ({ auth, domain, user, project, committish }) => `git+https://${maybeJoin(auth, '@')}${domain}/${user}/${project}.git${maybeJoin('#', committish)}`,
+  tarballtemplate: ({ domain, user, project, committish }) => `https://${domain}/${user}/${project}/repository/archive.tar.gz?ref=${maybeEncode(committish) || 'master'}`,
+  extract: (url) => {
+    const path = url.pathname.slice(1)
+    if (path.includes('/-/') || path.includes('/archive.tar.gz')) {
+      return
+    }
+
+    const segments = path.split('/')
+    let project = segments.pop()
+    if (project.endsWith('.git')) {
+      project = project.slice(0, -4)
+    }
+
+    const user = segments.join('/')
+    if (!user || !project) {
+      return
+    }
+
+    return { user, project, committish: url.hash.slice(1) }
+  },
+})
+
+gitHosts.gist = Object.assign({}, defaults, {
+  protocols: ['git:', 'git+ssh:', 'git+https:', 'ssh:', 'https:'],
+  domain: 'gist.github.com',
+  sshtemplate: ({ domain, project, committish }) => `git@${domain}:${project}.git${maybeJoin('#', committish)}`,
+  sshurltemplate: ({ domain, project, committish }) => `git+ssh://git@${domain}/${project}.git${maybeJoin('#', committish)}`,
+  browsetemplate: ({ domain, project, committish }) => `https://${domain}/${project}${maybeJoin('/', maybeEncode(committish))}`,
+  browsefiletemplate: ({ domain, project, committish, path, hashformat }) => `https://${domain}/${project}${maybeJoin('/', maybeEncode(committish))}${maybeJoin('#', hashformat(path))}`,
+  docstemplate: ({ domain, project, committish }) => `https://${domain}/${project}${maybeJoin('/', maybeEncode(committish))}`,
+  httpstemplate: ({ domain, project, committish }) => `git+https://${domain}/${project}.git${maybeJoin('#', committish)}`,
+  filetemplate: ({ user, project, committish, path }) => `https://gist.githubusercontent.com/${user}/${project}/raw${maybeJoin('/', maybeEncode(committish))}/${path}`,
+  shortcuttemplate: ({ type, project, committish }) => `${type}:${project}${maybeJoin('#', committish)}`,
+  pathtemplate: ({ project, committish }) => `${project}${maybeJoin('#', committish)}`,
+  bugstemplate: ({ domain, project }) => `https://${domain}/${project}`,
+  gittemplate: ({ domain, project, committish }) => `git://${domain}/${project}.git${maybeJoin('#', committish)}`,
+  tarballtemplate: ({ project, committish }) => `https://codeload.github.com/gist/${project}/tar.gz/${maybeEncode(committish) || 'master'}`,
+  extract: (url) => {
+    let [, user, project, aux] = url.pathname.split('/', 4)
+    if (aux === 'raw') {
+      return
+    }
+
+    if (!project) {
+      if (!user) {
+        return
+      }
+
+      project = user
+      user = null
+    }
+
+    if (project.endsWith('.git')) {
+      project = project.slice(0, -4)
+    }
+
+    return { user, project, committish: url.hash.slice(1) }
+  },
+  hashformat: function (fragment) {
+    return fragment && 'file-' + formatHashFragment(fragment)
+  },
+})
+
+gitHosts.sourcehut = Object.assign({}, defaults, {
+  protocols: ['git+ssh:', 'https:'],
+  domain: 'git.sr.ht',
+  treepath: 'tree',
+  browsefiletemplate: ({ domain, user, project, committish, treepath, path, fragment, hashformat }) => `https://${domain}/${user}/${project}/${treepath}/${maybeEncode(committish || 'main')}/${path}${maybeJoin('#', hashformat(fragment || ''))}`,
+  filetemplate: ({ domain, user, project, committish, path }) => `https://${domain}/${user}/${project}/blob/${maybeEncode(committish) || 'main'}/${path}`,
+  httpstemplate: ({ domain, user, project, committish }) => `https://${domain}/${user}/${project}.git${maybeJoin('#', committish)}`,
+  tarballtemplate: ({ domain, user, project, committish }) => `https://${domain}/${user}/${project}/archive/${maybeEncode(committish) || 'main'}.tar.gz`,
+  bugstemplate: ({ domain, user, project }) => `https://todo.sr.ht/${user}/${project}`,
+  docstemplate: ({ domain, user, project, treepath, committish }) => `https://${domain}/${user}/${project}${maybeJoin('/', treepath, '/', maybeEncode(committish))}#readme`,
+  extract: (url) => {
+    let [, user, project, aux] = url.pathname.split('/', 4)
+
+    // tarball url
+    if (['archive'].includes(aux)) {
+      return
+    }
+
+    if (project && project.endsWith('.git')) {
+      project = project.slice(0, -4)
+    }
+
+    if (!user || !project) {
+      return
+    }
+
+    return { user, project, committish: url.hash.slice(1) }
+  },
+})
+
+const names = Object.keys(gitHosts)
+gitHosts.byShortcut = {}
+gitHosts.byDomain = {}
+for (const name of names) {
+  gitHosts.byShortcut[`${name}:`] = name
+  gitHosts.byDomain[gitHosts[name].domain] = name
+}
+
+function formatHashFragment (fragment) {
+  return fragment.toLowerCase().replace(/^\W+|\/|\W+$/g, '').replace(/\W+/g, '-')
+}
+
+module.exports = gitHosts
+
+
+/***/ }),
+
+/***/ 8912:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+const gitHosts = __nccwpck_require__(40874)
+
+class GitHost {
+  constructor (type, user, auth, project, committish, defaultRepresentation, opts = {}) {
+    Object.assign(this, gitHosts[type])
+    this.type = type
+    this.user = user
+    this.auth = auth
+    this.project = project
+    this.committish = committish
+    this.default = defaultRepresentation
+    this.opts = opts
+  }
+
+  hash () {
+    return this.committish ? `#${this.committish}` : ''
+  }
+
+  ssh (opts) {
+    return this._fill(this.sshtemplate, opts)
+  }
+
+  _fill (template, opts) {
+    if (typeof template === 'function') {
+      const options = { ...this, ...this.opts, ...opts }
+
+      // the path should always be set so we don't end up with 'undefined' in urls
+      if (!options.path) {
+        options.path = ''
+      }
+
+      // template functions will insert the leading slash themselves
+      if (options.path.startsWith('/')) {
+        options.path = options.path.slice(1)
+      }
+
+      if (options.noCommittish) {
+        options.committish = null
+      }
+
+      const result = template(options)
+      return options.noGitPlus && result.startsWith('git+') ? result.slice(4) : result
+    }
+
+    return null
+  }
+
+  sshurl (opts) {
+    return this._fill(this.sshurltemplate, opts)
+  }
+
+  browse (path, fragment, opts) {
+    // not a string, treat path as opts
+    if (typeof path !== 'string') {
+      return this._fill(this.browsetemplate, path)
+    }
+
+    if (typeof fragment !== 'string') {
+      opts = fragment
+      fragment = null
+    }
+    return this._fill(this.browsefiletemplate, { ...opts, fragment, path })
+  }
+
+  docs (opts) {
+    return this._fill(this.docstemplate, opts)
+  }
+
+  bugs (opts) {
+    return this._fill(this.bugstemplate, opts)
+  }
+
+  https (opts) {
+    return this._fill(this.httpstemplate, opts)
+  }
+
+  git (opts) {
+    return this._fill(this.gittemplate, opts)
+  }
+
+  shortcut (opts) {
+    return this._fill(this.shortcuttemplate, opts)
+  }
+
+  path (opts) {
+    return this._fill(this.pathtemplate, opts)
+  }
+
+  tarball (opts) {
+    return this._fill(this.tarballtemplate, { ...opts, noCommittish: false })
+  }
+
+  file (path, opts) {
+    return this._fill(this.filetemplate, { ...opts, path })
+  }
+
+  getDefaultRepresentation () {
+    return this.default
+  }
+
+  toString (opts) {
+    if (this.default && typeof this[this.default] === 'function') {
+      return this[this.default](opts)
+    }
+
+    return this.sshurl(opts)
+  }
+}
+module.exports = GitHost
+
+
+/***/ }),
+
+/***/ 39401:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+const url = __nccwpck_require__(57310)
+const gitHosts = __nccwpck_require__(40874)
+const GitHost = module.exports = __nccwpck_require__(8912)
+const LRU = __nccwpck_require__(7129)
+const cache = new LRU({ max: 1000 })
+
+const protocolToRepresentationMap = {
+  'git+ssh:': 'sshurl',
+  'git+https:': 'https',
+  'ssh:': 'sshurl',
+  'git:': 'git',
+}
+
+function protocolToRepresentation (protocol) {
+  return protocolToRepresentationMap[protocol] || protocol.slice(0, -1)
+}
+
+const authProtocols = {
+  'git:': true,
+  'https:': true,
+  'git+https:': true,
+  'http:': true,
+  'git+http:': true,
+}
+
+const knownProtocols = Object.keys(gitHosts.byShortcut)
+  .concat(['http:', 'https:', 'git:', 'git+ssh:', 'git+https:', 'ssh:'])
+
+module.exports.fromUrl = function (giturl, opts) {
+  if (typeof giturl !== 'string') {
+    return
+  }
+
+  const key = giturl + JSON.stringify(opts || {})
+
+  if (!cache.has(key)) {
+    cache.set(key, fromUrl(giturl, opts))
+  }
+
+  return cache.get(key)
+}
+
+function fromUrl (giturl, opts) {
+  if (!giturl) {
+    return
+  }
+
+  const url = isGitHubShorthand(giturl) ? 'github:' + giturl : correctProtocol(giturl)
+  const parsed = parseGitUrl(url)
+  if (!parsed) {
+    return parsed
+  }
+
+  const gitHostShortcut = gitHosts.byShortcut[parsed.protocol]
+  const gitHostDomain =
+    gitHosts.byDomain[parsed.hostname.startsWith('www.') ?
+      parsed.hostname.slice(4) :
+      parsed.hostname]
+  const gitHostName = gitHostShortcut || gitHostDomain
+  if (!gitHostName) {
+    return
+  }
+
+  const gitHostInfo = gitHosts[gitHostShortcut || gitHostDomain]
+  let auth = null
+  if (authProtocols[parsed.protocol] && (parsed.username || parsed.password)) {
+    auth = `${parsed.username}${parsed.password ? ':' + parsed.password : ''}`
+  }
+
+  let committish = null
+  let user = null
+  let project = null
+  let defaultRepresentation = null
+
+  try {
+    if (gitHostShortcut) {
+      let pathname = parsed.pathname.startsWith('/') ? parsed.pathname.slice(1) : parsed.pathname
+      const firstAt = pathname.indexOf('@')
+      // we ignore auth for shortcuts, so just trim it out
+      if (firstAt > -1) {
+        pathname = pathname.slice(firstAt + 1)
+      }
+
+      const lastSlash = pathname.lastIndexOf('/')
+      if (lastSlash > -1) {
+        user = decodeURIComponent(pathname.slice(0, lastSlash))
+        // we want nulls only, never empty strings
+        if (!user) {
+          user = null
+        }
+        project = decodeURIComponent(pathname.slice(lastSlash + 1))
+      } else {
+        project = decodeURIComponent(pathname)
+      }
+
+      if (project.endsWith('.git')) {
+        project = project.slice(0, -4)
+      }
+
+      if (parsed.hash) {
+        committish = decodeURIComponent(parsed.hash.slice(1))
+      }
+
+      defaultRepresentation = 'shortcut'
+    } else {
+      if (!gitHostInfo.protocols.includes(parsed.protocol)) {
+        return
+      }
+
+      const segments = gitHostInfo.extract(parsed)
+      if (!segments) {
+        return
+      }
+
+      user = segments.user && decodeURIComponent(segments.user)
+      project = decodeURIComponent(segments.project)
+      committish = decodeURIComponent(segments.committish)
+      defaultRepresentation = protocolToRepresentation(parsed.protocol)
+    }
+  } catch (err) {
+    /* istanbul ignore else */
+    if (err instanceof URIError) {
+      return
+    } else {
+      throw err
+    }
+  }
+
+  return new GitHost(gitHostName, user, auth, project, committish, defaultRepresentation, opts)
+}
+
+// accepts input like git:github.com:user/repo and inserts the // after the first :
+const correctProtocol = (arg) => {
+  const firstColon = arg.indexOf(':')
+  const proto = arg.slice(0, firstColon + 1)
+  if (knownProtocols.includes(proto)) {
+    return arg
+  }
+
+  const firstAt = arg.indexOf('@')
+  if (firstAt > -1) {
+    if (firstAt > firstColon) {
+      return `git+ssh://${arg}`
+    } else {
+      return arg
+    }
+  }
+
+  const doubleSlash = arg.indexOf('//')
+  if (doubleSlash === firstColon + 1) {
+    return arg
+  }
+
+  return arg.slice(0, firstColon + 1) + '//' + arg.slice(firstColon + 1)
+}
+
+// look for github shorthand inputs, such as npm/cli
+const isGitHubShorthand = (arg) => {
+  // it cannot contain whitespace before the first #
+  // it cannot start with a / because that's probably an absolute file path
+  // but it must include a slash since repos are username/repository
+  // it cannot start with a . because that's probably a relative file path
+  // it cannot start with an @ because that's a scoped package if it passes the other tests
+  // it cannot contain a : before a # because that tells us that there's a protocol
+  // a second / may not exist before a #
+  const firstHash = arg.indexOf('#')
+  const firstSlash = arg.indexOf('/')
+  const secondSlash = arg.indexOf('/', firstSlash + 1)
+  const firstColon = arg.indexOf(':')
+  const firstSpace = /\s/.exec(arg)
+  const firstAt = arg.indexOf('@')
+
+  const spaceOnlyAfterHash = !firstSpace || (firstHash > -1 && firstSpace.index > firstHash)
+  const atOnlyAfterHash = firstAt === -1 || (firstHash > -1 && firstAt > firstHash)
+  const colonOnlyAfterHash = firstColon === -1 || (firstHash > -1 && firstColon > firstHash)
+  const secondSlashOnlyAfterHash = secondSlash === -1 || (firstHash > -1 && secondSlash > firstHash)
+  const hasSlash = firstSlash > 0
+  // if a # is found, what we really want to know is that the character
+  // immediately before # is not a /
+  const doesNotEndWithSlash = firstHash > -1 ? arg[firstHash - 1] !== '/' : !arg.endsWith('/')
+  const doesNotStartWithDot = !arg.startsWith('.')
+
+  return spaceOnlyAfterHash && hasSlash && doesNotEndWithSlash &&
+    doesNotStartWithDot && atOnlyAfterHash && colonOnlyAfterHash &&
+    secondSlashOnlyAfterHash
+}
+
+// attempt to correct an scp style url so that it will parse with `new URL()`
+const correctUrl = (giturl) => {
+  const firstAt = giturl.indexOf('@')
+  const lastHash = giturl.lastIndexOf('#')
+  let firstColon = giturl.indexOf(':')
+  let lastColon = giturl.lastIndexOf(':', lastHash > -1 ? lastHash : Infinity)
+
+  let corrected
+  if (lastColon > firstAt) {
+    // the last : comes after the first @ (or there is no @)
+    // like it would in:
+    // proto://hostname.com:user/repo
+    // username@hostname.com:user/repo
+    // :password@hostname.com:user/repo
+    // username:password@hostname.com:user/repo
+    // proto://username@hostname.com:user/repo
+    // proto://:password@hostname.com:user/repo
+    // proto://username:password@hostname.com:user/repo
+    // then we replace the last : with a / to create a valid path
+    corrected = giturl.slice(0, lastColon) + '/' + giturl.slice(lastColon + 1)
+    // // and we find our new : positions
+    firstColon = corrected.indexOf(':')
+    lastColon = corrected.lastIndexOf(':')
+  }
+
+  if (firstColon === -1 && giturl.indexOf('//') === -1) {
+    // we have no : at all
+    // as it would be in:
+    // username@hostname.com/user/repo
+    // then we prepend a protocol
+    corrected = `git+ssh://${corrected}`
+  }
+
+  return corrected
+}
+
+// try to parse the url as its given to us, if that throws
+// then we try to clean the url and parse that result instead
+// THIS FUNCTION SHOULD NEVER THROW
+const parseGitUrl = (giturl) => {
+  let result
+  try {
+    result = new url.URL(giturl)
+  } catch (err) {}
+
+  if (result) {
+    return result
+  }
+
+  const correctedUrl = correctUrl(giturl)
+  try {
+    result = new url.URL(correctedUrl)
+  } catch (err) {}
+
+  return result
+}
+
+
+/***/ }),
+
+/***/ 32913:
+/***/ ((module) => {
+
+module.exports = extractDescription
+
+// Extracts description from contents of a readme file in markdown format
+function extractDescription (d) {
+  if (!d) {
+    return
+  }
+  if (d === 'ERROR: No README data found!') {
+    return
+  }
+  // the first block of text before the first heading
+  // that isn't the first line heading
+  d = d.trim().split('\n')
+  for (var s = 0; d[s] && d[s].trim().match(/^(#|$)/); s++) {
+    ;
+  }
+  var l = d.length
+  for (var e = s + 1; e < l && d[e].trim(); e++) {
+    ;
+  }
+  return d.slice(s, e).join(' ').trim()
+}
+
+
+/***/ }),
+
+/***/ 81531:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+var isValidSemver = __nccwpck_require__(19601)
+var cleanSemver = __nccwpck_require__(48848)
+var validateLicense = __nccwpck_require__(22524)
+var hostedGitInfo = __nccwpck_require__(39401)
+var isBuiltinModule = __nccwpck_require__(56873)
+var depTypes = ['dependencies', 'devDependencies', 'optionalDependencies']
+var extractDescription = __nccwpck_require__(32913)
+var url = __nccwpck_require__(57310)
+var typos = __nccwpck_require__(57052)
+
+var isEmail = str => str.includes('@') && (str.indexOf('@') < str.lastIndexOf('.'))
+
+module.exports = {
+  // default warning function
+  warn: function () {},
+
+  fixRepositoryField: function (data) {
+    if (data.repositories) {
+      this.warn('repositories')
+      data.repository = data.repositories[0]
+    }
+    if (!data.repository) {
+      return this.warn('missingRepository')
+    }
+    if (typeof data.repository === 'string') {
+      data.repository = {
+        type: 'git',
+        url: data.repository,
+      }
+    }
+    var r = data.repository.url || ''
+    if (r) {
+      var hosted = hostedGitInfo.fromUrl(r)
+      if (hosted) {
+        r = data.repository.url
+          = hosted.getDefaultRepresentation() === 'shortcut' ? hosted.https() : hosted.toString()
+      }
+    }
+
+    if (r.match(/github.com\/[^/]+\/[^/]+\.git\.git$/)) {
+      this.warn('brokenGitUrl', r)
+    }
+  },
+
+  fixTypos: function (data) {
+    Object.keys(typos.topLevel).forEach(function (d) {
+      if (Object.prototype.hasOwnProperty.call(data, d)) {
+        this.warn('typo', d, typos.topLevel[d])
+      }
+    }, this)
+  },
+
+  fixScriptsField: function (data) {
+    if (!data.scripts) {
+      return
+    }
+    if (typeof data.scripts !== 'object') {
+      this.warn('nonObjectScripts')
+      delete data.scripts
+      return
+    }
+    Object.keys(data.scripts).forEach(function (k) {
+      if (typeof data.scripts[k] !== 'string') {
+        this.warn('nonStringScript')
+        delete data.scripts[k]
+      } else if (typos.script[k] && !data.scripts[typos.script[k]]) {
+        this.warn('typo', k, typos.script[k], 'scripts')
+      }
+    }, this)
+  },
+
+  fixFilesField: function (data) {
+    var files = data.files
+    if (files && !Array.isArray(files)) {
+      this.warn('nonArrayFiles')
+      delete data.files
+    } else if (data.files) {
+      data.files = data.files.filter(function (file) {
+        if (!file || typeof file !== 'string') {
+          this.warn('invalidFilename', file)
+          return false
+        } else {
+          return true
+        }
+      }, this)
+    }
+  },
+
+  fixBinField: function (data) {
+    if (!data.bin) {
+      return
+    }
+    if (typeof data.bin === 'string') {
+      var b = {}
+      var match
+      if (match = data.name.match(/^@[^/]+[/](.*)$/)) {
+        b[match[1]] = data.bin
+      } else {
+        b[data.name] = data.bin
+      }
+      data.bin = b
+    }
+  },
+
+  fixManField: function (data) {
+    if (!data.man) {
+      return
+    }
+    if (typeof data.man === 'string') {
+      data.man = [data.man]
+    }
+  },
+  fixBundleDependenciesField: function (data) {
+    var bdd = 'bundledDependencies'
+    var bd = 'bundleDependencies'
+    if (data[bdd] && !data[bd]) {
+      data[bd] = data[bdd]
+      delete data[bdd]
+    }
+    if (data[bd] && !Array.isArray(data[bd])) {
+      this.warn('nonArrayBundleDependencies')
+      delete data[bd]
+    } else if (data[bd]) {
+      data[bd] = data[bd].filter(function (bd) {
+        if (!bd || typeof bd !== 'string') {
+          this.warn('nonStringBundleDependency', bd)
+          return false
+        } else {
+          if (!data.dependencies) {
+            data.dependencies = {}
+          }
+          if (!Object.prototype.hasOwnProperty.call(data.dependencies, bd)) {
+            this.warn('nonDependencyBundleDependency', bd)
+            data.dependencies[bd] = '*'
+          }
+          return true
+        }
+      }, this)
+    }
+  },
+
+  fixDependencies: function (data, strict) {
+    objectifyDeps(data, this.warn)
+    addOptionalDepsToDeps(data, this.warn)
+    this.fixBundleDependenciesField(data)
+
+    ;['dependencies', 'devDependencies'].forEach(function (deps) {
+      if (!(deps in data)) {
+        return
+      }
+      if (!data[deps] || typeof data[deps] !== 'object') {
+        this.warn('nonObjectDependencies', deps)
+        delete data[deps]
+        return
+      }
+      Object.keys(data[deps]).forEach(function (d) {
+        var r = data[deps][d]
+        if (typeof r !== 'string') {
+          this.warn('nonStringDependency', d, JSON.stringify(r))
+          delete data[deps][d]
+        }
+        var hosted = hostedGitInfo.fromUrl(data[deps][d])
+        if (hosted) {
+          data[deps][d] = hosted.toString()
+        }
+      }, this)
+    }, this)
+  },
+
+  fixModulesField: function (data) {
+    if (data.modules) {
+      this.warn('deprecatedModules')
+      delete data.modules
+    }
+  },
+
+  fixKeywordsField: function (data) {
+    if (typeof data.keywords === 'string') {
+      data.keywords = data.keywords.split(/,\s+/)
+    }
+    if (data.keywords && !Array.isArray(data.keywords)) {
+      delete data.keywords
+      this.warn('nonArrayKeywords')
+    } else if (data.keywords) {
+      data.keywords = data.keywords.filter(function (kw) {
+        if (typeof kw !== 'string' || !kw) {
+          this.warn('nonStringKeyword')
+          return false
+        } else {
+          return true
+        }
+      }, this)
+    }
+  },
+
+  fixVersionField: function (data, strict) {
+    // allow "loose" semver 1.0 versions in non-strict mode
+    // enforce strict semver 2.0 compliance in strict mode
+    var loose = !strict
+    if (!data.version) {
+      data.version = ''
+      return true
+    }
+    if (!isValidSemver(data.version, loose)) {
+      throw new Error('Invalid version: "' + data.version + '"')
+    }
+    data.version = cleanSemver(data.version, loose)
+    return true
+  },
+
+  fixPeople: function (data) {
+    modifyPeople(data, unParsePerson)
+    modifyPeople(data, parsePerson)
+  },
+
+  fixNameField: function (data, options) {
+    if (typeof options === 'boolean') {
+      options = { strict: options }
+    } else if (typeof options === 'undefined') {
+      options = {}
+    }
+    var strict = options.strict
+    if (!data.name && !strict) {
+      data.name = ''
+      return
+    }
+    if (typeof data.name !== 'string') {
+      throw new Error('name field must be a string.')
+    }
+    if (!strict) {
+      data.name = data.name.trim()
+    }
+    ensureValidName(data.name, strict, options.allowLegacyCase)
+    if (isBuiltinModule(data.name)) {
+      this.warn('conflictingName', data.name)
+    }
+  },
+
+  fixDescriptionField: function (data) {
+    if (data.description && typeof data.description !== 'string') {
+      this.warn('nonStringDescription')
+      delete data.description
+    }
+    if (data.readme && !data.description) {
+      data.description = extractDescription(data.readme)
+    }
+    if (data.description === undefined) {
+      delete data.description
+    }
+    if (!data.description) {
+      this.warn('missingDescription')
+    }
+  },
+
+  fixReadmeField: function (data) {
+    if (!data.readme) {
+      this.warn('missingReadme')
+      data.readme = 'ERROR: No README data found!'
+    }
+  },
+
+  fixBugsField: function (data) {
+    if (!data.bugs && data.repository && data.repository.url) {
+      var hosted = hostedGitInfo.fromUrl(data.repository.url)
+      if (hosted && hosted.bugs()) {
+        data.bugs = { url: hosted.bugs() }
+      }
+    } else if (data.bugs) {
+      if (typeof data.bugs === 'string') {
+        if (isEmail(data.bugs)) {
+          data.bugs = { email: data.bugs }
+        /* eslint-disable-next-line node/no-deprecated-api */
+        } else if (url.parse(data.bugs).protocol) {
+          data.bugs = { url: data.bugs }
+        } else {
+          this.warn('nonEmailUrlBugsString')
+        }
+      } else {
+        bugsTypos(data.bugs, this.warn)
+        var oldBugs = data.bugs
+        data.bugs = {}
+        if (oldBugs.url) {
+          /* eslint-disable-next-line node/no-deprecated-api */
+          if (typeof (oldBugs.url) === 'string' && url.parse(oldBugs.url).protocol) {
+            data.bugs.url = oldBugs.url
+          } else {
+            this.warn('nonUrlBugsUrlField')
+          }
+        }
+        if (oldBugs.email) {
+          if (typeof (oldBugs.email) === 'string' && isEmail(oldBugs.email)) {
+            data.bugs.email = oldBugs.email
+          } else {
+            this.warn('nonEmailBugsEmailField')
+          }
+        }
+      }
+      if (!data.bugs.email && !data.bugs.url) {
+        delete data.bugs
+        this.warn('emptyNormalizedBugs')
+      }
+    }
+  },
+
+  fixHomepageField: function (data) {
+    if (!data.homepage && data.repository && data.repository.url) {
+      var hosted = hostedGitInfo.fromUrl(data.repository.url)
+      if (hosted && hosted.docs()) {
+        data.homepage = hosted.docs()
+      }
+    }
+    if (!data.homepage) {
+      return
+    }
+
+    if (typeof data.homepage !== 'string') {
+      this.warn('nonUrlHomepage')
+      return delete data.homepage
+    }
+    /* eslint-disable-next-line node/no-deprecated-api */
+    if (!url.parse(data.homepage).protocol) {
+      data.homepage = 'http://' + data.homepage
+    }
+  },
+
+  fixLicenseField: function (data) {
+    const license = data.license || data.licence
+    if (!license) {
+      return this.warn('missingLicense')
+    }
+    if (
+      typeof (license) !== 'string' ||
+      license.length < 1 ||
+      license.trim() === ''
+    ) {
+      return this.warn('invalidLicense')
+    }
+    if (!validateLicense(license).validForNewPackages) {
+      return this.warn('invalidLicense')
+    }
+  },
+}
+
+function isValidScopedPackageName (spec) {
+  if (spec.charAt(0) !== '@') {
+    return false
+  }
+
+  var rest = spec.slice(1).split('/')
+  if (rest.length !== 2) {
+    return false
+  }
+
+  return rest[0] && rest[1] &&
+    rest[0] === encodeURIComponent(rest[0]) &&
+    rest[1] === encodeURIComponent(rest[1])
+}
+
+function isCorrectlyEncodedName (spec) {
+  return !spec.match(/[/@\s+%:]/) &&
+    spec === encodeURIComponent(spec)
+}
+
+function ensureValidName (name, strict, allowLegacyCase) {
+  if (name.charAt(0) === '.' ||
+      !(isValidScopedPackageName(name) || isCorrectlyEncodedName(name)) ||
+      (strict && (!allowLegacyCase) && name !== name.toLowerCase()) ||
+      name.toLowerCase() === 'node_modules' ||
+      name.toLowerCase() === 'favicon.ico') {
+    throw new Error('Invalid name: ' + JSON.stringify(name))
+  }
+}
+
+function modifyPeople (data, fn) {
+  if (data.author) {
+    data.author = fn(data.author)
+  }['maintainers', 'contributors'].forEach(function (set) {
+    if (!Array.isArray(data[set])) {
+      return
+    }
+    data[set] = data[set].map(fn)
+  })
+  return data
+}
+
+function unParsePerson (person) {
+  if (typeof person === 'string') {
+    return person
+  }
+  var name = person.name || ''
+  var u = person.url || person.web
+  var url = u ? (' (' + u + ')') : ''
+  var e = person.email || person.mail
+  var email = e ? (' <' + e + '>') : ''
+  return name + email + url
+}
+
+function parsePerson (person) {
+  if (typeof person !== 'string') {
+    return person
+  }
+  var name = person.match(/^([^(<]+)/)
+  var url = person.match(/\(([^()]+)\)/)
+  var email = person.match(/<([^<>]+)>/)
+  var obj = {}
+  if (name && name[0].trim()) {
+    obj.name = name[0].trim()
+  }
+  if (email) {
+    obj.email = email[1]
+  }
+  if (url) {
+    obj.url = url[1]
+  }
+  return obj
+}
+
+function addOptionalDepsToDeps (data, warn) {
+  var o = data.optionalDependencies
+  if (!o) {
+    return
+  }
+  var d = data.dependencies || {}
+  Object.keys(o).forEach(function (k) {
+    d[k] = o[k]
+  })
+  data.dependencies = d
+}
+
+function depObjectify (deps, type, warn) {
+  if (!deps) {
+    return {}
+  }
+  if (typeof deps === 'string') {
+    deps = deps.trim().split(/[\n\r\s\t ,]+/)
+  }
+  if (!Array.isArray(deps)) {
+    return deps
+  }
+  warn('deprecatedArrayDependencies', type)
+  var o = {}
+  deps.filter(function (d) {
+    return typeof d === 'string'
+  }).forEach(function (d) {
+    d = d.trim().split(/(:?[@\s><=])/)
+    var dn = d.shift()
+    var dv = d.join('')
+    dv = dv.trim()
+    dv = dv.replace(/^@/, '')
+    o[dn] = dv
+  })
+  return o
+}
+
+function objectifyDeps (data, warn) {
+  depTypes.forEach(function (type) {
+    if (!data[type]) {
+      return
+    }
+    data[type] = depObjectify(data[type], type, warn)
+  })
+}
+
+function bugsTypos (bugs, warn) {
+  if (!bugs) {
+    return
+  }
+  Object.keys(bugs).forEach(function (k) {
+    if (typos.bugs[k]) {
+      warn('typo', k, typos.bugs[k], 'bugs')
+      bugs[typos.bugs[k]] = bugs[k]
+      delete bugs[k]
+    }
+  })
+}
+
+
+/***/ }),
+
+/***/ 60381:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+var util = __nccwpck_require__(73837)
+var messages = __nccwpck_require__(6563)
+
+module.exports = function () {
+  var args = Array.prototype.slice.call(arguments, 0)
+  var warningName = args.shift()
+  if (warningName === 'typo') {
+    return makeTypoWarning.apply(null, args)
+  } else {
+    var msgTemplate = messages[warningName] ? messages[warningName] : warningName + ": '%s'"
+    args.unshift(msgTemplate)
+    return util.format.apply(null, args)
+  }
+}
+
+function makeTypoWarning (providedName, probableName, field) {
+  if (field) {
+    providedName = field + "['" + providedName + "']"
+    probableName = field + "['" + probableName + "']"
+  }
+  return util.format(messages.typo, providedName, probableName)
+}
+
+
+/***/ }),
+
+/***/ 73997:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+module.exports = normalize
+
+var fixer = __nccwpck_require__(81531)
+normalize.fixer = fixer
+
+var makeWarning = __nccwpck_require__(60381)
+
+var fieldsToFix = ['name', 'version', 'description', 'repository', 'modules', 'scripts',
+  'files', 'bin', 'man', 'bugs', 'keywords', 'readme', 'homepage', 'license']
+var otherThingsToFix = ['dependencies', 'people', 'typos']
+
+var thingsToFix = fieldsToFix.map(function (fieldName) {
+  return ucFirst(fieldName) + 'Field'
+})
+// two ways to do this in CoffeeScript on only one line, sub-70 chars:
+// thingsToFix = fieldsToFix.map (name) -> ucFirst(name) + "Field"
+// thingsToFix = (ucFirst(name) + "Field" for name in fieldsToFix)
+thingsToFix = thingsToFix.concat(otherThingsToFix)
+
+function normalize (data, warn, strict) {
+  if (warn === true) {
+    warn = null
+    strict = true
+  }
+  if (!strict) {
+    strict = false
+  }
+  if (!warn || data.private) {
+    warn = function (msg) { /* noop */ }
+  }
+
+  if (data.scripts &&
+      data.scripts.install === 'node-gyp rebuild' &&
+      !data.scripts.preinstall) {
+    data.gypfile = true
+  }
+  fixer.warn = function () {
+    warn(makeWarning.apply(null, arguments))
+  }
+  thingsToFix.forEach(function (thingName) {
+    fixer['fix' + ucFirst(thingName)](data, strict)
+  })
+  data._id = data.name + '@' + data.version
+}
+
+function ucFirst (string) {
+  return string.charAt(0).toUpperCase() + string.slice(1)
 }
 
 
@@ -89804,7 +92749,7 @@ class Range {
 }
 module.exports = Range
 
-const LRU = __nccwpck_require__(7129)
+const LRU = __nccwpck_require__(81196)
 const cache = new LRU({ max: 1000 })
 
 const parseOptions = __nccwpck_require__(40785)
@@ -91171,6 +94116,348 @@ createToken('STAR', '(<|>)?=?\\s*\\*')
 // >=0.0.0 is like a star
 createToken('GTE0', '^\\s*>=\\s*0\.0\.0\\s*$')
 createToken('GTE0PRE', '^\\s*>=\\s*0\.0\.0-0\\s*$')
+
+
+/***/ }),
+
+/***/ 81196:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+// A linked list to keep track of recently-used-ness
+const Yallist = __nccwpck_require__(40665)
+
+const MAX = Symbol('max')
+const LENGTH = Symbol('length')
+const LENGTH_CALCULATOR = Symbol('lengthCalculator')
+const ALLOW_STALE = Symbol('allowStale')
+const MAX_AGE = Symbol('maxAge')
+const DISPOSE = Symbol('dispose')
+const NO_DISPOSE_ON_SET = Symbol('noDisposeOnSet')
+const LRU_LIST = Symbol('lruList')
+const CACHE = Symbol('cache')
+const UPDATE_AGE_ON_GET = Symbol('updateAgeOnGet')
+
+const naiveLength = () => 1
+
+// lruList is a yallist where the head is the youngest
+// item, and the tail is the oldest.  the list contains the Hit
+// objects as the entries.
+// Each Hit object has a reference to its Yallist.Node.  This
+// never changes.
+//
+// cache is a Map (or PseudoMap) that matches the keys to
+// the Yallist.Node object.
+class LRUCache {
+  constructor (options) {
+    if (typeof options === 'number')
+      options = { max: options }
+
+    if (!options)
+      options = {}
+
+    if (options.max && (typeof options.max !== 'number' || options.max < 0))
+      throw new TypeError('max must be a non-negative number')
+    // Kind of weird to have a default max of Infinity, but oh well.
+    const max = this[MAX] = options.max || Infinity
+
+    const lc = options.length || naiveLength
+    this[LENGTH_CALCULATOR] = (typeof lc !== 'function') ? naiveLength : lc
+    this[ALLOW_STALE] = options.stale || false
+    if (options.maxAge && typeof options.maxAge !== 'number')
+      throw new TypeError('maxAge must be a number')
+    this[MAX_AGE] = options.maxAge || 0
+    this[DISPOSE] = options.dispose
+    this[NO_DISPOSE_ON_SET] = options.noDisposeOnSet || false
+    this[UPDATE_AGE_ON_GET] = options.updateAgeOnGet || false
+    this.reset()
+  }
+
+  // resize the cache when the max changes.
+  set max (mL) {
+    if (typeof mL !== 'number' || mL < 0)
+      throw new TypeError('max must be a non-negative number')
+
+    this[MAX] = mL || Infinity
+    trim(this)
+  }
+  get max () {
+    return this[MAX]
+  }
+
+  set allowStale (allowStale) {
+    this[ALLOW_STALE] = !!allowStale
+  }
+  get allowStale () {
+    return this[ALLOW_STALE]
+  }
+
+  set maxAge (mA) {
+    if (typeof mA !== 'number')
+      throw new TypeError('maxAge must be a non-negative number')
+
+    this[MAX_AGE] = mA
+    trim(this)
+  }
+  get maxAge () {
+    return this[MAX_AGE]
+  }
+
+  // resize the cache when the lengthCalculator changes.
+  set lengthCalculator (lC) {
+    if (typeof lC !== 'function')
+      lC = naiveLength
+
+    if (lC !== this[LENGTH_CALCULATOR]) {
+      this[LENGTH_CALCULATOR] = lC
+      this[LENGTH] = 0
+      this[LRU_LIST].forEach(hit => {
+        hit.length = this[LENGTH_CALCULATOR](hit.value, hit.key)
+        this[LENGTH] += hit.length
+      })
+    }
+    trim(this)
+  }
+  get lengthCalculator () { return this[LENGTH_CALCULATOR] }
+
+  get length () { return this[LENGTH] }
+  get itemCount () { return this[LRU_LIST].length }
+
+  rforEach (fn, thisp) {
+    thisp = thisp || this
+    for (let walker = this[LRU_LIST].tail; walker !== null;) {
+      const prev = walker.prev
+      forEachStep(this, fn, walker, thisp)
+      walker = prev
+    }
+  }
+
+  forEach (fn, thisp) {
+    thisp = thisp || this
+    for (let walker = this[LRU_LIST].head; walker !== null;) {
+      const next = walker.next
+      forEachStep(this, fn, walker, thisp)
+      walker = next
+    }
+  }
+
+  keys () {
+    return this[LRU_LIST].toArray().map(k => k.key)
+  }
+
+  values () {
+    return this[LRU_LIST].toArray().map(k => k.value)
+  }
+
+  reset () {
+    if (this[DISPOSE] &&
+        this[LRU_LIST] &&
+        this[LRU_LIST].length) {
+      this[LRU_LIST].forEach(hit => this[DISPOSE](hit.key, hit.value))
+    }
+
+    this[CACHE] = new Map() // hash of items by key
+    this[LRU_LIST] = new Yallist() // list of items in order of use recency
+    this[LENGTH] = 0 // length of items in the list
+  }
+
+  dump () {
+    return this[LRU_LIST].map(hit =>
+      isStale(this, hit) ? false : {
+        k: hit.key,
+        v: hit.value,
+        e: hit.now + (hit.maxAge || 0)
+      }).toArray().filter(h => h)
+  }
+
+  dumpLru () {
+    return this[LRU_LIST]
+  }
+
+  set (key, value, maxAge) {
+    maxAge = maxAge || this[MAX_AGE]
+
+    if (maxAge && typeof maxAge !== 'number')
+      throw new TypeError('maxAge must be a number')
+
+    const now = maxAge ? Date.now() : 0
+    const len = this[LENGTH_CALCULATOR](value, key)
+
+    if (this[CACHE].has(key)) {
+      if (len > this[MAX]) {
+        del(this, this[CACHE].get(key))
+        return false
+      }
+
+      const node = this[CACHE].get(key)
+      const item = node.value
+
+      // dispose of the old one before overwriting
+      // split out into 2 ifs for better coverage tracking
+      if (this[DISPOSE]) {
+        if (!this[NO_DISPOSE_ON_SET])
+          this[DISPOSE](key, item.value)
+      }
+
+      item.now = now
+      item.maxAge = maxAge
+      item.value = value
+      this[LENGTH] += len - item.length
+      item.length = len
+      this.get(key)
+      trim(this)
+      return true
+    }
+
+    const hit = new Entry(key, value, len, now, maxAge)
+
+    // oversized objects fall out of cache automatically.
+    if (hit.length > this[MAX]) {
+      if (this[DISPOSE])
+        this[DISPOSE](key, value)
+
+      return false
+    }
+
+    this[LENGTH] += hit.length
+    this[LRU_LIST].unshift(hit)
+    this[CACHE].set(key, this[LRU_LIST].head)
+    trim(this)
+    return true
+  }
+
+  has (key) {
+    if (!this[CACHE].has(key)) return false
+    const hit = this[CACHE].get(key).value
+    return !isStale(this, hit)
+  }
+
+  get (key) {
+    return get(this, key, true)
+  }
+
+  peek (key) {
+    return get(this, key, false)
+  }
+
+  pop () {
+    const node = this[LRU_LIST].tail
+    if (!node)
+      return null
+
+    del(this, node)
+    return node.value
+  }
+
+  del (key) {
+    del(this, this[CACHE].get(key))
+  }
+
+  load (arr) {
+    // reset the cache
+    this.reset()
+
+    const now = Date.now()
+    // A previous serialized cache has the most recent items first
+    for (let l = arr.length - 1; l >= 0; l--) {
+      const hit = arr[l]
+      const expiresAt = hit.e || 0
+      if (expiresAt === 0)
+        // the item was created without expiration in a non aged cache
+        this.set(hit.k, hit.v)
+      else {
+        const maxAge = expiresAt - now
+        // dont add already expired items
+        if (maxAge > 0) {
+          this.set(hit.k, hit.v, maxAge)
+        }
+      }
+    }
+  }
+
+  prune () {
+    this[CACHE].forEach((value, key) => get(this, key, false))
+  }
+}
+
+const get = (self, key, doUse) => {
+  const node = self[CACHE].get(key)
+  if (node) {
+    const hit = node.value
+    if (isStale(self, hit)) {
+      del(self, node)
+      if (!self[ALLOW_STALE])
+        return undefined
+    } else {
+      if (doUse) {
+        if (self[UPDATE_AGE_ON_GET])
+          node.value.now = Date.now()
+        self[LRU_LIST].unshiftNode(node)
+      }
+    }
+    return hit.value
+  }
+}
+
+const isStale = (self, hit) => {
+  if (!hit || (!hit.maxAge && !self[MAX_AGE]))
+    return false
+
+  const diff = Date.now() - hit.now
+  return hit.maxAge ? diff > hit.maxAge
+    : self[MAX_AGE] && (diff > self[MAX_AGE])
+}
+
+const trim = self => {
+  if (self[LENGTH] > self[MAX]) {
+    for (let walker = self[LRU_LIST].tail;
+      self[LENGTH] > self[MAX] && walker !== null;) {
+      // We know that we're about to delete this one, and also
+      // what the next least recently used key will be, so just
+      // go ahead and set it now.
+      const prev = walker.prev
+      del(self, walker)
+      walker = prev
+    }
+  }
+}
+
+const del = (self, node) => {
+  if (node) {
+    const hit = node.value
+    if (self[DISPOSE])
+      self[DISPOSE](hit.key, hit.value)
+
+    self[LENGTH] -= hit.length
+    self[CACHE].delete(hit.key)
+    self[LRU_LIST].removeNode(node)
+  }
+}
+
+class Entry {
+  constructor (key, value, length, now, maxAge) {
+    this.key = key
+    this.value = value
+    this.length = length
+    this.now = now
+    this.maxAge = maxAge || 0
+  }
+}
+
+const forEachStep = (self, fn, node, thisp) => {
+  let hit = node.value
+  if (isStale(self, hit)) {
+    del(self, node)
+    if (!self[ALLOW_STALE])
+      hit = undefined
+  }
+  if (hit)
+    fn.call(thisp, hit.value, hit.key, self)
+}
+
+module.exports = LRUCache
 
 
 /***/ }),
@@ -94284,7 +97571,7 @@ var init_StatusSummary = __esm({
       }]
     ]);
     parseStatusSummary = function(text) {
-      const lines = text.trim().split("\n");
+      const lines = text.trim().split(NULL);
       const status = new StatusSummary();
       for (let i = 0, l = lines.length; i < l; i++) {
         splitLine(status, lines[i]);
@@ -94296,17 +97583,27 @@ var init_StatusSummary = __esm({
 
 // src/lib/tasks/status.ts
 function statusTask(customArgs) {
+  const commands = [
+    "status",
+    "--porcelain",
+    "-b",
+    "-u",
+    "--null",
+    ...customArgs.filter((arg) => !ignoredOptions.includes(arg))
+  ];
   return {
     format: "utf-8",
-    commands: ["status", "--porcelain", "-b", "-u", ...customArgs],
+    commands,
     parser(text) {
       return parseStatusSummary(text);
     }
   };
 }
+var ignoredOptions;
 var init_status = __esm({
   "src/lib/tasks/status.ts"() {
     init_StatusSummary();
+    ignoredOptions = ["--null", "-z"];
   }
 });
 
@@ -94688,13 +97985,16 @@ __export(clone_exports, {
   cloneMirrorTask: () => cloneMirrorTask,
   cloneTask: () => cloneTask
 });
+function disallowedCommand(command) {
+  return /^--upload-pack(=|$)/.test(command);
+}
 function cloneTask(repo, directory, customArgs) {
   const commands = ["clone", ...customArgs];
-  if (typeof repo === "string") {
-    commands.push(repo);
-  }
-  if (typeof directory === "string") {
-    commands.push(directory);
+  filterString(repo) && commands.push(repo);
+  filterString(directory) && commands.push(directory);
+  const banned = commands.find(disallowedCommand);
+  if (banned) {
+    return configurationErrorTask(`git.fetch: potential exploit argument blocked.`);
   }
   return straightThroughStringTask(commands);
 }
@@ -94843,10 +98143,17 @@ var fetch_exports = {};
 __export(fetch_exports, {
   fetchTask: () => fetchTask
 });
+function disallowedCommand2(command) {
+  return /^--upload-pack(=|$)/.test(command);
+}
 function fetchTask(remote, branch, customArgs) {
   const commands = ["fetch", ...customArgs];
   if (remote && branch) {
     commands.push(remote, branch);
+  }
+  const banned = commands.find(disallowedCommand2);
+  if (banned) {
+    return configurationErrorTask(`git.fetch: potential exploit argument blocked.`);
   }
   return {
     commands,
@@ -94857,6 +98164,7 @@ function fetchTask(remote, branch, customArgs) {
 var init_fetch = __esm({
   "src/lib/tasks/fetch.ts"() {
     init_parse_fetch();
+    init_task();
   }
 });
 
@@ -112551,11 +115859,19 @@ module.exports = JSON.parse('{"assert":true,"node:assert":[">= 14.18 && < 15",">
 
 /***/ }),
 
+/***/ 80557:
+/***/ ((module) => {
+
+"use strict";
+module.exports = JSON.parse('{"name":"make-fetch-happen","version":"10.1.1","description":"Opinionated, caching, retrying fetch client","main":"lib/index.js","files":["bin/","lib/"],"scripts":{"preversion":"npm test","postversion":"npm publish","prepublishOnly":"git push origin --follow-tags","test":"tap","posttest":"npm run lint","eslint":"eslint","lint":"eslint \\"**/*.js\\"","lintfix":"npm run lint -- --fix","postlint":"template-oss-check","snap":"tap","template-oss-apply":"template-oss-apply --force"},"repository":{"type":"git","url":"https://github.com/npm/make-fetch-happen.git"},"keywords":["http","request","fetch","mean girls","caching","cache","subresource integrity"],"author":"GitHub Inc.","license":"ISC","dependencies":{"agentkeepalive":"^4.2.1","cacache":"^16.0.2","http-cache-semantics":"^4.1.0","http-proxy-agent":"^5.0.0","https-proxy-agent":"^5.0.0","is-lambda":"^1.0.1","lru-cache":"^7.7.1","minipass":"^3.1.6","minipass-collect":"^1.0.2","minipass-fetch":"^2.0.3","minipass-flush":"^1.0.5","minipass-pipeline":"^1.2.4","negotiator":"^0.6.3","promise-retry":"^2.0.1","socks-proxy-agent":"^6.1.1","ssri":"^8.0.1"},"devDependencies":{"@npmcli/eslint-config":"^3.0.1","@npmcli/template-oss":"3.2.0","mkdirp":"^1.0.4","nock":"^13.2.4","rimraf":"^3.0.2","safe-buffer":"^5.2.1","standard-version":"^9.3.2","tap":"^16.0.0"},"engines":{"node":"^12.13.0 || ^14.15.0 || >=16.0.0"},"tap":{"color":1,"files":"test/*.js","check-coverage":true},"templateOSS":{"//@npmcli/template-oss":"This file is partially managed by @npmcli/template-oss. Edits may be overwritten.","version":"3.2.0"}}');
+
+/***/ }),
+
 /***/ 40500:
 /***/ ((module) => {
 
 "use strict";
-module.exports = {"i8":"1.4.1"};
+module.exports = {"i8":"2.1.0"};
 
 /***/ }),
 
@@ -112567,35 +115883,11 @@ module.exports = JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45,46],"valid"]
 
 /***/ }),
 
-/***/ 71947:
-/***/ ((module) => {
-
-"use strict";
-module.exports = JSON.parse('{"topLevel":{"dependancies":"dependencies","dependecies":"dependencies","depdenencies":"dependencies","devEependencies":"devDependencies","depends":"dependencies","dev-dependencies":"devDependencies","devDependences":"devDependencies","devDepenencies":"devDependencies","devdependencies":"devDependencies","repostitory":"repository","repo":"repository","prefereGlobal":"preferGlobal","hompage":"homepage","hampage":"homepage","autohr":"author","autor":"author","contributers":"contributors","publicationConfig":"publishConfig","script":"scripts"},"bugs":{"web":"url","name":"url"},"script":{"server":"start","tests":"test"}}');
-
-/***/ }),
-
-/***/ 86271:
-/***/ ((module) => {
-
-"use strict";
-module.exports = JSON.parse('{"repositories":"\'repositories\' (plural) Not supported. Please pick one as the \'repository\' field","missingRepository":"No repository field.","brokenGitUrl":"Probably broken git url: %s","nonObjectScripts":"scripts must be an object","nonStringScript":"script values must be string commands","nonArrayFiles":"Invalid \'files\' member","invalidFilename":"Invalid filename in \'files\' list: %s","nonArrayBundleDependencies":"Invalid \'bundleDependencies\' list. Must be array of package names","nonStringBundleDependency":"Invalid bundleDependencies member: %s","nonDependencyBundleDependency":"Non-dependency in bundleDependencies: %s","nonObjectDependencies":"%s field must be an object","nonStringDependency":"Invalid dependency: %s %s","deprecatedArrayDependencies":"specifying %s as array is deprecated","deprecatedModules":"modules field is deprecated","nonArrayKeywords":"keywords should be an array of strings","nonStringKeyword":"keywords should be an array of strings","conflictingName":"%s is also the name of a node core module.","nonStringDescription":"\'description\' field should be a string","missingDescription":"No description","missingReadme":"No README data","missingLicense":"No license field.","nonEmailUrlBugsString":"Bug string field must be url, email, or {email,url}","nonUrlBugsUrlField":"bugs.url field must be a string url. Deleted.","nonEmailBugsEmailField":"bugs.email field must be a string email. Deleted.","emptyNormalizedBugs":"Normalized value of bugs field is an empty object. Deleted.","nonUrlHomepage":"homepage field must be a string url. Deleted.","invalidLicense":"license should be a valid SPDX license expression","typo":"%s should probably be %s."}');
-
-/***/ }),
-
-/***/ 87274:
-/***/ ((module) => {
-
-"use strict";
-module.exports = JSON.parse('{"name":"make-fetch-happen","version":"10.0.3","description":"Opinionated, caching, retrying fetch client","main":"lib/index.js","files":["bin","lib"],"scripts":{"preversion":"npm test","postversion":"npm publish","prepublishOnly":"git push origin --follow-tags","test":"tap","posttest":"npm run lint","eslint":"eslint","lint":"eslint \'**/*.js\'","lintfix":"npm run lint -- --fix","postlint":"npm-template-check","snap":"tap","template-copy":"npm-template-copy --force"},"repository":"https://github.com/npm/make-fetch-happen","keywords":["http","request","fetch","mean girls","caching","cache","subresource integrity"],"author":"GitHub Inc.","license":"ISC","dependencies":{"agentkeepalive":"^4.2.0","cacache":"^15.3.0","http-cache-semantics":"^4.1.0","http-proxy-agent":"^5.0.0","https-proxy-agent":"^5.0.0","is-lambda":"^1.0.1","lru-cache":"^7.3.1","minipass":"^3.1.6","minipass-collect":"^1.0.2","minipass-fetch":"^1.4.1","minipass-flush":"^1.0.5","minipass-pipeline":"^1.2.4","negotiator":"^0.6.3","promise-retry":"^2.0.1","socks-proxy-agent":"^6.1.1","ssri":"^8.0.1"},"devDependencies":{"@npmcli/template-oss":"^2.7.1","eslint":"^8.9.0","mkdirp":"^1.0.4","nock":"^13.2.4","rimraf":"^3.0.2","safe-buffer":"^5.2.1","standard-version":"^9.3.2","tap":"^15.1.6"},"engines":{"node":"^12.13.0 || ^14.15.0 || >=16"},"tap":{"color":1,"files":"test/*.js","check-coverage":true},"templateOSS":{"version":"2.7.1"}}');
-
-/***/ }),
-
 /***/ 59099:
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse('{"name":"npm-registry-fetch","version":"13.0.0","description":"Fetch-based http client for use with npm registry APIs","main":"lib","files":["bin","lib"],"scripts":{"eslint":"eslint","lint":"eslint \'**/*.js\'","lintfix":"npm run lint -- --fix","prepublishOnly":"git push origin --follow-tags","preversion":"npm test","postversion":"npm publish","test":"tap","posttest":"npm run lint","npmclilint":"npmcli-lint","postsnap":"npm run lintfix --","postlint":"npm-template-check","snap":"tap","template-copy":"npm-template-copy --force"},"repository":"https://github.com/npm/npm-registry-fetch","keywords":["npm","registry","fetch"],"author":"GitHub Inc.","license":"ISC","dependencies":{"make-fetch-happen":"^10.0.2","minipass":"^3.1.6","minipass-fetch":"^1.4.1","minipass-json-stream":"^1.0.1","minizlib":"^2.1.2","npm-package-arg":"^9.0.0","proc-log":"^2.0.0"},"devDependencies":{"@npmcli/template-oss":"^2.7.1","cacache":"^15.3.0","nock":"^13.2.4","require-inject":"^1.4.4","ssri":"^8.0.1","tap":"^15.1.6"},"tap":{"check-coverage":true,"test-ignore":"test[\\\\\\\\/](util|cache)[\\\\\\\\/]"},"engines":{"node":"^12.13.0 || ^14.15.0 || >=16"},"templateOSS":{"version":"2.7.1"}}');
+module.exports = JSON.parse('{"name":"npm-registry-fetch","version":"13.1.0","description":"Fetch-based http client for use with npm registry APIs","main":"lib","files":["bin/","lib/"],"scripts":{"eslint":"eslint","lint":"eslint \\"**/*.js\\"","lintfix":"npm run lint -- --fix","prepublishOnly":"git push origin --follow-tags","preversion":"npm test","postversion":"npm publish","test":"tap","posttest":"npm run lint","npmclilint":"npmcli-lint","postsnap":"npm run lintfix --","postlint":"template-oss-check","snap":"tap","template-oss-apply":"template-oss-apply --force"},"repository":{"type":"git","url":"https://github.com/npm/npm-registry-fetch.git"},"keywords":["npm","registry","fetch"],"author":"GitHub Inc.","license":"ISC","dependencies":{"make-fetch-happen":"^10.0.6","minipass":"^3.1.6","minipass-fetch":"^2.0.3","minipass-json-stream":"^1.0.1","minizlib":"^2.1.2","npm-package-arg":"^9.0.1","proc-log":"^2.0.0"},"devDependencies":{"@npmcli/eslint-config":"^3.0.1","@npmcli/template-oss":"3.1.2","cacache":"^16.0.2","nock":"^13.2.4","require-inject":"^1.4.4","ssri":"^8.0.1","tap":"^15.1.6"},"tap":{"check-coverage":true,"test-ignore":"test[\\\\\\\\/](util|cache)[\\\\\\\\/]"},"engines":{"node":"^12.13.0 || ^14.15.0 || >=16.0.0"},"templateOSS":{"//@npmcli/template-oss":"This file is partially managed by @npmcli/template-oss. Edits may be overwritten.","version":"3.1.2"}}');
 
 /***/ }),
 
@@ -112603,7 +115895,23 @@ module.exports = JSON.parse('{"name":"npm-registry-fetch","version":"13.0.0","de
 /***/ ((module) => {
 
 "use strict";
-module.exports = {"i8":"13.0.2"};
+module.exports = {"i8":"13.0.5"};
+
+/***/ }),
+
+/***/ 57052:
+/***/ ((module) => {
+
+"use strict";
+module.exports = JSON.parse('{"topLevel":{"dependancies":"dependencies","dependecies":"dependencies","depdenencies":"dependencies","devEependencies":"devDependencies","depends":"dependencies","dev-dependencies":"devDependencies","devDependences":"devDependencies","devDepenencies":"devDependencies","devdependencies":"devDependencies","repostitory":"repository","repo":"repository","prefereGlobal":"preferGlobal","hompage":"homepage","hampage":"homepage","autohr":"author","autor":"author","contributers":"contributors","publicationConfig":"publishConfig","script":"scripts"},"bugs":{"web":"url","name":"url"},"script":{"server":"start","tests":"test"}}');
+
+/***/ }),
+
+/***/ 6563:
+/***/ ((module) => {
+
+"use strict";
+module.exports = JSON.parse('{"repositories":"\'repositories\' (plural) Not supported. Please pick one as the \'repository\' field","missingRepository":"No repository field.","brokenGitUrl":"Probably broken git url: %s","nonObjectScripts":"scripts must be an object","nonStringScript":"script values must be string commands","nonArrayFiles":"Invalid \'files\' member","invalidFilename":"Invalid filename in \'files\' list: %s","nonArrayBundleDependencies":"Invalid \'bundleDependencies\' list. Must be array of package names","nonStringBundleDependency":"Invalid bundleDependencies member: %s","nonDependencyBundleDependency":"Non-dependency in bundleDependencies: %s","nonObjectDependencies":"%s field must be an object","nonStringDependency":"Invalid dependency: %s %s","deprecatedArrayDependencies":"specifying %s as array is deprecated","deprecatedModules":"modules field is deprecated","nonArrayKeywords":"keywords should be an array of strings","nonStringKeyword":"keywords should be an array of strings","conflictingName":"%s is also the name of a node core module.","nonStringDescription":"\'description\' field should be a string","missingDescription":"No description","missingReadme":"No README data","missingLicense":"No license field.","nonEmailUrlBugsString":"Bug string field must be url, email, or {email,url}","nonUrlBugsUrlField":"bugs.url field must be a string url. Deleted.","nonEmailBugsEmailField":"bugs.email field must be a string email. Deleted.","emptyNormalizedBugs":"Normalized value of bugs field is an empty object. Deleted.","nonUrlHomepage":"homepage field must be a string url. Deleted.","invalidLicense":"license should be a valid SPDX license expression","typo":"%s should probably be %s."}');
 
 /***/ }),
 

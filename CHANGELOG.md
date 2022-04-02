@@ -1,4 +1,11 @@
-# [1.4.0](https://github.com/action-runner/dependencies-outdater/compare/1.3.4...1.4.0) (2022-02-21)
+
+
+# [1.5.0](https://github.com/action-runner/dependencies-outdater/compare/1.4.0...1.5.0) (2022-04-02)
+
+
+### Features
+
+* add workspace support ([#15](https://github.com/action-runner/dependencies-outdater/issues/15)) ([5463db8](https://github.com/action-runner/dependencies-outdater/commit/5463db8e13439531667dab4f5fe8ebca0877d024))# [1.4.0](https://github.com/action-runner/dependencies-outdater/compare/1.3.4...1.4.0) (2022-02-21)
 
 
 ### Features
@@ -119,4 +126,3 @@
 ### Features
 
 * add release scripts ([3e2a571](https://github.com/action-runner/conventional-labeler/commit/3e2a57120137c7b1dc92d277c6957193e839a487))
-
