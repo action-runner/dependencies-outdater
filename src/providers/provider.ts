@@ -1,36 +1,14 @@
-import { GithubClient } from "./client/github";
-import * as fs from "fs";
 import * as core from "@actions/core";
 import { exec } from "child_process";
-
-export interface Update {
-  /**
-   * Package name
-   */
-  name: string;
-  /**
-   * Package's new version
-   */
-  newVersion: string;
-
-  /**
-   * Package's current version
-   */
-  currentVersion: string;
-}
-
-export interface UpdateSuggestion {
-  fileName: string;
-  language: string;
-  content: string;
-}
+import * as fs from "fs";
+import { GithubClient } from "./client/github";
+import { Update, UpdateSuggestion } from "./types/update";
 
 export interface ProviderProps {
   githubClient: GithubClient;
   packageFilePath?: string;
   pkgManager: string;
 }
-
 export abstract class Provider {
   /**
    * Provider's name

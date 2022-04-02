@@ -86,6 +86,7 @@ describe("Given a github client", () => {
           name: "mock_package",
           currentVersion: "1.0.0",
           newVersion: "2.0.0",
+          packageFilePath: "package.json",
         },
       ],
     });
