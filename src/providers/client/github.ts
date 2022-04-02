@@ -3,6 +3,7 @@ import * as github from "@actions/github";
 import simpleGit from "simple-git";
 import { commentFinder } from "@action-runner/common";
 import { Update } from "../types/update";
+import git from "simple-git";
 
 export class GithubClient {
   githubToken: string;
@@ -12,7 +13,8 @@ export class GithubClient {
   }
 
   /**
-   * Create a pull request with the list of packages to update
+   * Create a pull request with the list of packages to update.
+   * If the current event is a pull request, then create comment only.
    */
   public async createPullRequest(
     sha: string,
@@ -24,7 +26,7 @@ export class GithubClient {
     }
   ): Promise<any | undefined> {
     const client = github.getOctokit(this.githubToken);
-    // add a comment to the pull request instead of creating a new one
+    // add a comment to the pull request instead of creating a new pull request comment
     if (this.isPullRequest()) {
       // Get the pull request number
       const pullRequestNumber = github.context.payload.pull_request?.number;
@@ -43,13 +45,24 @@ export class GithubClient {
       }
     }
 
-    if (await this.checkPullRequestExists(sha)) {
+    const { exist, pullRequestNumber } = await this.checkPullRequestExists(sha);
+    if (exist) {
+      // if pull request exists, update it
+      core.info(
+        `Pull request ${pullRequestNumber} already exists, updating comment`
+      );
+      await this.createComment(
+        pullRequestNumber!,
+        props.body,
+        props.packages,
+        props.deleteComment
+      );
       return;
     }
 
     // If user has specified a base branch, use it, otherwise use the default
     core.info(`Creating pull request for ${sha}`);
-    const result = await client.rest.pulls.create({
+    return await client.rest.pulls.create({
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
       title: this.getTitle(),
@@ -57,8 +70,6 @@ export class GithubClient {
       base: props.base ?? github.context.ref,
       body: props.body,
     });
-
-    return result;
   }
 
   /**
@@ -66,7 +77,7 @@ export class GithubClient {
    * Will update if the comment already exists
    * Will delete the comment if the deleteComment flag is set
    */
-  private async createComment(
+  async createComment(
     pullRequestNumber: number,
     content: string,
     packages: Update[],
@@ -144,7 +155,7 @@ export class GithubClient {
   /**
    * Get the branch name
    */
-  private getBranch(sha: string) {
+  getBranch(sha: string) {
     return `dependencies-update-${sha}`;
   }
 
@@ -152,29 +163,42 @@ export class GithubClient {
    *
    * @returns {Promise<Update[]>} Whether there exists a pull request for this commit
    */
-  private async checkPullRequestExists(sha: string): Promise<boolean> {
+  private async checkPullRequestExists(
+    sha: string
+  ): Promise<{ exist: boolean; pullRequestNumber?: number }> {
     const title = this.getTitle();
     const client = github.getOctokit(this.githubToken);
-    const result = await client.rest.search.issuesAndPullRequests({ q: title });
+    const query = `type:pr is:open repo:${github.context.repo.owner}/${github.context.repo.repo} ${title} in:title`;
+    const result = await client.rest.search.issuesAndPullRequests({ q: query });
     if (result.data.total_count > 0) {
-      return true;
+      return { exist: true, pullRequestNumber: result.data.items[0].number };
     }
-    return false;
+    return { exist: false };
   }
 
   /**
-   * Switch to the pull request branch. Will try to create one if it doesn't exist
+   * Switch to the pull request branch. Will try to create one if it doesn't exist.
    * @returns
    */
   async switchToBranch() {
-    const branch = this.getBranch(this.getCommit({}));
+    const localBranch = this.getBranch(this.getCommit({}));
     const git = simpleGit();
-    try {
-      await git.checkout(["-b", branch]);
-    } catch (e) {
-      await git.checkout(branch);
+    // fetch all remote branch
+    await git.fetch();
+    const branchResult = await git.branch();
+    const remoteBranchName = `remotes/origin/${localBranch}`;
+    if (branchResult.all.includes(remoteBranchName)) {
+      // checkout remote branch
+      await git.checkoutBranch(localBranch, remoteBranchName);
+    } else {
+      // checkout local branch
+      await git.checkoutLocalBranch(localBranch);
     }
-    return branch;
+    // stash local changes
+    const stashTag = await git.stash();
+    // await git.checkoutBranch(branch);
+    await git.applyPatch(stashTag);
+    return localBranch;
   }
 
   /**

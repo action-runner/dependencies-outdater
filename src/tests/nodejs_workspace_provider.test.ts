@@ -84,7 +84,9 @@ describe("Given a node js workspace provider", () => {
   });
 
   test("Should return a list of updates", async () => {
-    const updates = await nodejsProvider.checkUpdates({ skip: false });
+    const { updates } = await nodejsProvider.checkUpdates({
+      skip: false,
+    });
     expect(updates).toHaveLength(4);
     expect(updates[0].packageFilePath).toBe("a");
     expect(updates[1].packageFilePath).toBe("a");
@@ -128,7 +130,9 @@ describe("Given a node js workspace provider", () => {
       checkUpdater: mockUpdater,
     });
 
-    const updates = await nodejsProvider.checkUpdates({ skip: false });
+    const { updates } = await nodejsProvider.checkUpdates({
+      skip: false,
+    });
     expect(updates).toHaveLength(2);
     expect(updates[0].packageFilePath).toBe("a");
     // Check update suggestions
@@ -147,7 +151,9 @@ describe("Given a node js workspace provider", () => {
       checkUpdater: mockUpdater,
     });
 
-    const updates = await nodejsProvider.checkUpdates({ skip: false });
+    const { updates } = await nodejsProvider.checkUpdates({
+      skip: false,
+    });
     expect(updates).toHaveLength(0);
   });
 });

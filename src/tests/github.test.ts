@@ -1,6 +1,8 @@
 import { GithubClient } from "../providers/client/github";
 import github from "@actions/github";
+import git from "simple-git";
 
+jest.mock("simple-git");
 jest.mock("@actions/core");
 jest.mock("@actions/github", () => ({
   context: {
@@ -237,5 +239,65 @@ describe("Given a github client", () => {
     expect(mockCreate).toHaveBeenCalledTimes(0);
     expect(mockUpdate).toHaveBeenCalledTimes(0);
     expect(mockDelete).toHaveBeenCalledTimes(1);
+  });
+
+  test("Should return a valid branch name", () => {
+    const name = githubClient.getBranch("mock");
+    expect(name).toBe("dependencies-update-mock");
+  });
+
+  test("Should add and commit correctly", async () => {
+    const mockCheckout = jest.fn();
+    const mockPush = jest.fn();
+    const mockCommit = jest.fn();
+    const mockAdd = jest.fn();
+
+    (git as any).mockImplementation(() => ({
+      checkout: mockCheckout,
+      add: mockAdd,
+      commit: mockCommit,
+      push: mockPush,
+      addConfig: jest.fn(),
+    }));
+
+    await githubClient.addAndCommit();
+    expect(mockCommit).toBeCalledTimes(1);
+    expect(mockAdd).toBeCalledTimes(1);
+    expect(mockPush).toBeCalledTimes(1);
+  });
+
+  test("Should switch to correct local branch", async () => {
+    (github.context as any) = {
+      sha: "mock_sha",
+    };
+
+    const mockCheckout = jest.fn();
+    const mockPush = jest.fn();
+    const mockCommit = jest.fn();
+    const mockAdd = jest.fn();
+    const mockFetch = jest.fn();
+    const mockBranch = jest.fn().mockReturnValue({ all: [] });
+    const mockCheckoutLocal = jest.fn();
+    const mockStash = jest.fn();
+    const mockApply = jest.fn();
+
+    (git as any).mockImplementation(() => ({
+      checkoutBranch: mockCheckout,
+      add: mockAdd,
+      commit: mockCommit,
+      push: mockPush,
+      addConfig: jest.fn(),
+      fetch: mockFetch,
+      branch: mockBranch,
+      checkoutLocalBranch: mockCheckoutLocal,
+      stash: mockStash,
+      applyPatch: mockApply,
+    }));
+
+    await githubClient.switchToBranch();
+    expect(mockFetch).toBeCalledTimes(1);
+    expect(mockCheckout).toBeCalledTimes(0);
+    expect(mockCheckoutLocal).toBeCalledTimes(1);
+    expect(mockCheckoutLocal).toBeCalledWith("dependencies-update-mock_sha");
   });
 });

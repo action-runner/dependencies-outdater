@@ -45,6 +45,7 @@ const core = __importStar(__nccwpck_require__(42186));
 const ncu = __importStar(__nccwpck_require__(37790));
 const nodejs_1 = __nccwpck_require__(1081);
 const nodejs_workspace_1 = __nccwpck_require__(8929);
+const provider_1 = __nccwpck_require__(5400);
 (() => __awaiter(void 0, void 0, void 0, function* () {
     const accessToken = core.getInput("access_token");
     const language = core.getInput("language");
@@ -67,10 +68,37 @@ const nodejs_workspace_1 = __nccwpck_require__(8929);
     if (providers === undefined) {
         core.setFailed("Language is not supported");
     }
+    let index = 0;
+    let totalPackages = [];
+    let totalUpdateSuggestions = [];
     for (const provider of providers) {
         core.info(`Using provider ${provider.name}`);
-        yield provider.checkUpdates({ skip: false });
+        const { updateSuggestions, updates } = yield provider.checkUpdates({
+            skip: false,
+        });
+        totalPackages = totalPackages.concat(updates);
+        totalUpdateSuggestions = totalUpdateSuggestions.concat(updateSuggestions);
+        index += 1;
     }
+    // create a comment
+    const comment = provider_1.Provider.getComment({
+        title: gitClient.getTitle(),
+        packages: totalPackages,
+        updateSuggestions: totalUpdateSuggestions,
+    });
+    if (gitClient.isPullRequest()) {
+        // try to create an update
+        const branch = yield gitClient.switchToBranch();
+        core.info(`Switching to ${branch}`);
+        yield gitClient.addAndCommit();
+    }
+    const headCommit = gitClient.getCommit({});
+    // create a pull request
+    yield gitClient.createPullRequest(headCommit, {
+        body: comment,
+        deleteComment: totalPackages.length === 0,
+        packages: totalPackages,
+    });
 }))();
 
 
@@ -127,13 +155,14 @@ class GithubClient {
         this.githubToken = token;
     }
     /**
-     * Create a pull request with the list of packages to update
+     * Create a pull request with the list of packages to update.
+     * If the current event is a pull request, then create comment only.
      */
     createPullRequest(sha, props) {
         var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
             const client = github.getOctokit(this.githubToken);
-            // add a comment to the pull request instead of creating a new one
+            // add a comment to the pull request instead of creating a new pull request comment
             if (this.isPullRequest()) {
                 // Get the pull request number
                 const pullRequestNumber = (_a = github.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.number;
@@ -147,12 +176,16 @@ class GithubClient {
                     core.setFailed("Could not find pull request number");
                 }
             }
-            if (yield this.checkPullRequestExists(sha)) {
+            const { exist, pullRequestNumber } = yield this.checkPullRequestExists(sha);
+            if (exist) {
+                // if pull request exists, update it
+                core.info(`Pull request ${pullRequestNumber} already exists, updating comment`);
+                yield this.createComment(pullRequestNumber, props.body, props.packages, props.deleteComment);
                 return;
             }
             // If user has specified a base branch, use it, otherwise use the default
             core.info(`Creating pull request for ${sha}`);
-            const result = yield client.rest.pulls.create({
+            return yield client.rest.pulls.create({
                 owner: github.context.repo.owner,
                 repo: github.context.repo.repo,
                 title: this.getTitle(),
@@ -160,7 +193,6 @@ class GithubClient {
                 base: (_b = props.base) !== null && _b !== void 0 ? _b : github.context.ref,
                 body: props.body,
             });
-            return result;
         });
     }
     /**
@@ -252,11 +284,13 @@ class GithubClient {
         return __awaiter(this, void 0, void 0, function* () {
             const title = this.getTitle();
             const client = github.getOctokit(this.githubToken);
-            const result = yield client.rest.search.issuesAndPullRequests({ q: title });
+            const query = `type:pr is:open repo:${github.context.repo.owner}/${github.context.repo.repo} ${title} in:title`;
+            core.info(query);
+            const result = yield client.rest.search.issuesAndPullRequests({ q: query });
             if (result.data.total_count > 0) {
-                return true;
+                return { exist: true, pullRequestNumber: result.data.items[0].number };
             }
-            return false;
+            return { exist: false };
         });
     }
     /**
@@ -398,21 +432,23 @@ class NodeJSProvider extends provider_1.Provider {
             if (shouldApply) {
                 if (this.pkgManager === "yarn") {
                     core.info("Running yarn install");
-                    this.runCommand("yarn install");
+                    yield this.runCommand("yarn install");
                 }
                 if (this.pkgManager === "npm") {
                     core.info("Running npm install");
-                    this.runCommand("npm install");
+                    yield this.runCommand("npm install");
                 }
             }
             // update updateSuggestions
-            this.updateSuggestions = [
+            const updateSuggestion = [
                 {
                     fileName: this.packageFilePath,
                     language: "json",
                     content: JSON.stringify(packageFile, null, 2),
                 },
             ];
+            this.updateSuggestions = updateSuggestion;
+            return updateSuggestion;
         });
     }
     findUpdates() {
@@ -524,13 +560,15 @@ class NodeJSWorkspaceProvider extends nodejs_1.NodeJSProvider {
                 }
             }
             // update updateSuggestions
-            this.updateSuggestions = Object.entries(packageFiles).map(([filePath, pkgFile]) => {
+            const updateSuggestions = Object.entries(packageFiles).map(([filePath, pkgFile]) => {
                 return {
                     fileName: filePath,
                     language: "json",
                     content: JSON.stringify(pkgFile, null, 2),
                 };
             });
+            this.updateSuggestions = updateSuggestions;
+            return updateSuggestions;
         });
     }
     findUpdates() {
@@ -639,9 +677,9 @@ class Provider {
             core.startGroup("Checking dependencies");
             const updates = yield this.findUpdates();
             this.packages = updates;
-            yield this.update();
+            const updateSuggestions = yield this.update();
             core.endGroup();
-            return updates;
+            return { updates, updateSuggestions };
         });
     }
     /**
@@ -649,21 +687,21 @@ class Provider {
      *
      * @returns {string} Report in markdown format
      */
-    getComment() {
-        let output = `## ${this.github.getTitle()}\n\n`;
+    static getComment(props) {
+        let output = `## ${props.title}\n\n`;
         // markdown table header
         output += `| Package | Package Path | Current Version | New Version|\n`;
         output += `|:-------:|:------------:|:--------------:|:---------:|\n`;
-        for (const pkg of this.packages) {
+        for (const pkg of props.packages) {
             // use markdown table
             output += `| ${pkg.name} | ${pkg.packageFilePath} | ${pkg.currentVersion} | ${pkg.newVersion} |\n`;
         }
-        core.info("Creating Suggestions: " + this.updateSuggestions.length);
-        if (this.updateSuggestions.length > 0) {
+        core.info("Creating Suggestions: " + props.updateSuggestions.length);
+        if (props.updateSuggestions.length > 0) {
             output += `\n`;
             output += `### Suggested updates\n`;
         }
-        for (const suggestion of this.updateSuggestions) {
+        for (const suggestion of props.updateSuggestions) {
             output += `**${suggestion.fileName}** \n`;
             output += `\`\`\`${suggestion.language}\n`;
             output += `${suggestion.content}\n`;
@@ -677,31 +715,19 @@ class Provider {
     update() {
         return __awaiter(this, void 0, void 0, function* () {
             // if any update available
+            let updateSuggestions = [];
             if (this.packages.length > 0) {
                 core.startGroup("Updating dependencies");
-                core.info("Switching to new branch...");
                 if (!this.github.isPullRequest()) {
-                    const branch = yield this.github.switchToBranch();
-                    core.info(`Switched to branch ${branch}`);
-                    core.info("Performing updating...");
-                    yield this.performUpdate(true);
-                    core.info(`Adding commit...`);
-                    yield this.github.addAndCommit();
+                    updateSuggestions = yield this.performUpdate(true);
                 }
                 else {
-                    yield this.performUpdate(false);
+                    updateSuggestions = yield this.performUpdate(false);
                 }
             }
-            core.info("Creating pull request...");
-            const body = this.getComment();
-            const headCommit = this.github.getCommit({});
-            yield this.github.createPullRequest(headCommit, {
-                body: body,
-                deleteComment: this.packages.length === 0,
-                packages: this.packages,
-            });
             core.info("Done!");
             core.endGroup();
+            return updateSuggestions;
         });
     }
     runCommand(command) {

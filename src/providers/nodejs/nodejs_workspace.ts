@@ -1,4 +1,4 @@
-import { Update } from "../types/update";
+import { Update, UpdateSuggestion } from "../types/update";
 import { NodeJSProvider } from "./nodejs";
 import glob from "glob";
 import { PackageFile } from "../types/nodejs";
@@ -12,7 +12,9 @@ export class NodeJSWorkspaceProvider extends NodeJSProvider {
   // List of package file paths where updates are available
   protected updatedPackageFilePaths: string[] = [];
 
-  protected async performUpdate(shouldApply: boolean): Promise<void> {
+  protected async performUpdate(
+    shouldApply: boolean
+  ): Promise<UpdateSuggestion[]> {
     const packageFiles: { [key: string]: PackageFile } = {};
     for (const pkg of this.updatedPackageFilePaths) {
       packageFiles[pkg] = this.getPackageFile(pkg);
@@ -44,7 +46,7 @@ export class NodeJSWorkspaceProvider extends NodeJSProvider {
     }
 
     // update updateSuggestions
-    this.updateSuggestions = Object.entries(packageFiles).map(
+    const updateSuggestions = Object.entries(packageFiles).map(
       ([filePath, pkgFile]) => {
         return {
           fileName: filePath,
@@ -53,6 +55,8 @@ export class NodeJSWorkspaceProvider extends NodeJSProvider {
         };
       }
     );
+    this.updateSuggestions = updateSuggestions;
+    return updateSuggestions;
   }
 
   protected async findUpdates(): Promise<Update[]> {
