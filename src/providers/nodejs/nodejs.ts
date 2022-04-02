@@ -20,8 +20,12 @@ export class NodeJSProvider extends Provider {
   protected async performUpdate(shouldApply: boolean): Promise<void> {
     const packageFile = this.getPackageFile();
     for (const pkg of this.packages) {
-      const dep = packageFile?.dependencies ? [pkg.name] : undefined;
-      const devDep = packageFile?.devDependencies ? [pkg.name] : undefined;
+      const dep = packageFile?.dependencies
+        ? packageFile.dependencies[pkg.name]
+        : undefined;
+      const devDep = packageFile?.devDependencies
+        ? packageFile.devDependencies[pkg.name]
+        : undefined;
       if (dep) {
         packageFile.dependencies![pkg.name] = pkg.newVersion;
       }

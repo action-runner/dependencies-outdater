@@ -4,6 +4,7 @@ import git from "simple-git";
 import github from "@actions/github";
 import { commentFinder } from "@action-runner/common";
 import fs from "fs";
+import { PackageFile } from "../providers/types/nodejs";
 
 jest.mock("@action-runner/common");
 jest.mock("@actions/core");
@@ -95,6 +96,15 @@ describe("Given a node js provider", () => {
     expect(mockPush).toHaveBeenCalledTimes(1);
     expect(mockCommit).toHaveBeenCalledTimes(1);
     expect(mockAdd).toHaveBeenCalledTimes(1);
+
+    const parsedContent: PackageFile = JSON.parse(
+      nodejsProvider.updateSuggestions[0].content
+    );
+
+    expect(parsedContent.dependencies?.mock_dep).toBeDefined();
+    expect(parsedContent.dependencies?.mock_dev_dep).toBeUndefined();
+    expect(parsedContent.devDependencies?.mock_dep).toBeUndefined();
+    expect(parsedContent.devDependencies?.mock_dev_dep).toBeDefined();
   });
 
   test("Should return a list of updates 2", async () => {
