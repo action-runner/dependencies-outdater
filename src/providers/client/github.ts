@@ -1,8 +1,8 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import simpleGit from "simple-git";
-import { Update } from "../provider";
 import { commentFinder } from "@action-runner/common";
+import { Update } from "../types/update";
 
 export class GithubClient {
   githubToken: string;

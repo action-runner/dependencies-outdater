@@ -1,16 +1,8 @@
-import * as ncu from "npm-check-updates";
-import { Provider, ProviderProps, Update } from "../provider";
-import fs from "fs";
 import * as core from "@actions/core";
-
-interface PackageFile {
-  dependencies: { [key: string]: string };
-  devDependencies: { [key: string]: string };
-}
-
-interface Updater {
-  run(props: { packageFile?: string }): Promise<{ [key: string]: string }>;
-}
+import fs from "fs";
+import { Provider, ProviderProps } from "../provider";
+import { PackageFile, Updater } from "../types/nodejs";
+import { Update } from "../types/update";
 
 interface NodeJSProps extends ProviderProps {
   checkUpdater: Updater;
@@ -18,7 +10,7 @@ interface NodeJSProps extends ProviderProps {
 
 export class NodeJSProvider extends Provider {
   public name: string = "nodejs";
-  private updater: Updater;
+  protected updater: Updater;
 
   constructor(props: NodeJSProps) {
     super(props);
@@ -67,27 +59,38 @@ export class NodeJSProvider extends Provider {
 
   protected async findUpdates(): Promise<Update[]> {
     const packageFile = this.getPackageFile();
+    const updates = this.findUpdatesHelper(packageFile, this.packageFilePath);
+    return updates as any;
+  }
+
+  protected async findUpdatesHelper(
+    packageFile: PackageFile,
+    packageFilePath: string
+  ): Promise<Update[]> {
     const upgraded = await this.updater.run({
       packageFile: this.packageFilePath,
     });
     core.info(`Found ${Object.keys(upgraded).length} updates`);
-    const updates = Object.entries(upgraded).map(([name, version]) => ({
-      name,
-      newVersion: version,
-      currentVersion:
-        packageFile.dependencies[name] ?? packageFile.devDependencies[name],
-    }));
+    const updates: Update[] = Object.entries(upgraded).map(
+      ([name, version]) => ({
+        name,
+        packageFilePath: packageFilePath,
+        newVersion: version,
+        currentVersion:
+          packageFile.dependencies[name] ?? packageFile.devDependencies[name],
+      })
+    );
 
-    return updates as any;
+    return updates;
   }
 
   /**
-   * Return the package.json file
+   * Return the package.json file. Will returned the package file defined in the parameter
    * @returns Package file
    */
-  private getPackageFile(): PackageFile {
+  protected getPackageFile(packageFilePath?: string): PackageFile {
     const packageFile: PackageFile = JSON.parse(
-      fs.readFileSync(this.packageFilePath, "utf8")
+      fs.readFileSync(packageFilePath ?? this.packageFilePath, "utf8")
     );
     return packageFile;
   }
