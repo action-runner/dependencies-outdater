@@ -381,8 +381,12 @@ class NodeJSProvider extends provider_1.Provider {
         return __awaiter(this, void 0, void 0, function* () {
             const packageFile = this.getPackageFile();
             for (const pkg of this.packages) {
-                const dep = (packageFile === null || packageFile === void 0 ? void 0 : packageFile.dependencies) ? [pkg.name] : undefined;
-                const devDep = (packageFile === null || packageFile === void 0 ? void 0 : packageFile.devDependencies) ? [pkg.name] : undefined;
+                const dep = (packageFile === null || packageFile === void 0 ? void 0 : packageFile.dependencies)
+                    ? packageFile.dependencies[pkg.name]
+                    : undefined;
+                const devDep = (packageFile === null || packageFile === void 0 ? void 0 : packageFile.devDependencies)
+                    ? packageFile.devDependencies[pkg.name]
+                    : undefined;
                 if (dep) {
                     packageFile.dependencies[pkg.name] = pkg.newVersion;
                 }
@@ -499,8 +503,12 @@ class NodeJSWorkspaceProvider extends nodejs_1.NodeJSProvider {
             for (const pkg of this.packages) {
                 // get package file based on package filepath
                 const pkgFile = packageFiles[pkg.packageFilePath];
-                const dep = pkgFile.dependencies ? [pkg.name] : undefined;
-                const devDep = pkgFile.devDependencies ? [pkg.name] : undefined;
+                const dep = pkgFile.dependencies
+                    ? pkgFile.dependencies[pkg.name]
+                    : undefined;
+                const devDep = pkgFile.devDependencies
+                    ? pkgFile.devDependencies[pkg.name]
+                    : undefined;
                 if (dep) {
                     pkgFile.dependencies[pkg.name] = pkg.newVersion;
                 }

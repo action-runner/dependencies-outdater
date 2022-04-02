@@ -1,6 +1,11 @@
 
 
-## [1.5.1](https://github.com/action-runner/dependencies-outdater/compare/1.5.0...1.5.1) (2022-04-02)
+## [1.5.2](https://github.com/action-runner/dependencies-outdater/compare/1.5.1...1.5.2) (2022-04-02)
+
+
+### Bug Fixes
+
+* dev dependencies will appear in dependencies section ([#17](https://github.com/action-runner/dependencies-outdater/issues/17)) ([2856629](https://github.com/action-runner/dependencies-outdater/commit/2856629fa21f8ed557b9ce3fd0a98f8fbcfa03bd))## [1.5.1](https://github.com/action-runner/dependencies-outdater/compare/1.5.0...1.5.1) (2022-04-02)
 
 
 ### Bug Fixes
