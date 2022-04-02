@@ -3,6 +3,7 @@ import { NodeJSProvider } from "../providers/nodejs/nodejs";
 import git from "simple-git";
 import github from "@actions/github";
 import { commentFinder } from "@action-runner/common";
+import fs from "fs";
 
 jest.mock("@action-runner/common");
 jest.mock("@actions/core");
@@ -32,17 +33,8 @@ jest.mock("@actions/github", () => ({
 jest.mock("simple-git");
 jest.mock("fs", () => ({
   existsSync: jest.fn().mockResolvedValue(true),
-  readFileSync: jest.fn().mockReturnValue(
-    JSON.stringify({
-      dependencies: {
-        mock_dep: "1.0.0",
-      },
-      devDependencies: {
-        mock_dev_dep: "1.0.0",
-      },
-    })
-  ),
   writeFileSync: jest.fn(),
+  readFileSync: jest.fn(),
 }));
 jest.mock("ignore");
 jest.mock("child_process");
@@ -53,6 +45,17 @@ describe("Given a node js provider", () => {
   let nodejsProvider: NodeJSProvider;
 
   beforeEach(() => {
+    (fs.readFileSync as any).mockImplementation(() =>
+      JSON.stringify({
+        dependencies: {
+          mock_dep: "1.0.0",
+        },
+        devDependencies: {
+          mock_dev_dep: "1.0.0",
+        },
+      })
+    );
+
     const mockUpdater = {
       run: jest.fn().mockReturnValue({
         mock_dep: "1.0.1",
@@ -66,7 +69,7 @@ describe("Given a node js provider", () => {
     });
   });
 
-  test("Should return a list of updates", async () => {
+  test("Should return a list of updates 1", async () => {
     const mockCheckout = jest.fn();
     const mockPush = jest.fn();
     const mockCommit = jest.fn();
@@ -92,6 +95,78 @@ describe("Given a node js provider", () => {
     expect(mockPush).toHaveBeenCalledTimes(1);
     expect(mockCommit).toHaveBeenCalledTimes(1);
     expect(mockAdd).toHaveBeenCalledTimes(1);
+  });
+
+  test("Should return a list of updates 2", async () => {
+    const mockUpdater = {
+      run: jest.fn().mockReturnValue({
+        mock_dep: "1.0.1",
+      }),
+    };
+    nodejsProvider = new NodeJSProvider({
+      githubClient: githubClient,
+      pkgManager: "npm",
+      checkUpdater: mockUpdater,
+    });
+
+    const mockCheckout = jest.fn();
+    const mockPush = jest.fn();
+    const mockCommit = jest.fn();
+    const mockAdd = jest.fn();
+
+    (fs.readFileSync as any).mockImplementation(() =>
+      JSON.stringify({
+        devDependencies: {
+          mock_dev_dep: "1.0.0",
+        },
+      })
+    );
+    (git as any).mockImplementation(() => ({
+      checkout: mockCheckout,
+      add: mockAdd,
+      commit: mockCommit,
+      push: mockPush,
+      addConfig: jest.fn(),
+    }));
+
+    const updates = await nodejsProvider.checkUpdates({ skip: false });
+    expect(updates).toHaveLength(1);
+  });
+
+  test("Should return a list of updates 3", async () => {
+    const mockUpdater = {
+      run: jest.fn().mockReturnValue({
+        mock_dev_dep: "1.0.1",
+      }),
+    };
+    nodejsProvider = new NodeJSProvider({
+      githubClient: githubClient,
+      pkgManager: "npm",
+      checkUpdater: mockUpdater,
+    });
+
+    const mockCheckout = jest.fn();
+    const mockPush = jest.fn();
+    const mockCommit = jest.fn();
+    const mockAdd = jest.fn();
+
+    (fs.readFileSync as any).mockImplementation(() =>
+      JSON.stringify({
+        dependencies: {
+          mock_dev_dep: "1.0.0",
+        },
+      })
+    );
+    (git as any).mockImplementation(() => ({
+      checkout: mockCheckout,
+      add: mockAdd,
+      commit: mockCommit,
+      push: mockPush,
+      addConfig: jest.fn(),
+    }));
+
+    const updates = await nodejsProvider.checkUpdates({ skip: false });
+    expect(updates).toHaveLength(1);
   });
 
   test("Should return an empty list of updates", async () => {
@@ -159,7 +234,7 @@ describe("Given a node js provider", () => {
 
     const updates = await nodejsProvider.checkUpdates({ skip: false });
     expect(nodejsProvider.getComment()).toContain(
-      "| mock_dep | 1.0.0 | 1.0.1 |"
+      "| mock_dep | package.json | 1.0.0 | 1.0.1 |"
     );
     expect(updates).toHaveLength(2);
     expect(mockCheckout).toHaveBeenCalledTimes(1);

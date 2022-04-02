@@ -20,14 +20,14 @@ export class NodeJSProvider extends Provider {
   protected async performUpdate(shouldApply: boolean): Promise<void> {
     const packageFile = this.getPackageFile();
     for (const pkg of this.packages) {
-      const dep = packageFile.dependencies[pkg.name];
-      const devDep = packageFile.devDependencies[pkg.name];
+      const dep = packageFile?.dependencies ? [pkg.name] : undefined;
+      const devDep = packageFile?.devDependencies ? [pkg.name] : undefined;
       if (dep) {
-        packageFile.dependencies[pkg.name] = pkg.newVersion;
+        packageFile.dependencies![pkg.name] = pkg.newVersion;
       }
 
       if (devDep) {
-        packageFile.devDependencies[pkg.name] = pkg.newVersion;
+        packageFile.devDependencies![pkg.name] = pkg.newVersion;
       }
     }
     fs.writeFileSync(
@@ -68,20 +68,34 @@ export class NodeJSProvider extends Provider {
     packageFilePath: string
   ): Promise<Update[]> {
     const upgraded = await this.updater.run({
-      packageFile: this.packageFilePath,
+      packageFile: packageFilePath,
     });
-    core.info(`Found ${Object.keys(upgraded).length} updates`);
+    core.info(
+      `Found ${Object.keys(upgraded).length} updates in ${packageFilePath}`
+    );
     const updates: Update[] = Object.entries(upgraded).map(
       ([name, version]) => ({
         name,
         packageFilePath: packageFilePath,
         newVersion: version,
-        currentVersion:
-          packageFile.dependencies[name] ?? packageFile.devDependencies[name],
+        currentVersion: this.getCurrentVersion(packageFile, name),
       })
     );
 
     return updates;
+  }
+
+  protected getCurrentVersion(packageFile: PackageFile, name: string) {
+    if (packageFile.dependencies) {
+      if (packageFile.dependencies[name]) {
+        return packageFile.dependencies[name];
+      }
+    }
+
+    if (packageFile.devDependencies) {
+      return packageFile.devDependencies[name];
+    }
+    return "";
   }
 
   /**
