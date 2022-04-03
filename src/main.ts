@@ -5,5 +5,4 @@ import SimpleGit from "simple-git";
 
 (async () => {
   const git = SimpleGit();
-  console.log(await git.branch());
 })();
