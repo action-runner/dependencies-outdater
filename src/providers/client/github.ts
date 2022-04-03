@@ -194,10 +194,6 @@ export class GithubClient {
       // checkout local branch
       await git.checkoutLocalBranch(localBranch);
     }
-    // stash local changes
-    const stashTag = await git.stash();
-    // await git.checkoutBranch(branch);
-    await git.applyPatch(stashTag);
     return localBranch;
   }
 

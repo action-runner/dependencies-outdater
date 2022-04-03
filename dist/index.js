@@ -71,6 +71,11 @@ function application() {
             core.setFailed("Language is not supported");
             return;
         }
+        if (!gitClient.isPullRequest()) {
+            // try to create an update
+            const branch = yield gitClient.switchToBranch();
+            core.info(`Switching to ${branch}`);
+        }
         let index = 0;
         let totalPackages = [];
         let totalUpdateSuggestions = [];
@@ -90,9 +95,6 @@ function application() {
             updateSuggestions: totalUpdateSuggestions,
         });
         if (!gitClient.isPullRequest()) {
-            // try to create an update
-            const branch = yield gitClient.switchToBranch();
-            core.info(`Switching to ${branch}`);
             yield gitClient.addAndCommit();
         }
         const headCommit = gitClient.getCommit({});
@@ -341,10 +343,6 @@ class GithubClient {
                 // checkout local branch
                 yield git.checkoutLocalBranch(localBranch);
             }
-            // stash local changes
-            const stashTag = yield git.stash();
-            // await git.checkoutBranch(branch);
-            yield git.applyPatch(stashTag);
             return localBranch;
         });
     }

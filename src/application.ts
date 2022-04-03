@@ -34,6 +34,12 @@ export async function application() {
     return;
   }
 
+  if (!gitClient.isPullRequest()) {
+    // try to create an update
+    const branch = await gitClient.switchToBranch();
+    core.info(`Switching to ${branch}`);
+  }
+
   let index = 0;
   let totalPackages: Update[] = [];
   let totalUpdateSuggestions: UpdateSuggestion[] = [];
@@ -55,9 +61,6 @@ export async function application() {
   });
 
   if (!gitClient.isPullRequest()) {
-    // try to create an update
-    const branch = await gitClient.switchToBranch();
-    core.info(`Switching to ${branch}`);
     await gitClient.addAndCommit();
   }
 
