@@ -1,6 +1,11 @@
 
 
-## [1.5.3](https://github.com/action-runner/dependencies-outdater/compare/1.5.2...1.5.3) (2022-04-03)
+## [1.5.4](https://github.com/action-runner/dependencies-outdater/compare/1.5.3...1.5.4) (2022-04-03)
+
+
+### Bug Fixes
+
+* stash error ([#19](https://github.com/action-runner/dependencies-outdater/issues/19)) ([55e1eca](https://github.com/action-runner/dependencies-outdater/commit/55e1eca4d7a1e2a97e8d24bd161a65ca034d8f67))## [1.5.3](https://github.com/action-runner/dependencies-outdater/compare/1.5.2...1.5.3) (2022-04-03)
 
 
 ### Bug Fixes
