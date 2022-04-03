@@ -1,6 +1,11 @@
 
 
-## [1.5.2](https://github.com/action-runner/dependencies-outdater/compare/1.5.1...1.5.2) (2022-04-02)
+## [1.5.3](https://github.com/action-runner/dependencies-outdater/compare/1.5.2...1.5.3) (2022-04-03)
+
+
+### Bug Fixes
+
+* pull request issue ([#18](https://github.com/action-runner/dependencies-outdater/issues/18)) ([047cbce](https://github.com/action-runner/dependencies-outdater/commit/047cbceaa27dfd68a8f49c1a33a48cbab2923952))## [1.5.2](https://github.com/action-runner/dependencies-outdater/compare/1.5.1...1.5.2) (2022-04-02)
 
 
 ### Bug Fixes

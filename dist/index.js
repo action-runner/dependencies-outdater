@@ -1,7 +1,7 @@
 require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 71667:
+/***/ 67925:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -39,6 +39,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.application = void 0;
 const github_1 = __nccwpck_require__(18779);
 const languages_1 = __nccwpck_require__(9866);
 const core = __importStar(__nccwpck_require__(42186));
@@ -46,59 +47,87 @@ const ncu = __importStar(__nccwpck_require__(37790));
 const nodejs_1 = __nccwpck_require__(1081);
 const nodejs_workspace_1 = __nccwpck_require__(8929);
 const provider_1 = __nccwpck_require__(5400);
-(() => __awaiter(void 0, void 0, void 0, function* () {
-    const accessToken = core.getInput("access_token");
-    const language = core.getInput("language");
-    const gitClient = new github_1.GithubClient(accessToken);
-    const map = {
-        [languages_1.Language.nodeJs]: [
-            new nodejs_1.NodeJSProvider({
-                githubClient: gitClient,
-                pkgManager: "yarn",
-                checkUpdater: ncu,
-            }),
-            new nodejs_workspace_1.NodeJSWorkspaceProvider({
-                githubClient: gitClient,
-                pkgManager: "yarn",
-                checkUpdater: ncu,
-            }),
-        ],
-    };
-    const providers = map[language];
-    if (providers === undefined) {
-        core.setFailed("Language is not supported");
-    }
-    let index = 0;
-    let totalPackages = [];
-    let totalUpdateSuggestions = [];
-    for (const provider of providers) {
-        core.info(`Using provider ${provider.name}`);
-        const { updateSuggestions, updates } = yield provider.checkUpdates({
-            skip: false,
+function application() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const accessToken = core.getInput("access_token");
+        const language = core.getInput("language");
+        const gitClient = new github_1.GithubClient(accessToken);
+        const map = {
+            [languages_1.Language.nodeJs]: [
+                new nodejs_1.NodeJSProvider({
+                    githubClient: gitClient,
+                    pkgManager: "yarn",
+                    checkUpdater: ncu,
+                }),
+                new nodejs_workspace_1.NodeJSWorkspaceProvider({
+                    githubClient: gitClient,
+                    pkgManager: "yarn",
+                    checkUpdater: ncu,
+                }),
+            ],
+        };
+        const providers = map[language];
+        if (providers === undefined) {
+            core.setFailed("Language is not supported");
+            return;
+        }
+        let index = 0;
+        let totalPackages = [];
+        let totalUpdateSuggestions = [];
+        for (const provider of providers) {
+            core.info(`Using provider ${provider.name}`);
+            const { updateSuggestions, updates } = yield provider.checkUpdates({
+                skip: false,
+            });
+            totalPackages = totalPackages.concat(updates);
+            totalUpdateSuggestions = totalUpdateSuggestions.concat(updateSuggestions);
+            index += 1;
+        }
+        // create a comment
+        const comment = provider_1.Provider.getComment({
+            title: gitClient.getTitle(),
+            packages: totalPackages,
+            updateSuggestions: totalUpdateSuggestions,
         });
-        totalPackages = totalPackages.concat(updates);
-        totalUpdateSuggestions = totalUpdateSuggestions.concat(updateSuggestions);
-        index += 1;
-    }
-    // create a comment
-    const comment = provider_1.Provider.getComment({
-        title: gitClient.getTitle(),
-        packages: totalPackages,
-        updateSuggestions: totalUpdateSuggestions,
+        if (!gitClient.isPullRequest()) {
+            // try to create an update
+            const branch = yield gitClient.switchToBranch();
+            core.info(`Switching to ${branch}`);
+            yield gitClient.addAndCommit();
+        }
+        const headCommit = gitClient.getCommit({});
+        // create a pull request
+        yield gitClient.createPullRequest(headCommit, {
+            body: comment,
+            deleteComment: totalPackages.length === 0,
+            packages: totalPackages,
+        });
+        return { totalPackages, totalUpdateSuggestions };
     });
-    if (gitClient.isPullRequest()) {
-        // try to create an update
-        const branch = yield gitClient.switchToBranch();
-        core.info(`Switching to ${branch}`);
-        yield gitClient.addAndCommit();
-    }
-    const headCommit = gitClient.getCommit({});
-    // create a pull request
-    yield gitClient.createPullRequest(headCommit, {
-        body: comment,
-        deleteComment: totalPackages.length === 0,
-        packages: totalPackages,
+}
+exports.application = application;
+
+
+/***/ }),
+
+/***/ 71667:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const application_1 = __nccwpck_require__(67925);
+(() => __awaiter(void 0, void 0, void 0, function* () {
+    yield (0, application_1.application)();
 }))();
 
 
@@ -285,7 +314,6 @@ class GithubClient {
             const title = this.getTitle();
             const client = github.getOctokit(this.githubToken);
             const query = `type:pr is:open repo:${github.context.repo.owner}/${github.context.repo.repo} ${title} in:title`;
-            core.info(query);
             const result = yield client.rest.search.issuesAndPullRequests({ q: query });
             if (result.data.total_count > 0) {
                 return { exist: true, pullRequestNumber: result.data.items[0].number };
@@ -294,20 +322,30 @@ class GithubClient {
         });
     }
     /**
-     * Switch to the pull request branch. Will try to create one if it doesn't exist
+     * Switch to the pull request branch. Will try to create one if it doesn't exist.
      * @returns
      */
     switchToBranch() {
         return __awaiter(this, void 0, void 0, function* () {
-            const branch = this.getBranch(this.getCommit({}));
+            const localBranch = this.getBranch(this.getCommit({}));
             const git = (0, simple_git_1.default)();
-            try {
-                yield git.checkout(["-b", branch]);
+            // fetch all remote branch
+            yield git.fetch();
+            const branchResult = yield git.branch();
+            const remoteBranchName = `remotes/origin/${localBranch}`;
+            if (branchResult.all.includes(remoteBranchName)) {
+                // checkout remote branch
+                yield git.checkoutBranch(localBranch, remoteBranchName);
             }
-            catch (e) {
-                yield git.checkout(branch);
+            else {
+                // checkout local branch
+                yield git.checkoutLocalBranch(localBranch);
             }
-            return branch;
+            // stash local changes
+            const stashTag = yield git.stash();
+            // await git.checkoutBranch(branch);
+            yield git.applyPatch(stashTag);
+            return localBranch;
         });
     }
     /**
