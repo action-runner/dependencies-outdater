@@ -2,7 +2,7 @@ import * as core from "@actions/core";
 import fs from "fs";
 import { Provider, ProviderProps } from "../provider";
 import { PackageFile, Updater } from "../types/nodejs";
-import { Update } from "../types/update";
+import { Update, UpdateSuggestion } from "../types/update";
 
 interface NodeJSProps extends ProviderProps {
   checkUpdater: Updater;
@@ -17,7 +17,9 @@ export class NodeJSProvider extends Provider {
     this.updater = props.checkUpdater;
   }
 
-  protected async performUpdate(shouldApply: boolean): Promise<void> {
+  protected async performUpdate(
+    shouldApply: boolean
+  ): Promise<UpdateSuggestion[]> {
     const packageFile = this.getPackageFile();
     for (const pkg of this.packages) {
       const dep = packageFile?.dependencies
@@ -42,23 +44,25 @@ export class NodeJSProvider extends Provider {
     if (shouldApply) {
       if (this.pkgManager === "yarn") {
         core.info("Running yarn install");
-        this.runCommand("yarn install");
+        await this.runCommand("yarn install");
       }
 
       if (this.pkgManager === "npm") {
         core.info("Running npm install");
-        this.runCommand("npm install");
+        await this.runCommand("npm install");
       }
     }
 
     // update updateSuggestions
-    this.updateSuggestions = [
+    const updateSuggestion = [
       {
         fileName: this.packageFilePath,
         language: "json",
         content: JSON.stringify(packageFile, null, 2),
       },
     ];
+    this.updateSuggestions = updateSuggestion;
+    return updateSuggestion;
   }
 
   protected async findUpdates(): Promise<Update[]> {

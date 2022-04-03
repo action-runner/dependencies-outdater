@@ -50,9 +50,9 @@ export abstract class Provider {
     core.startGroup("Checking dependencies");
     const updates = await this.findUpdates();
     this.packages = updates;
-    await this.update();
+    const updateSuggestions = await this.update();
     core.endGroup();
-    return updates;
+    return { updates, updateSuggestions };
   }
 
   /**
@@ -60,23 +60,27 @@ export abstract class Provider {
    *
    * @returns {string} Report in markdown format
    */
-  getComment(): string {
-    let output = `## ${this.github.getTitle()}\n\n`;
+  static getComment(props: {
+    title: string;
+    packages: Update[];
+    updateSuggestions: UpdateSuggestion[];
+  }): string {
+    let output = `## ${props.title}\n\n`;
     // markdown table header
     output += `| Package | Package Path | Current Version | New Version|\n`;
     output += `|:-------:|:------------:|:--------------:|:---------:|\n`;
-    for (const pkg of this.packages) {
+    for (const pkg of props.packages) {
       // use markdown table
       output += `| ${pkg.name} | ${pkg.packageFilePath} | ${pkg.currentVersion} | ${pkg.newVersion} |\n`;
     }
 
-    core.info("Creating Suggestions: " + this.updateSuggestions.length);
-    if (this.updateSuggestions.length > 0) {
+    core.info("Creating Suggestions: " + props.updateSuggestions.length);
+    if (props.updateSuggestions.length > 0) {
       output += `\n`;
       output += `### Suggested updates\n`;
     }
 
-    for (const suggestion of this.updateSuggestions) {
+    for (const suggestion of props.updateSuggestions) {
       output += `**${suggestion.fileName}** \n`;
       output += `\`\`\`${suggestion.language}\n`;
       output += `${suggestion.content}\n`;
@@ -91,33 +95,24 @@ export abstract class Provider {
    */
   private async update() {
     // if any update available
+    let updateSuggestions: UpdateSuggestion[] = [];
     if (this.packages.length > 0) {
       core.startGroup("Updating dependencies");
-      core.info("Switching to new branch...");
       if (!this.github.isPullRequest()) {
-        const branch = await this.github.switchToBranch();
-        core.info(`Switched to branch ${branch}`);
-        core.info("Performing updating...");
-        await this.performUpdate(true);
-        core.info(`Adding commit...`);
-        await this.github.addAndCommit();
+        updateSuggestions = await this.performUpdate(true);
       } else {
-        await this.performUpdate(false);
+        updateSuggestions = await this.performUpdate(false);
       }
     }
-    core.info("Creating pull request...");
-    const body = this.getComment();
-    const headCommit = this.github.getCommit({});
-    await this.github.createPullRequest(headCommit, {
-      body: body,
-      deleteComment: this.packages.length === 0,
-      packages: this.packages,
-    });
     core.info("Done!");
     core.endGroup();
+
+    return updateSuggestions;
   }
 
-  protected abstract performUpdate(shouldApply: boolean): Promise<void>;
+  protected abstract performUpdate(
+    shouldApply: boolean
+  ): Promise<UpdateSuggestion[]>;
 
   /**
    * Given a package's dependencies' file, returns dependencies which need to be updated
