@@ -356,7 +356,7 @@ class GithubClient {
             yield git.addConfig("user.name", "dependencies-outdater");
             yield git.addConfig("user.email", "dependencies-outater");
             yield git.add("./*");
-            yield git.commit("fix: Depedencies_outdater: Update dependencies");
+            yield git.commit(`fix: ${this.getTitle()}`);
             yield git.push("origin", this.getBranch(this.getCommit({})), {});
         });
     }

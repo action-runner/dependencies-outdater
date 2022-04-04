@@ -1,6 +1,11 @@
 
 
-## [1.5.5](https://github.com/action-runner/dependencies-outdater/compare/1.5.4...1.5.5) (2022-04-04)
+## [1.5.6](https://github.com/action-runner/dependencies-outdater/compare/1.5.5...1.5.6) (2022-04-04)
+
+
+### Bug Fixes
+
+* commit message ([#21](https://github.com/action-runner/dependencies-outdater/issues/21)) ([fe893b2](https://github.com/action-runner/dependencies-outdater/commit/fe893b2905a218c7315ff4b35add6b1e24ab51bc))## [1.5.5](https://github.com/action-runner/dependencies-outdater/compare/1.5.4...1.5.5) (2022-04-04)
 
 
 ### Bug Fixes
