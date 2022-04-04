@@ -65,7 +65,7 @@ export class GithubClient {
     return await client.rest.pulls.create({
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
-      title: this.getTitle(),
+      title: `fix: ${this.getTitle()}`,
       head: `dependencies-update-${sha}`,
       base: props.base ?? github.context.ref,
       body: props.body,
@@ -207,7 +207,7 @@ export class GithubClient {
     await git.addConfig("user.email", "dependencies-outater");
 
     await git.add("./*");
-    await git.commit("Depedencies_outdater: Update dependencies");
+    await git.commit("fix: Depedencies_outdater: Update dependencies");
     await git.push("origin", this.getBranch(this.getCommit({})), {});
   }
 

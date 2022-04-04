@@ -208,6 +208,8 @@ describe("Given a application", () => {
       expect(createPull).toBeCalledTimes(1);
       expect(createComment).toBeCalledTimes(0);
       expect(updateComment).toBeCalledTimes(0);
+      const callBody = createPull.mock.calls[0][0];
+      expect(callBody.title).toBe("fix: Update dependencies for mock_commit");
     });
 
     test("Should update existing pull request's comment", async () => {
