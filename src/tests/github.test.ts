@@ -264,6 +264,7 @@ describe("Given a github client", () => {
     expect(mockCommit).toBeCalledTimes(1);
     expect(mockAdd).toBeCalledTimes(1);
     expect(mockPush).toBeCalledTimes(1);
+    expect(mockCommit).toBeCalledWith(`fix: ${githubClient.getTitle()}`);
   });
 
   test("Should switch to correct local branch", async () => {

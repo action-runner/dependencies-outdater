@@ -207,7 +207,7 @@ export class GithubClient {
     await git.addConfig("user.email", "dependencies-outater");
 
     await git.add("./*");
-    await git.commit("fix: Depedencies_outdater: Update dependencies");
+    await git.commit(`fix: ${this.getTitle()}`);
     await git.push("origin", this.getBranch(this.getCommit({})), {});
   }
 
