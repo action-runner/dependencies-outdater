@@ -1,6 +1,11 @@
 
 
-## [1.5.4](https://github.com/action-runner/dependencies-outdater/compare/1.5.3...1.5.4) (2022-04-03)
+## [1.5.5](https://github.com/action-runner/dependencies-outdater/compare/1.5.4...1.5.5) (2022-04-04)
+
+
+### Bug Fixes
+
+* use conventional pr title ([#20](https://github.com/action-runner/dependencies-outdater/issues/20)) ([bacf04f](https://github.com/action-runner/dependencies-outdater/commit/bacf04fde6a6e38c1d4284ce8cb9f7fd38eec2de))## [1.5.4](https://github.com/action-runner/dependencies-outdater/compare/1.5.3...1.5.4) (2022-04-03)
 
 
 ### Bug Fixes

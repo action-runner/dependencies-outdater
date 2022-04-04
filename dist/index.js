@@ -219,7 +219,7 @@ class GithubClient {
             return yield client.rest.pulls.create({
                 owner: github.context.repo.owner,
                 repo: github.context.repo.repo,
-                title: this.getTitle(),
+                title: `fix: ${this.getTitle()}`,
                 head: `dependencies-update-${sha}`,
                 base: (_b = props.base) !== null && _b !== void 0 ? _b : github.context.ref,
                 body: props.body,
@@ -356,7 +356,7 @@ class GithubClient {
             yield git.addConfig("user.name", "dependencies-outdater");
             yield git.addConfig("user.email", "dependencies-outater");
             yield git.add("./*");
-            yield git.commit("Depedencies_outdater: Update dependencies");
+            yield git.commit("fix: Depedencies_outdater: Update dependencies");
             yield git.push("origin", this.getBranch(this.getCommit({})), {});
         });
     }
