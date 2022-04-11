@@ -636,7 +636,10 @@ class NodeJSWorkspaceProvider extends nodejs_1.NodeJSProvider {
      * @param workspace Workspace path
      */
     findPackageJsonFile(workspace) {
-        return glob_1.default.sync(`${workspace}/**/package.json`);
+        // we don't want to include any package files within the node_modules folder
+        return glob_1.default
+            .sync(`${workspace}/**/package.json`)
+            .filter((f) => !f.includes("node_modules"));
     }
 }
 exports.NodeJSWorkspaceProvider = NodeJSWorkspaceProvider;

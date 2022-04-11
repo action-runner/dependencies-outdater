@@ -49,7 +49,7 @@ jest.mock("ignore");
 jest.mock("child_process");
 jest.mock("npm-check-updates");
 jest.mock("glob", () => ({
-  sync: jest.fn().mockReturnValue(["a", "b"]),
+  sync: jest.fn().mockReturnValue(["a", "b", "node_modules/c"]),
 }));
 
 describe("Given a node js workspace provider", () => {
