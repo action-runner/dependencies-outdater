@@ -1,6 +1,11 @@
 
 
-## [1.5.6](https://github.com/action-runner/dependencies-outdater/compare/1.5.5...1.5.6) (2022-04-04)
+## [1.5.7](https://github.com/action-runner/dependencies-outdater/compare/1.5.6...1.5.7) (2022-04-11)
+
+
+### Bug Fixes
+
+* workspace problem ([#22](https://github.com/action-runner/dependencies-outdater/issues/22)) ([35517ce](https://github.com/action-runner/dependencies-outdater/commit/35517ceb96223d0b8b467cea833bd76ec70760ac))## [1.5.6](https://github.com/action-runner/dependencies-outdater/compare/1.5.5...1.5.6) (2022-04-04)
 
 
 ### Bug Fixes
