@@ -1,6 +1,11 @@
 
 
-## [1.5.7](https://github.com/action-runner/dependencies-outdater/compare/1.5.6...1.5.7) (2022-04-11)
+# [1.6.0](https://github.com/action-runner/dependencies-outdater/compare/1.5.7...1.6.0) (2022-04-12)
+
+
+### Features
+
+* use branch name for pr title ([#23](https://github.com/action-runner/dependencies-outdater/issues/23)) ([db354a9](https://github.com/action-runner/dependencies-outdater/commit/db354a9002c7cf9cc5f4e81420d94e96a06775b0))## [1.5.7](https://github.com/action-runner/dependencies-outdater/compare/1.5.6...1.5.7) (2022-04-11)
 
 
 ### Bug Fixes
