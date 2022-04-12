@@ -47,6 +47,7 @@ const ncu = __importStar(__nccwpck_require__(37790));
 const nodejs_1 = __nccwpck_require__(1081);
 const nodejs_workspace_1 = __nccwpck_require__(8929);
 const provider_1 = __nccwpck_require__(5400);
+const github_2 = __nccwpck_require__(95438);
 function application() {
     return __awaiter(this, void 0, void 0, function* () {
         const accessToken = core.getInput("access_token");
@@ -93,6 +94,7 @@ function application() {
             title: gitClient.getTitle(),
             packages: totalPackages,
             updateSuggestions: totalUpdateSuggestions,
+            sha: github_2.context.sha,
         });
         if (!gitClient.isPullRequest()) {
             yield gitClient.addAndCommit();
@@ -298,14 +300,14 @@ class GithubClient {
     getTitle() {
         const title = this.isPullRequest()
             ? `pull request #${this.pullRequestNumber()}`
-            : this.getCommit({});
+            : github.context.ref.replace("refs/heads/", "");
         return `Update dependencies for ${title}`;
     }
     /**
      * Get the branch name
      */
-    getBranch(sha) {
-        return `dependencies-update-${sha}`;
+    getBranch(name) {
+        return `dependencies-update-${name}`;
     }
     /**
      *
@@ -728,6 +730,7 @@ class Provider {
      */
     static getComment(props) {
         let output = `## ${props.title}\n\n`;
+        output += `For commit [${props.sha}]\n\n`;
         // markdown table header
         output += `| Package | Package Path | Current Version | New Version|\n`;
         output += `|:-------:|:------------:|:--------------:|:---------:|\n`;

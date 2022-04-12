@@ -187,6 +187,7 @@ describe("Given a application", () => {
       (github.context as any) = {
         eventName: "schedule",
         sha: "mock_commit",
+        ref: "refs/heads/mock_branch",
         repo: {
           owner: "mock_owner",
           repo: "mock_repo",
@@ -209,7 +210,7 @@ describe("Given a application", () => {
       expect(createComment).toBeCalledTimes(0);
       expect(updateComment).toBeCalledTimes(0);
       const callBody = createPull.mock.calls[0][0];
-      expect(callBody.title).toBe("fix: Update dependencies for mock_commit");
+      expect(callBody.title).toBe("fix: Update dependencies for mock_branch");
     });
 
     test("Should update existing pull request's comment", async () => {

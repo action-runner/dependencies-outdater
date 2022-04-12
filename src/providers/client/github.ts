@@ -3,7 +3,6 @@ import * as github from "@actions/github";
 import simpleGit from "simple-git";
 import { commentFinder } from "@action-runner/common";
 import { Update } from "../types/update";
-import git from "simple-git";
 
 export class GithubClient {
   githubToken: string;
@@ -148,15 +147,15 @@ export class GithubClient {
   getTitle() {
     const title = this.isPullRequest()
       ? `pull request #${this.pullRequestNumber()}`
-      : this.getCommit({});
+      : github.context.ref.replace("refs/heads/", "");
     return `Update dependencies for ${title}`;
   }
 
   /**
    * Get the branch name
    */
-  getBranch(sha: string) {
-    return `dependencies-update-${sha}`;
+  getBranch(name: string) {
+    return `dependencies-update-${name}`;
   }
 
   /**
