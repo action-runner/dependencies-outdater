@@ -6,6 +6,7 @@ import { NodeJSProvider } from "./providers/nodejs/nodejs";
 import { NodeJSWorkspaceProvider } from "./providers/nodejs/nodejs_workspace";
 import { Update, UpdateSuggestion } from "./providers/types/update";
 import { Provider } from "./providers/provider";
+import { context } from "@actions/github";
 
 export async function application() {
   const accessToken = core.getInput("access_token");
@@ -58,6 +59,7 @@ export async function application() {
     title: gitClient.getTitle(),
     packages: totalPackages,
     updateSuggestions: totalUpdateSuggestions,
+    sha: context.sha,
   });
 
   if (!gitClient.isPullRequest()) {

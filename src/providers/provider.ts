@@ -64,8 +64,11 @@ export abstract class Provider {
     title: string;
     packages: Update[];
     updateSuggestions: UpdateSuggestion[];
+    sha: string;
   }): string {
     let output = `## ${props.title}\n\n`;
+    output += `For commit [${props.sha}]\n\n`;
+    
     // markdown table header
     output += `| Package | Package Path | Current Version | New Version|\n`;
     output += `|:-------:|:------------:|:--------------:|:---------:|\n`;

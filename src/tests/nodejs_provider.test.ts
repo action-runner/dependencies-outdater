@@ -177,6 +177,7 @@ describe("Given a node js provider", () => {
             newVersion: "1.0.1",
           },
         ],
+        sha: "mock_sha",
       })
     ).toContain("| mock_dep | package.json | 1.0.0 | 1.0.1 |");
     expect(updates).toHaveLength(2);
@@ -211,6 +212,7 @@ describe("Given a node js provider", () => {
           name: "mock_dep",
         },
       ],
+      sha: "mock_sha",
       updateSuggestions: updateSuggestions,
     });
     expect(comment).toContain("### Suggested updates");
