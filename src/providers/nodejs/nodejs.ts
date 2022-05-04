@@ -51,6 +51,11 @@ export class NodeJSProvider extends Provider {
         core.info("Running npm install");
         await this.runCommand("npm install");
       }
+
+      if (this.pkgManager === "pnpm") {
+        core.info("Running pnpm install");
+        await this.runCommand("pnpm install");
+      }
     }
 
     // update updateSuggestions
