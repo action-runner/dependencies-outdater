@@ -52,17 +52,18 @@ function application() {
     return __awaiter(this, void 0, void 0, function* () {
         const accessToken = core.getInput("access_token");
         const language = core.getInput("language");
+        const pkgManager = core.getInput("package_manager");
         const gitClient = new github_1.GithubClient(accessToken);
         const map = {
             [languages_1.Language.nodeJs]: [
                 new nodejs_1.NodeJSProvider({
                     githubClient: gitClient,
-                    pkgManager: "yarn",
+                    pkgManager: pkgManager,
                     checkUpdater: ncu,
                 }),
                 new nodejs_workspace_1.NodeJSWorkspaceProvider({
                     githubClient: gitClient,
-                    pkgManager: "yarn",
+                    pkgManager: pkgManager,
                     checkUpdater: ncu,
                 }),
             ],
@@ -475,6 +476,10 @@ class NodeJSProvider extends provider_1.Provider {
                 if (this.pkgManager === "npm") {
                     core.info("Running npm install");
                     yield this.runCommand("npm install");
+                }
+                if (this.pkgManager === "pnpm") {
+                    core.info("Running pnpm install");
+                    yield this.runCommand("pnpm install");
                 }
             }
             // update updateSuggestions

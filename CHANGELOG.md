@@ -1,6 +1,11 @@
 
 
-# [1.6.0](https://github.com/action-runner/dependencies-outdater/compare/1.5.7...1.6.0) (2022-04-12)
+# [1.7.0](https://github.com/action-runner/dependencies-outdater/compare/1.6.0...1.7.0) (2022-05-04)
+
+
+### Features
+
+* add pnpm support ([#24](https://github.com/action-runner/dependencies-outdater/issues/24)) ([a9ee89d](https://github.com/action-runner/dependencies-outdater/commit/a9ee89d09ed41722964f34b6d9998b3d2d49b742))# [1.6.0](https://github.com/action-runner/dependencies-outdater/compare/1.5.7...1.6.0) (2022-04-12)
 
 
 ### Features
