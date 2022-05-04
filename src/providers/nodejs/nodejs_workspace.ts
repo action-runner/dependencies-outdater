@@ -3,7 +3,6 @@ import { NodeJSProvider } from "./nodejs";
 import glob from "glob";
 import { PackageFile } from "../types/nodejs";
 import fs from "fs";
-import core from "@actions/core";
 
 /**
  * Check packages under nodejs workspace

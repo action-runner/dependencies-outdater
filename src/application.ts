@@ -11,18 +11,19 @@ import { context } from "@actions/github";
 export async function application() {
   const accessToken = core.getInput("access_token");
   const language = core.getInput("language") as Language;
+  const pkgManager = core.getInput("package_manager") as string;
 
   const gitClient = new GithubClient(accessToken);
   const map = {
     [Language.nodeJs]: [
       new NodeJSProvider({
         githubClient: gitClient,
-        pkgManager: "yarn",
+        pkgManager: pkgManager,
         checkUpdater: ncu as any,
       }),
       new NodeJSWorkspaceProvider({
         githubClient: gitClient,
-        pkgManager: "yarn",
+        pkgManager: pkgManager,
         checkUpdater: ncu as any,
       }),
     ],
