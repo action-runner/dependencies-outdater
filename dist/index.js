@@ -779,12 +779,14 @@ class Provider {
     }
     runCommand(command) {
         return new Promise((resolve, reject) => {
-            (0, child_process_1.exec)(command, (error) => {
+            (0, child_process_1.exec)(command, (error, stdout, stderr) => {
                 if (error) {
-                    core.setFailed(`${error === null || error === void 0 ? void 0 : error.message}`);
-                    reject();
+                    core.setFailed(`${error === null || error === void 0 ? void 0 : error.message}\n${stderr}`);
+                    reject(error);
                 }
-                resolve("success");
+                else {
+                    resolve(stdout);
+                }
             });
         });
     }

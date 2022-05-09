@@ -1,6 +1,11 @@
 
 
-# [1.7.0](https://github.com/action-runner/dependencies-outdater/compare/1.6.0...1.7.0) (2022-05-04)
+## [1.7.1](https://github.com/action-runner/dependencies-outdater/compare/1.7.0...1.7.1) (2022-05-09)
+
+
+### Bug Fixes
+
+* error message when exec command ([#25](https://github.com/action-runner/dependencies-outdater/issues/25)) ([51b1133](https://github.com/action-runner/dependencies-outdater/commit/51b11336383f74ca43ac30005095047b633c552b))# [1.7.0](https://github.com/action-runner/dependencies-outdater/compare/1.6.0...1.7.0) (2022-05-04)
 
 
 ### Features
