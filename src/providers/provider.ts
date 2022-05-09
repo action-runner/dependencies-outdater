@@ -68,7 +68,7 @@ export abstract class Provider {
   }): string {
     let output = `## ${props.title}\n\n`;
     output += `For commit [${props.sha}]\n\n`;
-    
+
     // markdown table header
     output += `| Package | Package Path | Current Version | New Version|\n`;
     output += `|:-------:|:------------:|:--------------:|:---------:|\n`;
@@ -125,13 +125,13 @@ export abstract class Provider {
 
   protected runCommand(command: string) {
     return new Promise((resolve, reject) => {
-      exec(command, (error) => {
+      exec(command, (error, stdout, stderr) => {
         if (error) {
-          core.setFailed(`${error?.message}`);
-          reject();
+          core.setFailed(`${error?.message}\n${stderr}`);
+          reject(error);
+        } else {
+          resolve(stdout);
         }
-
-        resolve("success");
       });
     });
   }
